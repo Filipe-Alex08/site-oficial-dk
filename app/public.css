@@ -1,14 +1,33 @@
 .section-heading {
-  max-width: 820px;
-  margin: 0 auto 42px;
-  text-align: center;
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.68fr);
+  align-items: end;
+  gap: 56px;
+  margin: 0 0 38px;
+  text-align: left;
+}
+.section-heading h2 {
+  font-size: clamp(1.9rem, 3vw, 3rem);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.section-heading h2::after {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 2px;
+  margin-top: 15px;
+  background: var(--red-bright);
 }
 .section-heading > p {
-  max-width: 680px;
-  margin: 18px auto 0;
+  max-width: 570px;
+  margin: 0;
+  font-family: Georgia, serif;
 }
 .calendar-section {
-  background: linear-gradient(180deg, #0c0e11, #08090b);
+  background: linear-gradient(180deg, #0d0f11, #090a0b);
+  border-top: 1px solid var(--line);
 }
 .activity-list {
   display: grid;
@@ -21,6 +40,10 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.activity-card:hover {
+  border-color: #62303a;
 }
 .date-block {
   display: flex;
@@ -90,15 +113,15 @@
 .join-panel {
   margin-top: 70px;
   padding: clamp(30px, 5vw, 48px);
-  text-align: center;
+  text-align: left;
   background: linear-gradient(135deg, #1a1d23, #111318);
   border: 1px solid var(--line);
   border-top: 3px solid var(--red);
   border-radius: var(--radius);
 }
 .join-panel > div:first-child {
-  max-width: 760px;
-  margin-inline: auto;
+  max-width: 820px;
+  margin-inline: 0;
 }
 .join-panel > div:first-child > p:last-child {
   margin-top: 16px;
@@ -116,6 +139,7 @@
   border: 1px solid var(--line);
   background: #101216;
   border-radius: 10px;
+  text-align: left;
 }
 .join-steps span {
   display: block;
@@ -128,7 +152,7 @@
   font-size: 0.9rem;
 }
 .games-list {
-  max-width: 980px;
+  max-width: 1180px;
   display: grid;
   gap: 18px;
 }
@@ -245,7 +269,7 @@
   background: #d5ab49;
 }
 .media-feed {
-  max-width: 940px;
+  max-width: 1120px;
   display: grid;
   gap: 28px;
 }
@@ -322,13 +346,13 @@
   font-size: 0.83rem;
 }
 .post-hero {
+  position: relative;
+  isolation: isolate;
   padding: 85px 0 65px;
-  text-align: center;
-  background: radial-gradient(
-    circle at 50% 10%,
-    rgba(197, 31, 58, 0.16),
-    transparent 28rem
-  );
+  text-align: left;
+  background:
+    linear-gradient(90deg, rgba(5, 6, 7, 0.98), rgba(5, 6, 7, 0.58)),
+    url("/images/dk-events.webp") center / cover;
   border-bottom: 1px solid var(--line);
 }
 .post-hero-content {
@@ -360,7 +384,7 @@
 .page-anchor-nav {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   margin-top: 30px;
 }
@@ -373,9 +397,12 @@
   color: #dddfe3;
   background: rgba(15, 17, 21, 0.68);
   border: 1px solid #3b3f48;
-  border-radius: 99px;
-  font-size: 0.86rem;
+  border-radius: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 0.7rem;
   font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   transition:
     border-color 0.2s,
     color 0.2s,
@@ -441,8 +468,8 @@
 }
 .event-introduction {
   max-width: 820px;
-  margin-inline: auto;
-  text-align: center;
+  margin-inline: 0;
+  text-align: left;
 }
 .event-introduction p + p {
   margin-top: 14px;
@@ -455,7 +482,7 @@
 .event-options article {
   height: 100%;
   padding: 30px;
-  text-align: center;
+  text-align: left;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -484,6 +511,13 @@
   margin-top: 6px;
 }
 @media (max-width: 900px) {
+  .section-heading {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .section-heading > p {
+    max-width: 680px;
+  }
   .about-grid {
     grid-template-columns: 1fr 1fr;
   }

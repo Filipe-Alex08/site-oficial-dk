@@ -11,6 +11,7 @@ export default function SwordplayPage() {
         eyebrow="Atividades"
         title="Swordplay e Boffering"
         description="Uma prática com equipamentos acolchoados que combina técnica, estratégia e movimento."
+        variant="training"
       />
       <section className="section">
         <div className="container prose">

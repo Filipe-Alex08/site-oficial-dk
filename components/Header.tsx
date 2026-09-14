@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Menu, Shield, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -23,12 +23,12 @@ export default function Header() {
     <header className="site-header">
       <div className="header-inner">
         <Link className="brand" href="/" onClick={() => setOpen(false)}>
-          <span className="brand-mark">
-            <Shield size={25} />
+          <span className="brand-mark" aria-hidden="true">
+            DK
           </span>
-          <span>
-            <strong>DK</strong>
-            <small>Death Knights</small>
+          <span className="brand-copy">
+            <strong>Death Knights</strong>
+            <small>Swordplay • Belo Horizonte</small>
           </span>
         </Link>
 
@@ -101,6 +101,12 @@ export default function Header() {
             Área do Membro
           </Link>
         </nav>
+
+        <p className="header-motto">
+          <span>Disciplina</span>
+          <span>Movimento</span>
+          <span>Comunidade</span>
+        </p>
       </div>
     </header>
   );

@@ -1,47 +1,145 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin, Shield, Swords } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  Camera,
+  Castle,
+  ShieldCheck,
+  Swords,
+  Users,
+} from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
 
 export default function HomePage() {
   return (
     <>
       <section className="home-hero">
-        <div className="hero-emblem" aria-hidden="true"><Swords /></div>
-        <div className="container home-hero-content">
-          <p className="eyebrow">Swordplay • Belo Horizonte</p>
-          <h1>Cavaleiros da Morte</h1>
-          <p>
-            Batalhas, técnica e comunidade. Conheça o DK-BH e descubra uma atividade
-            que une esporte, estratégia, batalhas e diversão.
-          </p>
-          <div className="hero-actions">
-            <Link className="button button-primary" href="/sobre">
-              Conheça o DK-BH <ArrowRight size={18} />
-            </Link>
-            <Link className="button button-ghost" href="/sobre#como-participar">
-              Como participar
-            </Link>
+        <div className="container home-hero-layout">
+          <div className="home-hero-content">
+            <p className="eyebrow">Mais do que um esporte. Uma jornada.</p>
+            <h1>
+              Swordplay
+              <span>com propósito</span>
+            </h1>
+            <p>
+              Bem-vindo ao DK — Death Knights Swordplay. Aqui, técnica,
+              estratégia e comunidade se encontram em uma experiência esportiva
+              e recreativa.
+            </p>
+            <div className="hero-actions">
+              <Link
+                className="button button-primary"
+                href="/sobre#como-participar"
+              >
+                Saiba como participar <ArrowRight size={18} />
+              </Link>
+            </div>
           </div>
+
+          <aside className="hero-manifesto" aria-label="Valores do DK">
+            <p>Pessoas reais</p>
+            <p>Combate recreativo</p>
+            <p>Amizades duradouras</p>
+          </aside>
         </div>
-        <div className="hero-stats container">
-          <div><Shield /><span><strong>Desde 2020</strong><small>História e comunidade</small></span></div>
-          <div><CalendarDays /><span><strong>Normalmente aos domingos</strong><small>Atividades regulares</small></span></div>
-          <div><MapPin /><span><strong>Belo Horizonte</strong><small>Parque Ecológico da Pampulha</small></span></div>
+
+        <div className="container hero-signature">
+          <span>Disciplina hoje</span>
+          <span>Guerreiros melhores amanhã</span>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container split-intro">
-          <div>
-            <p className="eyebrow">Bem-vindos ao DK-BH</p>
-            <h2>Um campo aberto para aprender, evoluir e fazer parte</h2>
-          </div>
-          <div>
+      <section className="home-portals" aria-label="Principais áreas do site">
+        <div className="container home-portal-grid">
+          <Link
+            className="home-portal home-portal-activities"
+            href="/atividades/swordplay"
+          >
+            <span className="home-portal-icon">
+              <Swords />
+            </span>
+            <h2>Atividades</h2>
             <p>
-              O DK-BH reúne pessoas interessadas em Swordplay, combates recreativos,
-              trabalho em equipe e experiências inspiradas no universo medieval.
+              Treinos, práticas e jogos para desenvolver técnica, estratégia e
+              espírito de equipe.
             </p>
-            <Link className="text-link" href="/sobre">Conheça nossa história <ArrowRight size={16} /></Link>
+            <span className="home-portal-link">
+              Saiba mais <ArrowRight size={16} />
+            </span>
+          </Link>
+
+          <Link className="home-portal home-portal-media" href="/midias">
+            <span className="home-portal-icon">
+              <Camera />
+            </span>
+            <h2>Mídias</h2>
+            <p>
+              Fotos, vídeos e publicações que registram a jornada do DK dentro e
+              fora dos treinos.
+            </p>
+            <span className="home-portal-link">
+              Saiba mais <ArrowRight size={16} />
+            </span>
+          </Link>
+
+          <Link className="home-portal home-portal-events" href="/eventos">
+            <span className="home-portal-icon">
+              <CalendarDays />
+            </span>
+            <h2>Eventos</h2>
+            <p>
+              Encontros internos, grandes batalhas, eventos geek e experiências
+              para aniversários.
+            </p>
+            <span className="home-portal-link">
+              Saiba mais <ArrowRight size={16} />
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      <section className="newcomer-strip">
+        <div className="newcomer-photo" aria-hidden="true" />
+        <div className="newcomer-content">
+          <div className="newcomer-copy">
+            <p className="eyebrow">Para todos os níveis</p>
+            <h2>Iniciantes também são bem-vindos</h2>
+            <p>
+              Não é preciso ter experiência prévia. Nossa equipe acompanha os
+              primeiros passos e disponibiliza equipamentos para uma
+              participação segura e divertida.
+            </p>
+            <small>
+              Atividades normalmente aos domingos • Parque Ecológico da Pampulha
+            </small>
+          </div>
+
+          <div className="newcomer-values" aria-label="Diferenciais do DK">
+            <div>
+              <Users />
+              <span>
+                Comunidade<strong>acolhedora</strong>
+              </span>
+            </div>
+            <div>
+              <BarChart3 />
+              <span>
+                Evolução<strong>constante</strong>
+              </span>
+            </div>
+            <div>
+              <ShieldCheck />
+              <span>
+                Ambiente<strong>seguro</strong>
+              </span>
+            </div>
+            <div>
+              <Castle />
+              <span>
+                Tradição<strong>viva</strong>
+              </span>
+            </div>
           </div>
         </div>
       </section>

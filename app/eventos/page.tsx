@@ -57,6 +57,7 @@ export default function EventsPage() {
         eyebrow="Encontros e experiências"
         title="Eventos do DK"
         description="Conheça os eventos organizados pelo grupo, nossa participação em encontros de Swordplay e as experiências que levamos a eventos e aniversários."
+        variant="events"
       >
         <nav
           className="page-anchor-nav"
