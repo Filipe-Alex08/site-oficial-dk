@@ -15,20 +15,49 @@ export default function Footer() {
         <Link href="/sobre">Sobre o DK</Link>
         <Link href="/atividades/jogos">Atividades</Link>
         <Link href="/midias">Mídias</Link>
-        <Link href="/eventos/internos">Eventos</Link>
+        <Link href="/eventos">Eventos</Link>
       </nav>
 
       <div className="social-links" aria-label="Redes sociais">
-        <a href={socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram /></a>
-        <a href={socialLinks.whatsapp} target="_blank" rel="noreferrer" aria-label="WhatsApp"><MessageCircle /></a>
+        <a
+          href={socialLinks.instagram}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Instagram"
+        >
+          <Instagram />
+        </a>
+        <a
+          href={socialLinks.whatsapp}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="WhatsApp"
+        >
+          <MessageCircle />
+        </a>
         {socialLinks.youtube ? (
-          <a href={socialLinks.youtube} target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube /></a>
+          <a
+            href={socialLinks.youtube}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="YouTube"
+          >
+            <Youtube />
+          </a>
         ) : (
-          <span className="social-disabled" title="Adicione o link do YouTube nas configurações"><Youtube /></span>
+          <span
+            className="social-disabled"
+            title="Adicione o link do YouTube nas configurações"
+          >
+            <Youtube />
+          </span>
         )}
       </div>
 
-      <p className="copyright">© {new Date().getFullYear()} DK — Death Knights. Todos os direitos reservados.</p>
+      <p className="copyright">
+        © {new Date().getFullYear()} DK — Death Knights. Todos os direitos
+        reservados.
+      </p>
     </footer>
   );
 }

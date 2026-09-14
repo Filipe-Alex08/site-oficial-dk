@@ -12,12 +12,6 @@ const activityLinks = [
   ["Graduações", "/atividades/graduacoes"],
 ];
 
-const eventLinks = [
-  ["Eventos Internos", "/eventos/internos"],
-  ["Eventos Externos", "/eventos/externos"],
-  ["DK em Eventos Geek", "/eventos/geek"],
-];
-
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -29,8 +23,13 @@ export default function Header() {
     <header className="site-header">
       <div className="header-inner">
         <Link className="brand" href="/" onClick={() => setOpen(false)}>
-          <span className="brand-mark"><Shield size={25} /></span>
-          <span><strong>DK</strong><small>Death Knights</small></span>
+          <span className="brand-mark">
+            <Shield size={25} />
+          </span>
+          <span>
+            <strong>DK</strong>
+            <small>Death Knights</small>
+          </span>
         </Link>
 
         <button
@@ -43,35 +42,62 @@ export default function Header() {
           {open ? <X /> : <Menu />}
         </button>
 
-        <nav className={"main-nav " + (open ? "is-open" : "")} aria-label="Menu principal">
-          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Página Inicial</Link>
-          <Link className={active("/sobre") ? "active" : ""} href="/sobre" onClick={() => setOpen(false)}>Sobre o DK</Link>
+        <nav
+          className={"main-nav " + (open ? "is-open" : "")}
+          aria-label="Menu principal"
+        >
+          <Link
+            className={active("/") ? "active" : ""}
+            href="/"
+            onClick={() => setOpen(false)}
+          >
+            Página Inicial
+          </Link>
+          <Link
+            className={active("/sobre") ? "active" : ""}
+            href="/sobre"
+            onClick={() => setOpen(false)}
+          >
+            Sobre o DK
+          </Link>
 
           <div className="nav-dropdown">
-            <button className={active("/atividades") ? "active" : ""} type="button">
+            <button
+              className={active("/atividades") ? "active" : ""}
+              type="button"
+            >
               Atividades <ChevronDown size={15} />
             </button>
             <div className="dropdown-panel">
               {activityLinks.map(([label, href]) => (
-                <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>
+                <Link key={href} href={href} onClick={() => setOpen(false)}>
+                  {label}
+                </Link>
               ))}
             </div>
           </div>
 
-          <Link className={active("/midias") ? "active" : ""} href="/midias" onClick={() => setOpen(false)}>Mídias</Link>
+          <Link
+            className={active("/midias") ? "active" : ""}
+            href="/midias"
+            onClick={() => setOpen(false)}
+          >
+            Mídias
+          </Link>
 
-          <div className="nav-dropdown">
-            <button className={active("/eventos") ? "active" : ""} type="button">
-              Eventos <ChevronDown size={15} />
-            </button>
-            <div className="dropdown-panel">
-              {eventLinks.map(([label, href]) => (
-                <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>
-              ))}
-            </div>
-          </div>
+          <Link
+            className={active("/eventos") ? "active" : ""}
+            href="/eventos"
+            onClick={() => setOpen(false)}
+          >
+            Eventos
+          </Link>
 
-          <Link className="member-link" href="/area-do-membro/login" onClick={() => setOpen(false)}>
+          <Link
+            className="member-link"
+            href="/area-do-membro/login"
+            onClick={() => setOpen(false)}
+          >
             Área do Membro
           </Link>
         </nav>
