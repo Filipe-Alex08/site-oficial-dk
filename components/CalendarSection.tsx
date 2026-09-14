@@ -1,6 +1,7 @@
 import { CalendarDays, Clock3, MapPin } from "lucide-react";
 import { demoActivities } from "@/lib/content";
-import type { ActivityStatus } from "@/lib/types";
+import type { Activity, ActivityStatus } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
 
 const statusLabel: Record<ActivityStatus, string> = {
   confirmado: "Confirmado",
@@ -10,20 +11,29 @@ const statusLabel: Record<ActivityStatus, string> = {
   finalizado: "Finalizado",
 };
 
-export default function CalendarSection() {
+export default async function CalendarSection() {
+  let activities: Activity[] = demoActivities;
+  const supabase = await createClient();
+
+  if (supabase) {
+    const { data } = await supabase
+      .from("activities")
+      .select("*")
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at")
+      .limit(8);
+    if (data?.length) activities = data as Activity[];
+  }
+
   return (
     <section className="section calendar-section" id="calendario">
       <div className="container">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Cronograma</p>
-            <h2>Calendário do DK</h2>
-          </div>
+          <div><p className="eyebrow">Cronograma</p><h2>Calendário do DK</h2></div>
           <p>Confira os próximos treinos e atividades. Alterações são publicadas diretamente pela equipe responsável.</p>
         </div>
-
         <div className="activity-list">
-          {demoActivities.map((activity) => {
+          {activities.map((activity) => {
             const date = new Date(activity.starts_at);
             return (
               <article className="activity-card" key={activity.id}>
@@ -33,10 +43,7 @@ export default function CalendarSection() {
                 </div>
                 <div className="activity-content">
                   <div className="activity-title-row">
-                    <div>
-                      <span className="activity-type">{activity.type}</span>
-                      <h3>{activity.title}</h3>
-                    </div>
+                    <div><span className="activity-type">{activity.type}</span><h3>{activity.title}</h3></div>
                     <span className={"badge " + activity.status}>{statusLabel[activity.status]}</span>
                   </div>
                   <p>{activity.description}</p>
