@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import "./globals.css";
+import "./public.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
