@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Jogos" };
 export default function GamesPage() {
   return (
     <>
-      <PageHero eyebrow="Atividades" title="Jogos do DK" description="Conheça os objetivos, regras e equipamentos de cada jogo em uma única página." />
+      <PageHero eyebrow="Atividades" title="Jogos de Swordplay" description="Conheça os objetivos, regras, dinâmicas e equipamentos de cada jogo" />
       <section className="section">
         <div className="container games-list">
           {games.map((game) => <GameCard key={game.id} game={game} />)}

@@ -9,9 +9,24 @@ export default function ExternalEventsPage() {
     <>
       <PageHero eyebrow="Eventos" title="Eventos Externos" description="O DK também participa de encontros organizados por outros grupos e comunidades." />
       <section className="section"><div className="container card-grid">
-        <article className="card"><span className="card-icon"><Map /></span><h3>Eventos estaduais</h3><p>Encontros realizados em Minas Gerais e em outros estados.</p></article>
-        <article className="card"><span className="card-icon"><Network /></span><h3>Eventos regionais</h3><p>Atividades que aproximam grupos de diferentes cidades e regiões.</p></article>
-        <article className="card"><span className="card-icon"><Shield /></span><h3>Encontros entre clãs</h3><p>Momentos de convivência e troca de experiência com outras comunidades.</p></article>
+        <article className="card"><span className="card-icon"><Map /></span><h3>Eventos estaduais</h3>
+        <p>Grandes encontros realizados em Minas Gerais e em outros estados, reunindo diferentes grupos de Swordplay em um mesmo field. São grandes batalhas, troca de experiências, novas amizades e muita integração. Exemplos: 
+          <ul>
+            <li>Encontro Mineiro de Swordplay;</li>
+            <li>Encontro Carioca de Swordplay;</li>
+            <li>Encontro Paulista de Swordplay;</li>
+            <li>Encontro da Aliança da Estrada Real;</li>
+            <li>Guerra das Facções;</li>
+          </ul>
+          </p></article>
+
+        <article className="card"><span className="card-icon"><Network /></span><h3>Eventos regionais</h3>
+        <p> Encontros ainda maiores, capazes de reunir grupos de várias cidades, estados e regiões. São eventos marcados por batalhas intensas, estratégias coletivas e a oportunidade de lutar ao lado — ou contra — jogadores de diferentes partes do país.
+          <ul>
+            <li>Apocalipse;</li>
+            <li>Odisseia;</li>
+          </ul>
+        </p></article>
       </div></section>
     </>
   );

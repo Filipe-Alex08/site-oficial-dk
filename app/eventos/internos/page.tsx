@@ -5,11 +5,11 @@ import PageHero from "@/components/PageHero";
 export const metadata: Metadata = { title: "Eventos Internos" };
 
 const items = [
-  ["Treinos especiais", "Atividades temáticas ou com programação diferenciada.", Swords],
-  ["Confraternizações", "Encontros para fortalecer a convivência entre os membros.", PartyPopper],
-  ["Exames", "Momentos de avaliação relacionados ao desenvolvimento e às graduações.", Award],
-  ["Torneios", "Disputas internas organizadas em diferentes formatos.", Shield],
-  ["Atividades entre divisões", "Encontros que aproximam participantes de diferentes regiões do DK.", Users],
+  ["Treinos especiais", "Atividades com propostas diferentes dos treinos regulares, podendo incluir desafios específicos, novas dinâmicas, convidados ou programações temáticas.", Swords],
+  ["Confraternizações", "Momentos para reunir os membros fora do ritmo das batalhas, fortalecer amizades, integrar novos participantes e aproximar ainda mais a comunidade do DK.", PartyPopper],
+  ["Exames", "Avaliações voltadas ao desenvolvimento dos integrantes, considerando conhecimentos, habilidades e evolução dentro do sistema de graduações do DK.", Award],
+  ["Torneios", "Disputas internas organizadas em diferentes formatos, criadas para testar habilidades, estratégias e proporcionar novos desafios entre os participantes.", Shield],
+  ["Atividades entre divisões", "Encontros que reúnem integrantes de diferentes regiões do DK, promovendo integração, troca de experiências e atividades em conjunto entre as divisões.", Users],
 ];
 
 export default function InternalEventsPage() {
