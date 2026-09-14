@@ -4,6 +4,7 @@ import { CalendarPlus, Edit3, ImagePlus, LayoutDashboard, ShieldCheck, TicketPlu
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AdminRole, MemberProfile, Post } from "@/lib/types";
+import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 
 type Section = "resumo" | "midias" | "calendario" | "membros" | "convites";
 type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
@@ -155,6 +156,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
             <div className="form-actions"><button className="button button-primary" type="submit">{editingPost ? "Atualizar" : "Criar publicação"}</button>{editingPost && <button className="button button-ghost" type="button" onClick={() => { setEditingPost(null); setPostForm(emptyPost); }}>Cancelar</button>}</div>
           </form>
           <AdminTable headers={["Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={"badge " + (post.published ? "aprovado" : "pendente")}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", published: post.published }); }}><Edit3 /></button><button onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <MediaGalleryManager posts={posts} />
         </div>}
 
         {section === "calendario" && canCalendar && <div>
