@@ -20,17 +20,23 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
     setItems((data || []) as MediaItem[]);
   }, [supabase]);
 
-  useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    if (!postId && posts[0]) setPostId(posts[0].id);
-  }, [posts, postId]);
+    if (!supabase) return;
+    let active = true;
+    supabase.from("media_items").select("*").order("sort_order").then(({ data }) => {
+      if (active) setItems((data || []) as MediaItem[]);
+    });
+    return () => { active = false; };
+  }, [supabase]);
+
+  const selectedPostId = postId || posts[0]?.id || "";
 
   async function add(event: FormEvent) {
     event.preventDefault();
-    if (!supabase || !postId) return;
-    const sort = items.filter((item) => item.post_id === postId).length;
+    if (!supabase || !selectedPostId) return;
+    const sort = items.filter((item) => item.post_id === selectedPostId).length;
     const { error } = await supabase.from("media_items").insert({
-      post_id: postId,
+      post_id: selectedPostId,
       type,
       url,
       caption: caption || null,
@@ -47,7 +53,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
     await load();
   }
 
-  const visible = items.filter((item) => item.post_id === postId);
+  const visible = items.filter((item) => item.post_id === selectedPostId);
 
   return (
     <section className="gallery-manager">
@@ -60,7 +66,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
             <div className="form-grid">
               <div className="field field-full">
                 <label>Publicação</label>
-                <select value={postId} onChange={(e) => setPostId(e.target.value)}>
+                <select value={selectedPostId} onChange={(e) => setPostId(e.target.value)}>
                   {posts.map((post) => <option key={post.id} value={post.id}>{post.title}</option>)}
                 </select>
               </div>
