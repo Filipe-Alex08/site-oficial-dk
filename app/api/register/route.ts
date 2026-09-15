@@ -1,12 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { graduationOptions, rankOptions } from "@/lib/member-access";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getZodiacSign } from "@/lib/zodiac";
 
 export async function POST(request: Request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const admin = createAdminClient();
 
-  if (!url || !secretKey) {
+  if (!admin) {
     return NextResponse.json({ error: "O banco de dados ainda não foi configurado." }, { status: 503 });
   }
 
@@ -19,10 +19,6 @@ export async function POST(request: Request) {
     if (String(body.password).length < 8) {
       return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
     }
-
-    const admin = createClient(url, secretKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     const code = String(body.invite_code).trim().toUpperCase();
     const { data: invite } = await admin.from("invites").select("*").eq("code", code).eq("active", true).maybeSingle();
@@ -42,12 +38,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError?.message || "Não foi possível criar a conta." }, { status: 400 });
     }
 
+    const requestedRank = String(body.rank || "recruta");
+    const requestedGraduation = String(body.graduation_level || "sem_graduacao");
+    const rank = rankOptions.some((item) => item.value === requestedRank) ? requestedRank : "recruta";
+    const graduationLevel = graduationOptions.some((item) => item.value === requestedGraduation)
+      ? requestedGraduation
+      : "sem_graduacao";
+
     const profile = {
       id: authData.user.id,
       email: String(body.email).trim().toLowerCase(),
       full_name: String(body.full_name).trim(),
       nickname: String(body.nickname).trim(),
-      rank: String(body.rank || "").trim() || null,
+      member_kind: "membro",
+      rank,
+      graduation_level: graduationLevel,
       graduation_order: String(body.graduation_order || "").trim() || null,
       house: String(body.house || "").trim() || null,
       shirt_number: body.shirt_number ? Number(body.shirt_number) : null,

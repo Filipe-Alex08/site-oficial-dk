@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, LogOut, Settings, Shield, Swords, UserRound } from "lucide-react";
+import { CalendarDays, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
+import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Painel do Membro" };
@@ -22,7 +24,8 @@ export default async function MemberPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const profile = profileData as MemberProfile | null;
   if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
 
   const { data: adminRoles } = await supabase.from("user_admin_roles").select("role").eq("user_id", user.id);
@@ -42,9 +45,13 @@ export default async function MemberPage() {
             <div className="profile-avatar"><UserRound /></div>
             <h2>{profile.full_name}</h2>
             <p>@{profile.nickname}</p>
-            <span className="badge aprovado">Membro aprovado</span>
+            <div className="profile-badges">
+              <span className="badge aprovado">{memberKindLabels[profile.member_kind]}</span>
+              <span className="badge graduation">{graduationLabels[profile.graduation_level]}</span>
+            </div>
             <dl>
-              <div><dt>Patente</dt><dd>{profile.rank || "Não informada"}</dd></div>
+              <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
+              <div><dt>Graduação</dt><dd>{graduationLabels[profile.graduation_level]}</dd></div>
               <div><dt>Ordem</dt><dd>{profile.graduation_order || "Não informada"}</dd></div>
               <div><dt>Casa</dt><dd>{profile.house || "Não informada"}</dd></div>
               <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
@@ -54,9 +61,9 @@ export default async function MemberPage() {
             </dl>
           </article>
           <div className="member-options">
-            <article className="card"><span className="card-icon"><CalendarDays /></span><h3>Calendário interno</h3><p>Acompanhe compromissos e informações destinadas aos membros.</p></article>
-            <article className="card"><span className="card-icon"><Swords /></span><h3>Conteúdos do DK</h3><p>Espaço preparado para manuais, documentos e registros internos.</p></article>
-            <article className="card"><span className="card-icon"><Shield /></span><h3>Graduação</h3><p>Consulte posteriormente sua evolução e registros.</p></article>
+            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação, consulte a lista e compartilhe pelo WhatsApp.</p></Link>
+            <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos internos</h3><p>Acesse somente os documentos liberados para seu perfil e sua patente.</p></Link>
+            <Link className="card" href="/membro/documentos"><span className="card-icon"><Shield /></span><h3>Conteúdos de graduação</h3><p>Consulte os materiais disponíveis para seu nível de Bronze, Prata ou Ouro.</p></Link>
             {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Gerencie as áreas permitidas para seu perfil.</p></Link>}
           </div>
         </div>

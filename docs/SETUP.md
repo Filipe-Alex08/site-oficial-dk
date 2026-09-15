@@ -38,7 +38,15 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
 3. Copie todo o conteúdo desse arquivo para uma nova consulta no SQL Editor.
 4. Clique em **Run** e confirme que a execução terminou sem erro.
 
-O script cria tabelas, índices, tipos, funções e políticas de Row Level Security para os quatro níveis administrativos.
+O script cria tabelas, índices, tipos, funções e políticas de Row Level Security para:
+
+- Membro e Oficial como níveis internos independentes da patente;
+- patentes de Recruta a General de Exército;
+- graduações Bronze, Prata e Ouro com acesso progressivo;
+- quatro níveis administrativos independentes;
+- documentos privados em PDF;
+- confirmação de presença nas atividades;
+- bucket privado `dk-documents` no Supabase Storage.
 
 Não execute `supabase/seed.sql` nesta etapa. Esse arquivo é opcional e insere conteúdo demonstrativo; o banco do DK começará vazio para receber eventos e publicações reais.
 
@@ -78,12 +86,16 @@ O cadastro público direto não existe. Para iniciar o sistema:
 
 ```sql
 insert into public.profiles (
-  id, email, full_name, nickname, status
+  id, email, full_name, nickname, member_kind, rank,
+  graduation_level, status
 ) values (
   'UUID-DO-USUARIO',
   'email@exemplo.com',
-  'Nome do Administrador',
-  'Apelido',
+  'Filipe Alexandre',
+  'Kurono',
+  'oficial',
+  'terceiro_sargento',
+  'bronze',
   'aprovado'
 );
 
@@ -103,15 +115,42 @@ values ('UUID-DO-USUARIO', 'principal');
 | `atividades` | ADM de Atividades | Calendário e eventos |
 | `membros` | ADM de Membros | Convites, aprovação e acesso dos membros |
 
-O ADM Principal também herda as permissões dos outros três perfis. A atribuição de papéis ainda é feita na tabela `user_admin_roles`; a interface para distribuir esses papéis será uma das próximas melhorias.
+O ADM Principal também herda as permissões dos outros três perfis. Depois de entrar em `/admin`, ele poderá abrir **Membros**, editar um integrante e marcar ou remover cada papel administrativo.
 
-## 8. Imagens e vídeos
+Ser Membro ou Oficial não concede automaticamente nenhuma permissão administrativa. A marcação de Oficial é feita manualmente pelo ADM de Membros.
+
+## 8. Documentos e PDFs internos
+
+Somente o ADM Principal poderá enviar e excluir PDFs pelo menu **Documentos** do painel administrativo.
+
+Os níveis disponíveis são:
+
+- todos os membros aprovados;
+- somente Oficiais, a partir de uma patente mínima;
+- graduação mínima Bronze, Prata ou Ouro.
+
+O acesso de graduação é progressivo: Prata também acessa Bronze, e Ouro acessa Prata e Bronze. Os arquivos permanecem no bucket privado `dk-documents`; o site gera um link temporário somente depois de validar a permissão.
+
+## 9. Presença nas atividades
+
+O ADM de Atividades informa início, término, local e se a confirmação está aberta. Em `/membro/atividades`, cada integrante aprovado poderá:
+
+- marcar **Vou** ou **Não vou**;
+- informar convidados ou recrutas que irão com ele;
+- incluir uma observação pública;
+- alterar ou remover a própria resposta;
+- consultar a lista completa;
+- copiar a lista ou abri-la no WhatsApp.
+
+O WhatsApp recebe o texto formatado, mas não permite que o site crie marcações reais com `@`. Essas marcações precisam ser adicionadas manualmente depois que a mensagem for aberta.
+
+## 10. Imagens e vídeos públicos
 
 O CMS atual aceita URLs de capa, imagens e vídeos. A tabela `media_items` já suporta galerias.
 
-O envio direto de arquivos pelo CMS ainda não foi implementado. Essa etapa exigirá um bucket no Supabase Storage e políticas próprias de upload para o ADM de Mídias.
+O envio direto de imagens e vídeos públicos pelo CMS ainda não foi implementado. Essa etapa é independente do armazenamento privado de PDFs.
 
-## 9. Ordem de validação
+## 11. Ordem de validação
 
 Depois da configuração inicial, os testes devem seguir esta ordem:
 
@@ -121,10 +160,16 @@ Depois da configuração inicial, os testes devem seguir esta ordem:
 4. verificação das permissões e bloqueios de cada perfil;
 5. geração e uso de convite de membro;
 6. aprovação do cadastro e acesso à área interna;
-7. criação de uma atividade real;
-8. criação de uma publicação real como rascunho e posterior publicação.
+7. criação de uma atividade real com confirmação aberta;
+8. teste das respostas **Vou** e **Não vou** com duas contas;
+9. cópia e compartilhamento da lista;
+10. envio de PDFs gerais, de Oficial e de cada graduação;
+11. tentativa de abertura de cada PDF com perfis permitidos e bloqueados;
+12. criação de uma publicação real como rascunho e posterior publicação.
 
-## 10. Publicação futura
+O roteiro completo, com a matriz de permissões esperada, está em `docs/TESTES-ACESSO.md`.
+
+## 12. Publicação futura
 
 Quando chegar a etapa de colocar o site na internet, cadastre as mesmas variáveis de ambiente no provedor de hospedagem e altere `NEXT_PUBLIC_SITE_URL` para o domínio definitivo.
 

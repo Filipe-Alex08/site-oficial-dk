@@ -23,6 +23,12 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - Login seguro
 - Cadastro somente por convite
 - Aprovação administrativa
+- Separação entre Membro e Oficial
+- Patentes padronizadas de Recruta a General de Exército
+- Graduações Bronze, Prata e Ouro com acesso progressivo
+- Documentos e PDFs privados conforme o nível de acesso
+- Confirmação de presença em atividades, convidados e observações
+- Lista formatada para compartilhamento no WhatsApp
 - Nome, apelido, patente, ordem, casa, camisa e builds
 - Identificação automática do signo pela data de nascimento
 - Painel interno e perfil do membro
@@ -33,6 +39,7 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - ADM de Mídias: publicações
 - ADM de Atividades: calendário
 - ADM de Membros: cadastros, convites e exclusão
+- ADM Principal: documentos privados e atribuição dos quatro papéis de ADM
 - Controle por Row Level Security no banco
 
 ## Tecnologias
@@ -46,11 +53,13 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 
 ## Executar
 
-    npm install
-    cp .env.example .env.local
-    npm run dev
+    npm.cmd install
+    Copy-Item .env.example .env.local
+    npm.cmd run dev
 
 O site público funciona inicialmente com dados demonstrativos. Para ativar login e CMS, siga docs/SETUP.md.
+
+Depois da configuração, valide as permissões seguindo `docs/TESTES-ACESSO.md`.
 
 ## Estrutura
 
@@ -67,7 +76,9 @@ O site público funciona inicialmente com dados demonstrativos. Para ativar logi
 - Cadastros começam com status pendente.
 - Aprovação obrigatória para acesso.
 - Permissões administrativas verificadas no servidor e no banco.
-- Service role utilizada somente em rotas de servidor.
+- Chave secreta utilizada somente em rotas de servidor.
+- PDFs armazenados em bucket privado e liberados por links temporários.
+- Acesso a documentos verificado também no banco por Row Level Security.
 
 ## Links do DK
 

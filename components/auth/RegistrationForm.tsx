@@ -2,11 +2,12 @@
 
 import { CheckCircle2, UserPlus } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+import { graduationOptions, rankGroups } from "@/lib/member-access";
 import { getZodiacSign } from "@/lib/zodiac";
 
 const empty = {
   invite_code: "", email: "", password: "", full_name: "", nickname: "",
-  rank: "", graduation_order: "", house: "", shirt_number: "",
+  rank: "recruta", graduation_level: "sem_graduacao", graduation_order: "", house: "", shirt_number: "",
   primary_build: "", secondary_build: "", birth_date: "",
 };
 
@@ -78,7 +79,19 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
         </div>
         <div className="field">
           <label htmlFor="rank">Patente</label>
-          <input id="rank" value={form.rank} onChange={(e) => update("rank", e.target.value)} placeholder="Será acompanhada por imagem futuramente" />
+          <select id="rank" value={form.rank} onChange={(e) => update("rank", e.target.value)}>
+            {rankGroups.map((group) => (
+              <optgroup label={group.category} key={group.category}>
+                {group.ranks.map((rank) => <option value={rank.value} key={rank.value}>{rank.label}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="graduation_level">Graduação</label>
+          <select id="graduation_level" value={form.graduation_level} onChange={(e) => update("graduation_level", e.target.value)}>
+            {graduationOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="graduation_order">Ordem de graduação</label>
@@ -108,6 +121,7 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
           <label htmlFor="zodiac_sign">Signo do Zodíaco</label>
           <input id="zodiac_sign" value={zodiac} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" />
         </div>
+        <p className="form-help field-full">A patente e a graduação informadas serão conferidas pelo ADM de Membros antes da liberação do acesso.</p>
       </div>
       <button className="button button-primary" type="submit" disabled={loading}>
         <UserPlus size={18} /> {loading ? "Enviando..." : "Enviar cadastro"}
