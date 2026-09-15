@@ -5,11 +5,15 @@ import {
   CalendarDays,
   Camera,
   Castle,
+  Instagram,
+  MessageCircle,
   ShieldCheck,
   Swords,
   Users,
+  Youtube,
 } from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
+import { socialLinks } from "@/lib/content";
 
 export default function HomePage() {
   return (
@@ -56,10 +60,12 @@ export default function HomePage() {
             className="home-portal home-portal-activities"
             href="/atividades/swordplay"
           >
-            <span className="home-portal-icon">
-              <Swords />
-            </span>
-            <h2>Atividades</h2>
+            <div className="home-portal-heading">
+              <span className="home-portal-icon">
+                <Swords />
+              </span>
+              <h2>Atividades</h2>
+            </div>
             <p>
               Treinos, práticas e jogos para desenvolver técnica, estratégia e
               espírito de equipe.
@@ -70,10 +76,12 @@ export default function HomePage() {
           </Link>
 
           <Link className="home-portal home-portal-media" href="/midias">
-            <span className="home-portal-icon">
-              <Camera />
-            </span>
-            <h2>Mídias</h2>
+            <div className="home-portal-heading">
+              <span className="home-portal-icon">
+                <Camera />
+              </span>
+              <h2>Mídias</h2>
+            </div>
             <p>
               Fotos, vídeos e publicações que registram a jornada do DK dentro e
               fora dos treinos.
@@ -84,10 +92,12 @@ export default function HomePage() {
           </Link>
 
           <Link className="home-portal home-portal-events" href="/eventos">
-            <span className="home-portal-icon">
-              <CalendarDays />
-            </span>
-            <h2>Eventos</h2>
+            <div className="home-portal-heading">
+              <span className="home-portal-icon">
+                <CalendarDays />
+              </span>
+              <h2>Eventos</h2>
+            </div>
             <p>
               Encontros internos, grandes batalhas, eventos geek e experiências
               para aniversários.
@@ -143,6 +153,44 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <div className="home-edition-bar">
+        <div className="container home-edition-inner">
+          <p className="home-edition-brand">DK — Death Knights Swordplay</p>
+          <p className="home-edition-message">
+            Pessoas reais. Combates recreativos. Amizades duradouras.
+          </p>
+          <div className="home-edition-social" aria-label="Redes sociais do DK">
+            <a
+              href={socialLinks.instagram}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Instagram do DK"
+            >
+              <Instagram />
+            </a>
+            <a
+              href={socialLinks.whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="WhatsApp do DK"
+            >
+              <MessageCircle />
+            </a>
+            {socialLinks.youtube ? (
+              <a
+                href={socialLinks.youtube}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="YouTube do DK"
+              >
+                <Youtube />
+              </a>
+            ) : null}
+            <span>Mais que espadas. Pessoas.</span>
+          </div>
+        </div>
+      </div>
 
       <CalendarSection />
     </>
