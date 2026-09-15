@@ -22,7 +22,7 @@ export default async function CalendarSection() {
       .gte("starts_at", new Date().toISOString())
       .order("starts_at")
       .limit(8);
-    if (data?.length) activities = data as Activity[];
+    activities = (data ?? []) as Activity[];
   }
 
   return (
@@ -33,6 +33,13 @@ export default async function CalendarSection() {
           <p>Confira os próximos treinos e atividades. Alterações são publicadas diretamente pela equipe responsável.</p>
         </div>
         <div className="activity-list">
+          {!activities.length && (
+            <div className="empty-state">
+              <CalendarDays />
+              <h3>Nenhuma atividade agendada</h3>
+              <p>As próximas atividades do DK aparecerão aqui assim que forem cadastradas.</p>
+            </div>
+          )}
           {activities.map((activity) => {
             const date = new Date(activity.starts_at);
             return (

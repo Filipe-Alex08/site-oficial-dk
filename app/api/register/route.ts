@@ -4,9 +4,9 @@ import { getZodiacSign } from "@/lib/zodiac";
 
 export async function POST(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !serviceKey) {
+  if (!url || !secretKey) {
     return NextResponse.json({ error: "O banco de dados ainda não foi configurado." }, { status: 503 });
   }
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
     }
 
-    const admin = createClient(url, serviceKey, {
+    const admin = createClient(url, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 

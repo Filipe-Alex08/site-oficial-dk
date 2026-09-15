@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Image as ImageIcon } from "lucide-react";
 import MediaCard from "@/components/MediaCard";
 import PageHero from "@/components/PageHero";
 import { demoPosts } from "@/lib/content";
@@ -16,7 +17,7 @@ export default async function MediaPage() {
       .select("*")
       .eq("published", true)
       .order("published_at", { ascending: false });
-    if (data?.length) posts = data as Post[];
+    posts = (data ?? []) as Post[];
   }
 
   return (
@@ -29,6 +30,13 @@ export default async function MediaPage() {
       />
       <section className="section">
         <div className="container media-feed">
+          {!posts.length && (
+            <div className="empty-state">
+              <ImageIcon />
+              <h2>Nenhuma publicação disponível</h2>
+              <p>As publicações do DK aparecerão aqui assim que forem cadastradas e publicadas.</p>
+            </div>
+          )}
           {posts.map((post) => (
             <MediaCard key={post.id} post={post} />
           ))}

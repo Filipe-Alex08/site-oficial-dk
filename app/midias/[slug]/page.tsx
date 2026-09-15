@@ -8,26 +8,29 @@ import { createClient } from "@/lib/supabase/server";
 
 type Props = { params: Promise<{ slug: string }> };
 
+async function loadPost(slug: string) {
+  const supabase = await createClient();
+  if (!supabase) return demoPosts.find((item) => item.slug === slug);
+
+  const { data } = await supabase
+    .from("posts")
+    .select("*, media_items(*)")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+
+  return data ? data as Post : undefined;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const local = demoPosts.find((item) => item.slug === slug);
-  return { title: local?.title ?? "Publicação", description: local?.excerpt };
+  const post = await loadPost(slug);
+  return { title: post?.title ?? "Publicação", description: post?.excerpt };
 }
 
 export default async function PostPage({ params }: Props) {
   const { slug } = await params;
-  let post: Post | undefined = demoPosts.find((item) => item.slug === slug);
-  const supabase = await createClient();
-
-  if (supabase) {
-    const { data } = await supabase
-      .from("posts")
-      .select("*, media_items(*)")
-      .eq("slug", slug)
-      .eq("published", true)
-      .maybeSingle();
-    if (data) post = data as Post;
-  }
+  const post = await loadPost(slug);
 
   if (!post) notFound();
 
