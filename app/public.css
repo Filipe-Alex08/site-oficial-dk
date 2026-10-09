@@ -103,6 +103,9 @@
 }
 .calendar-attendance-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin-top: 18px; }
 .calendar-attendance-link { min-height: 38px; margin-top: 0; padding: 8px 14px; font-size: 0.86rem; }
+.activity-badges { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; }
+.calendar-response-hint { display: inline-flex; align-items: center; gap: 4px; color: #8ac9a5; font-size: .72rem; font-weight: 650; white-space: nowrap; }
+.calendar-response-hint.is-not-going { color: #d99aa1; }
 .year-calendar-event-info { flex: 1; min-width: 0; }
 .year-calendar-event-topline { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; }
 .year-calendar-event-topline > span:first-child { color: var(--red-bright); font-size: .75rem; font-weight: 800; text-transform: uppercase; }

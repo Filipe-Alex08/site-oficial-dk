@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
 
 const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -115,6 +115,10 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
                   <h5>{activity.title}</h5><p>{activity.location}</p>{activity.description && <p>{activity.description}</p>}
                 </div>
                 <div className="year-calendar-attendance-actions">
+                  {attendanceByActivity[activity.id] && <span className={`calendar-response-hint ${attendanceByActivity[activity.id] === "vai" ? "is-going" : "is-not-going"}`}>
+                    {attendanceByActivity[activity.id] === "vai" ? <Check size={13} /> : <X size={13} />}
+                    {attendanceByActivity[activity.id] === "vai" ? "Você vai" : "Você não vai"}
+                  </span>}
                   {isApprovedMember && activity.attendance_open && activity.status !== "cancelado" && activity.status !== "finalizado" && (
                     <Link className="button button-primary calendar-attendance-link" href={`/membro/atividades#activity-${activity.id}`}>
                       {attendanceByActivity[activity.id] ? "Ver resposta" : "Confirmar presença"} <ArrowRight size={17} />

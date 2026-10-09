@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CalendarRange, Clock3, List, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, CalendarRange, Check, Clock3, List, MapPin, X } from "lucide-react";
 import CalendarYearView from "@/components/CalendarYearView";
 import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
 
@@ -60,7 +60,13 @@ export default function CalendarViews({
                 <div className="activity-content">
                   <div className="activity-title-row">
                     <div><span className="activity-type">{activity.type}</span><h3>{activity.title}</h3></div>
-                    <span className={`badge ${activity.status}`}>{statusLabel[activity.status]}</span>
+                    <div className="activity-badges">
+                      {attendanceByActivity[activity.id] && <span className={`calendar-response-hint ${attendanceByActivity[activity.id] === "vai" ? "is-going" : "is-not-going"}`}>
+                        {attendanceByActivity[activity.id] === "vai" ? <Check size={13} /> : <X size={13} />}
+                        {attendanceByActivity[activity.id] === "vai" ? "Você vai" : "Você não vai"}
+                      </span>}
+                      <span className={`badge ${activity.status}`}>{statusLabel[activity.status]}</span>
+                    </div>
                   </div>
                   <p>{activity.description}</p>
                   <div className="activity-meta">
