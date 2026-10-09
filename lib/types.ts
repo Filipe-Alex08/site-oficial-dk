@@ -26,6 +26,7 @@ export type Activity = {
   title: string;
   starts_at: string;
   ends_at?: string | null;
+  updated_at?: string;
   location: string;
   type: string;
   status: ActivityStatus;

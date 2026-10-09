@@ -159,7 +159,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
         const isClosed = !activity.attendance_open || activity.status === "cancelado" || activity.status === "finalizado";
 
         return (
-          <article className="attendance-card" key={activity.id}>
+          <article className="attendance-card" id={`activity-${activity.id}`} key={activity.id}>
             <header>
               <div><span>{activity.type}</span><h2>{activity.title}</h2><p>{new Date(activity.starts_at).toLocaleDateString("pt-BR", dateOptions)} • {activityTime(activity)} • {activity.location}</p></div>
               <div className="attendance-count"><strong>{attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0)}</strong><small>confirmados</small></div>
