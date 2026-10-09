@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import DocumentManager from "@/components/admin/DocumentManager";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
@@ -32,6 +32,18 @@ function toDateTimeInput(value?: string | null) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
+function toDateInput(value: Date) {
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
+function defaultInstagramDateRange() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 6);
+  return { start: toDateInput(start), end: toDateInput(end) };
+}
+
 export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   const supabase = useMemo(() => createClient(), []);
   const principal = roles.includes("principal");
@@ -59,6 +71,9 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [syncingInstagram, setSyncingInstagram] = useState(false);
+  const [instagramDateRange, setInstagramDateRange] = useState(defaultInstagramDateRange);
+  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -105,8 +120,56 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   async function removePost(id: string) {
     if (!supabase || !window.confirm("Excluir esta publicação?")) return;
     const { error } = await supabase.from("posts").delete().eq("id", id);
+    setSelectedPostIds((current) => { const next = new Set(current); next.delete(id); return next; });
     show(error ? error.message : "Publicação excluída.");
     await load();
+  }
+
+  function togglePostSelection(id: string) {
+    setSelectedPostIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllPostSelection() {
+    setSelectedPostIds((current) => current.size === posts.length
+      ? new Set()
+      : new Set(posts.map((post) => post.id)));
+  }
+
+  async function removeSelectedPosts() {
+    if (!supabase || !selectedPostIds.size) return;
+    const count = selectedPostIds.size;
+    if (!window.confirm(`Excluir ${count} publicação(ões) selecionada(s)? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from("posts").delete().in("id", Array.from(selectedPostIds));
+    if (!error) setSelectedPostIds(new Set());
+    show(error ? error.message : `${count} publicação(ões) excluída(s).`);
+    await load();
+  }
+
+  async function syncInstagram() {
+    if (!instagramDateRange.start || !instagramDateRange.end || instagramDateRange.start > instagramDateRange.end) {
+      return show("Selecione um intervalo de datas válido.");
+    }
+    setSyncingInstagram(true);
+    try {
+      const response = await fetch("/api/admin/instagram/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(instagramDateRange),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível sincronizar o Instagram.");
+      show(`${result.imported} nova(s), ${result.refreshed || 0} atualizada(s) e ${result.skipped} sem alteração.${result.failed ? ` Falhas: ${result.failed}.` : ""}`);
+      await load();
+    } catch (error) {
+      show(error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram.");
+    } finally {
+      setSyncingInstagram(false);
+    }
   }
 
   async function saveActivity(event: FormEvent) {
@@ -234,19 +297,37 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
 
         {section === "midias" && canMedia && <div>
           <AdminTitle title="Mídias" description="Crie, edite, publique ou remova postagens da linha do tempo." />
+          <div className="instagram-sync-panel">
+            <div className="instagram-sync-heading"><h3>Sincronizar publicações do Instagram</h3><p>Importa automaticamente todas as publicações encontradas no intervalo selecionado.</p></div>
+            <div className="instagram-import-controls">
+              <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
+              <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
+              <button className="button button-ghost" type="button" onClick={() => void syncInstagram()} disabled={syncingInstagram}>
+                <RefreshCw size={17} className={syncingInstagram ? "spin" : ""} />
+                {syncingInstagram ? "Buscando publicações…" : "Importar do Instagram"}
+              </button>
+            </div>
+          </div>
+          <div className="manual-post-heading"><h3>Criar publicação manualmente</h3><p>Cadastre uma publicação do site sem sincronizar com o Instagram.</p></div>
           <form className="admin-form" onSubmit={savePost}>
             <div className="form-grid">
               <div className="field"><label>Título</label><input value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required /></div>
               <div className="field"><label>Slug</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
               <div className="field"><label>Categoria</label><select value={postForm.category} onChange={(event) => setPostForm({ ...postForm, category: event.target.value })}><option>Treinos</option><option>Eventos</option><option>Encontros</option><option>Comunicados</option></select></div>
               <div className="field"><label>Imagem de capa (URL)</label><input type="url" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
-              <div className="field field-full"><label>Resumo</label><textarea value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required /></div>
+              <div className="field field-full"><label>Resumo</label><textarea value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
               <div className="field field-full"><label>Conteúdo</label><textarea value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
               <label className="check-field"><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /> Publicar agora</label>
             </div>
             <div className="form-actions"><button className="button button-primary" type="submit">{editingPost ? "Atualizar" : "Criar publicação"}</button>{editingPost && <button className="button button-ghost" type="button" onClick={() => { setEditingPost(null); setPostForm(emptyPost); }}>Cancelar</button>}</div>
           </form>
-          <AdminTable headers={["Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <div className="post-bulk-actions">
+            <label className="check-field"><input type="checkbox" checked={posts.length > 0 && selectedPostIds.size === posts.length} onChange={toggleAllPostSelection} /> Selecionar todos</label>
+            <button className="button button-ghost" type="button" onClick={() => void removeSelectedPosts()} disabled={!selectedPostIds.size}>
+              <Trash2 size={17} /> Excluir selecionados{selectedPostIds.size ? ` (${selectedPostIds.size})` : ""}
+            </button>
+          </div>
+          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
           <MediaGalleryManager posts={posts} />
         </div>}
 

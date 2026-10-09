@@ -38,6 +38,8 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
 3. Copie todo o conteúdo desse arquivo para uma nova consulta no SQL Editor.
 4. Clique em **Run** e confirme que a execução terminou sem erro.
 
+5. Execute também as migrações adicionais em `supabase/migrations/002_...sql` até `004_...sql`, em ordem, para habilitar a importação e a proteção contra publicações repetidas.
+
 O script cria tabelas, índices, tipos, funções e políticas de Row Level Security para:
 
 - Membro e Oficial como níveis internos independentes da patente;
@@ -149,6 +151,25 @@ O WhatsApp recebe o texto formatado, mas não permite que o site crie marcaçõe
 O CMS atual aceita URLs de capa, imagens e vídeos. A tabela `media_items` já suporta galerias.
 
 O envio direto de imagens e vídeos públicos pelo CMS ainda não foi implementado. Essa etapa é independente do armazenamento privado de PDFs.
+
+### Importação do Instagram pelo Apify
+
+O ADM Principal ou ADM de Mídias pode usar **Importar do Instagram** no painel de Mídias. A integração consulta as últimas 50 publicações de um perfil público com o ator `apify/instagram-scraper`, cria as postagens publicadas e suas galerias no CMS, e evita duplicatas pelo shortcode do Instagram. O token do Apify fica apenas no servidor.
+
+Configure no `.env.local` (e também nas variáveis do provedor de hospedagem):
+
+```env
+APIFY_TOKEN=seu_token_do_apify
+APIFY_INSTAGRAM_USERNAME=dkbhmg
+APIFY_INSTAGRAM_ACTOR_ID=apify~instagram-scraper
+CRON_SECRET=um_segredo_longo_aleatorio
+```
+
+O `CRON_SECRET` é opcional e permite que um agendador externo chame `GET /api/admin/instagram/sync` com o cabeçalho `Authorization: Bearer <CRON_SECRET>`. A chamada manual é feita pelo painel e não exige esse segredo. Para ativar a importação automática periódica, configure esse agendador no provedor de hospedagem; o site não assume um provedor específico.
+
+Antes de sincronizar, aplique a migração `supabase/migrations/002_instagram_import.sql` no projeto Supabase. A sincronização importa apenas URLs de mídia retornadas pelo ator; como elas são servidas pelo Instagram, podem expirar ou mudar. Para uma cópia durável dos arquivos, será necessário adicionar uma etapa de download e armazenamento próprio.
+
+Se o projeto foi criado antes das migrações `supabase/migrations/003_service_role_table_access.sql` e `supabase/migrations/004_instagram_permalink_collision.sql`, aplique também esses arquivos no SQL Editor, em ordem. A migração 003 concede privilégios de tabela ao papel `service_role`, usado apenas pelo servidor para operações administrativas e importações. A 004 também impede que a mesma URL do Instagram seja cadastrada duas vezes.
 
 ## 11. Ordem de validação
 

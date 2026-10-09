@@ -1,18 +1,17 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Image as ImageIcon } from "lucide-react";
+import { ArrowUpRight, CalendarDays } from "lucide-react";
 import type { Post } from "@/lib/types";
+import MediaCover from "@/components/MediaCover";
 
 export default function MediaCard({ post }: { post: Post }) {
   const date = new Date(post.published_at);
+  const videoCover = !post.cover_url
+    ? post.media_items?.find((item) => item.type === "video")?.url
+    : null;
   return (
     <article className="media-card">
       <div className="media-cover">
-        {post.cover_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.cover_url} alt="" />
-        ) : (
-          <div className="media-placeholder"><ImageIcon size={42} /><span>DK</span></div>
-        )}
+        <MediaCover title={post.title} coverUrl={post.cover_url} videoUrl={videoCover} />
         <span className="media-category">{post.category}</span>
       </div>
       <div className="media-body">
