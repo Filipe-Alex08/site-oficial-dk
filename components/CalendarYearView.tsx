@@ -3,9 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import type { Activity } from "@/lib/types";
+import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
 
 const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
+const statusLabel: Record<ActivityStatus, string> = {
+  confirmado: "Confirmado",
+  a_definir: "A definir",
+  adiado: "Adiado",
+  cancelado: "Cancelado",
+  finalizado: "Finalizado",
+};
 
 function activityDateKey(value: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -24,7 +31,7 @@ function eventTimes(activity: Activity) {
   return { start, end };
 }
 
-export default function CalendarYearView({ activities, initialYear, isApprovedMember }: { activities: Activity[]; initialYear: number; isApprovedMember: boolean }) {
+export default function CalendarYearView({ activities, initialYear, isApprovedMember, attendanceByActivity }: { activities: Activity[]; initialYear: number; isApprovedMember: boolean; attendanceByActivity: Record<string, AttendanceResponse> }) {
   const [year, setYear] = useState(initialYear);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const activitiesByDate = useMemo(() => {
@@ -91,17 +98,29 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
 
       {selectedDate && (
         <section className="year-calendar-selected" aria-live="polite">
-          <div className="year-calendar-selected-heading"><CalendarDays /><h4>{selectedLabel}</h4></div>
+          <div className="year-calendar-selected-heading">
+            <div className="year-calendar-selected-title"><CalendarDays /><h4>{selectedLabel}</h4></div>
+            <div className="year-calendar-selected-statuses">
+              {selectedActivities.map((activity) => <span className={`badge ${activity.status}`} key={activity.id}>{statusLabel[activity.status]}</span>)}
+            </div>
+          </div>
           {selectedActivities.length ? selectedActivities.map((activity) => {
             const { start } = eventTimes(activity);
             return (
               <article className="year-calendar-event" key={activity.id}>
-                <div><span>{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })} · {activity.type}</span><h5>{activity.title}</h5><p>{activity.location}</p>{activity.description && <p>{activity.description}</p>}</div>
-                {isApprovedMember && activity.attendance_open && activity.status !== "cancelado" && activity.status !== "finalizado" && (
-                  <Link className="button button-primary calendar-attendance-link" href={`/membro/atividades#activity-${activity.id}`}>
-                    Confirmar presença <ArrowRight size={17} />
-                  </Link>
-                )}
+                <div className="year-calendar-event-info">
+                  <div className="year-calendar-event-topline">
+                    <span>{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })} · {activity.type}</span>
+                  </div>
+                  <h5>{activity.title}</h5><p>{activity.location}</p>{activity.description && <p>{activity.description}</p>}
+                </div>
+                <div className="year-calendar-attendance-actions">
+                  {isApprovedMember && activity.attendance_open && activity.status !== "cancelado" && activity.status !== "finalizado" && (
+                    <Link className="button button-primary calendar-attendance-link" href={`/membro/atividades#activity-${activity.id}`}>
+                      {attendanceByActivity[activity.id] ? "Ver resposta" : "Confirmar presença"} <ArrowRight size={17} />
+                    </Link>
+                  )}
+                </div>
               </article>
             );
           }) : <p>Nenhuma atividade nesta data.</p>}

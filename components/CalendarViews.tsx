@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, CalendarRange, Clock3, List, MapPin } from "lucide-react";
 import CalendarYearView from "@/components/CalendarYearView";
-import type { Activity, ActivityStatus } from "@/lib/types";
+import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
 
 const statusLabel: Record<ActivityStatus, string> = {
   confirmado: "Confirmado",
@@ -18,11 +18,13 @@ export default function CalendarViews({
   activities,
   upcomingActivities,
   isApprovedMember,
+  attendanceByActivity,
   initialYear,
 }: {
   activities: Activity[];
   upcomingActivities: Activity[];
   isApprovedMember: boolean;
+  attendanceByActivity: Record<string, AttendanceResponse>;
   initialYear: number;
 }) {
   const [view, setView] = useState<"cronograma" | "agenda">("cronograma");
@@ -67,16 +69,18 @@ export default function CalendarViews({
                     <span><CalendarDays size={16} /> {date.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" })}</span>
                   </div>
                   {isApprovedMember && activity.attendance_open && activity.status !== "cancelado" && activity.status !== "finalizado" && (
-                    <Link className="button button-primary calendar-attendance-link" href={`/membro/atividades#activity-${activity.id}`}>
-                      Confirmar presença <ArrowRight size={17} />
-                    </Link>
+                    <div className="calendar-attendance-actions">
+                      <Link className="button button-primary calendar-attendance-link" href={`/membro/atividades#activity-${activity.id}`}>
+                        {attendanceByActivity[activity.id] ? "Ver resposta" : "Confirmar presença"} <ArrowRight size={17} />
+                      </Link>
+                    </div>
                   )}
                 </div>
               </article>
             );
           })}
         </div>
-      ) : <CalendarYearView activities={activities} initialYear={initialYear} isApprovedMember={isApprovedMember} />}
+      ) : <CalendarYearView activities={activities} initialYear={initialYear} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} />}
     </>
   );
 }
