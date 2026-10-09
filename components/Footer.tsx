@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Instagram, MessageCircle, Youtube } from "lucide-react";
+import { Instagram, Youtube } from "lucide-react";
 import { socialLinks } from "@/lib/content";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 
 export default function Footer() {
   return (
@@ -34,7 +35,7 @@ export default function Footer() {
             rel="noreferrer"
             aria-label="WhatsApp"
           >
-            <MessageCircle />
+            <WhatsAppIcon />
           </a>
           {socialLinks.youtube ? (
             <a

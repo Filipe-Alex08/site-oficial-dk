@@ -1,29 +1,34 @@
-import { CalendarDays, Clock3, MapPin } from "lucide-react";
+import CalendarViews from "@/components/CalendarViews";
 import { demoActivities } from "@/lib/content";
-import type { Activity, ActivityStatus } from "@/lib/types";
+import type { Activity } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
-
-const statusLabel: Record<ActivityStatus, string> = {
-  confirmado: "Confirmado",
-  a_definir: "A definir",
-  adiado: "Adiado",
-  cancelado: "Cancelado",
-  finalizado: "Finalizado",
-};
 
 export default async function CalendarSection() {
   let activities: Activity[] = demoActivities;
+  let isApprovedMember = false;
   const supabase = await createClient();
 
   if (supabase) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).maybeSingle();
+      isApprovedMember = profile?.status === "aprovado";
+    }
     const { data } = await supabase
       .from("activities")
       .select("*")
-      .gte("starts_at", new Date().toISOString())
-      .order("starts_at")
-      .limit(8);
+      .order("starts_at");
     activities = (data ?? []) as Activity[];
   }
+
+  const now = new Date();
+  const upcomingActivities = activities
+    .filter((activity) => new Date(activity.starts_at) >= now)
+    .slice(0, 8);
+  const currentYear = Number(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+  }).format(now));
 
   return (
     <section className="section calendar-section" id="calendario">
@@ -32,38 +37,7 @@ export default async function CalendarSection() {
           <div><p className="eyebrow">Cronograma</p><h2>Calendário do DK</h2></div>
           <p>Confira os próximos treinos e atividades. Alterações são publicadas diretamente pela equipe responsável.</p>
         </div>
-        <div className="activity-list">
-          {!activities.length && (
-            <div className="empty-state">
-              <CalendarDays />
-              <h3>Nenhuma atividade agendada</h3>
-              <p>As próximas atividades do DK aparecerão aqui assim que forem cadastradas.</p>
-            </div>
-          )}
-          {activities.map((activity) => {
-            const date = new Date(activity.starts_at);
-            return (
-              <article className="activity-card" key={activity.id}>
-                <div className="date-block">
-                  <strong>{date.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: "America/Sao_Paulo" })}</strong>
-                  <span>{date.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" }).replace(".", "")}</span>
-                </div>
-                <div className="activity-content">
-                  <div className="activity-title-row">
-                    <div><span className="activity-type">{activity.type}</span><h3>{activity.title}</h3></div>
-                    <span className={"badge " + activity.status}>{statusLabel[activity.status]}</span>
-                  </div>
-                  <p>{activity.description}</p>
-                  <div className="activity-meta">
-                    <span><Clock3 size={16} /> {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</span>
-                    <span><MapPin size={16} /> {activity.location}</span>
-                    <span><CalendarDays size={16} /> {date.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" })}</span>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <CalendarViews activities={activities} upcomingActivities={upcomingActivities} isApprovedMember={isApprovedMember} initialYear={currentYear} />
       </div>
     </section>
   );

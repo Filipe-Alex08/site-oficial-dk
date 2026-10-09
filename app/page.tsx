@@ -21,7 +21,7 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">
-            <p className="eyebrow">Mais do que um esporte. Uma jornada.</p>
+            <p className="eyebrow">Um lugar para aprender, se movimentar e criar laços.</p>
             <h1>
               Swordplay
               <span>com propósito</span>
@@ -157,38 +157,6 @@ export default function HomePage() {
       <div className="home-edition-bar">
         <div className="container home-edition-inner">
           <p className="home-edition-brand">DK — Death Knights Swordplay</p>
-          <p className="home-edition-message">
-            Pessoas reais. Combates recreativos. Amizades duradouras.
-          </p>
-          <div className="home-edition-social" aria-label="Redes sociais do DK">
-            <a
-              href={socialLinks.instagram}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram do DK"
-            >
-              <Instagram />
-            </a>
-            <a
-              href={socialLinks.whatsapp}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp do DK"
-            >
-              <MessageCircle />
-            </a>
-            {socialLinks.youtube ? (
-              <a
-                href={socialLinks.youtube}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="YouTube do DK"
-              >
-                <Youtube />
-              </a>
-            ) : null}
-            <span>Mais que espadas. Pessoas.</span>
-          </div>
         </div>
       </div>
 
