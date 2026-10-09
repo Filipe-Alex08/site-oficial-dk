@@ -95,7 +95,7 @@ export default function Header() {
 
           <Link
             className="member-link"
-            href="/area-do-membro/login"
+            href="/membro"
             onClick={() => setOpen(false)}
           >
             Área do Membro
