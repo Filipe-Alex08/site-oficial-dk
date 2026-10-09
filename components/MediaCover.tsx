@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 
-type Props = { title: string; coverUrl?: string | null; videoUrl?: string };
+type Props = { title: string; coverUrl?: string | null; videoUrl?: string | null };
 
 export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
   const [coverFailed, setCoverFailed] = useState(false);
