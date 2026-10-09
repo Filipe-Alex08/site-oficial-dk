@@ -14,7 +14,7 @@ export default async function MediaPage() {
   if (supabase) {
     const { data } = await supabase
       .from("posts")
-      .select("*")
+      .select("*, media_items(*)")
       .eq("published", true)
       .order("published_at", { ascending: false });
     posts = (data ?? []) as Post[];

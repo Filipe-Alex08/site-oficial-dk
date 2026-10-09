@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { demoPosts } from "@/lib/content";
 import type { Post } from "@/lib/types";
@@ -38,15 +38,29 @@ export default async function PostPage({ params }: Props) {
     <article>
       <section className="post-hero"><div className="container post-hero-content">
         <Link className="back-link" href="/midias"><ArrowLeft size={17} /> Voltar para Mídias</Link>
-        <span className="media-category inline">{post.category}</span>
         <h1>{post.title}</h1>
         <p className="media-date"><CalendarDays size={16} /> {new Date(post.published_at).toLocaleDateString("pt-BR")}</p>
+        {post.source_url && <a className="text-link" href={post.source_url} target="_blank" rel="noreferrer">Ver no Instagram <ExternalLink size={16} /></a>}
       </div></section>
       <section className="section"><div className="container post-layout"><div className="prose">
-        <p className="lead">{post.excerpt}</p><p>{post.content}</p><h2>Fotos e vídeos</h2>
+        {post.source !== "instagram" && post.excerpt && <p className="lead">{post.excerpt}</p>}
+        {post.content && <p>{post.content}</p>}
+        <h2>Fotos e vídeos</h2>
         {post.media_items?.length ? (
-          <div className="media-gallery">{post.media_items.sort((a,b) => a.sort_order-b.sort_order).map((item) => (
-            <a className="gallery-item" href={item.url} target="_blank" rel="noreferrer" key={item.id}>{item.caption || (item.type === "image" ? "Ver imagem" : "Assistir ao vídeo")}</a>
+          <div className="media-gallery">{[...post.media_items].sort((a,b) => a.sort_order-b.sort_order).map((item, index) => (
+            <figure className="gallery-item" key={item.id}>
+              {item.type === "video" ? (
+                <video controls preload="metadata" poster={post.cover_url || undefined} aria-label={item.caption || `Vídeo ${index + 1}`}>
+                  <source src={item.url} />
+                </video>
+              ) : (
+                <a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir foto ${index + 1} no Instagram`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.url} alt={item.caption || `Foto ${index + 1}`} loading="lazy" />
+                </a>
+              )}
+              {item.caption && item.caption !== post.content && <figcaption>{item.caption}</figcaption>}
+            </figure>
           ))}</div>
         ) : (
           <div className="empty-state"><ImageIcon /><h3>Galeria em preparação</h3><p>As fotos e os vídeos poderão ser adicionados pelo CMS.</p></div>

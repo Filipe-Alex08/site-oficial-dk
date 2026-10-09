@@ -62,6 +62,8 @@ export type Post = {
   cover_url?: string | null;
   published: boolean;
   published_at: string;
+  source?: string | null;
+  source_url?: string | null;
   media_items?: MediaItem[];
 };
 
