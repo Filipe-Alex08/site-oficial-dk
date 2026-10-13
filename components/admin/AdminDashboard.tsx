@@ -4,6 +4,7 @@ import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, S
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import DocumentManager from "@/components/admin/DocumentManager";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
+import Select from "@/components/ui/Select";
 import { adminRoleOptions, graduationLabels, graduationOptions, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
@@ -55,7 +56,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     ...(canMedia ? ["midias" as const] : []),
     ...(canCalendar ? ["calendario" as const] : []),
     ...(canMembers ? ["membros" as const, "convites" as const] : []),
-    ...(principal ? ["documentos" as const] : []),
+    ...(canMembers ? ["documentos" as const] : []),
   ];
 
   const [section, setSection] = useState<Section>("resumo");
@@ -278,7 +279,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
           {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
           {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} />}
           {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
-          {principal && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
+          {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
         </nav>
       </aside>
 
@@ -313,7 +314,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
             <div className="form-grid">
               <div className="field"><label>Título</label><input value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required /></div>
               <div className="field"><label>Slug</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
-              <div className="field"><label>Categoria</label><select value={postForm.category} onChange={(event) => setPostForm({ ...postForm, category: event.target.value })}><option>Treinos</option><option>Eventos</option><option>Encontros</option><option>Comunicados</option></select></div>
+              <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
               <div className="field"><label>Imagem de capa (URL)</label><input type="url" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
               <div className="field field-full"><label>Resumo</label><textarea value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
               <div className="field field-full"><label>Conteúdo</label><textarea value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
@@ -340,7 +341,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
               <div className="field"><label>Término</label><input type="datetime-local" value={activityForm.ends_at} onChange={(event) => setActivityForm({ ...activityForm, ends_at: event.target.value })} /></div>
               <div className="field"><label>Local</label><input value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required /></div>
               <div className="field"><label>Tipo</label><input value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required /></div>
-              <div className="field"><label>Situação</label><select value={activityForm.status} onChange={(event) => setActivityForm({ ...activityForm, status: event.target.value as ActivityStatus })}><option value="confirmado">Confirmado</option><option value="a_definir">A definir</option><option value="adiado">Adiado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></div>
+              <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => setActivityForm({ ...activityForm, status: value as ActivityStatus })} /></div>
               <div className="field field-full"><label>Descrição</label><textarea value={activityForm.description} onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })} /></div>
               <label className="check-field"><input type="checkbox" checked={activityForm.attendance_open} onChange={(event) => setActivityForm({ ...activityForm, attendance_open: event.target.checked })} /> Permitir confirmação de presença</label>
             </div>
@@ -354,9 +355,9 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
           {memberForm && <form className="admin-form access-form" onSubmit={saveMemberAccess}>
             <h3>Acessos de {memberForm.full_name}</h3>
             <div className="form-grid">
-              <div className="field"><label>Nível interno</label><select value={memberForm.member_kind} onChange={(event) => setMemberForm({ ...memberForm, member_kind: event.target.value as MemberKind })}>{memberKindOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></div>
-              <div className="field"><label>Patente</label><select value={memberForm.rank} onChange={(event) => setMemberForm({ ...memberForm, rank: event.target.value as DkRank })}>{rankGroups.map((group) => <optgroup label={group.category} key={group.category}>{group.ranks.map((rank) => <option value={rank.value} key={rank.value}>{rank.label}</option>)}</optgroup>)}</select></div>
-              <div className="field"><label>Graduação</label><select value={memberForm.graduation_level} onChange={(event) => setMemberForm({ ...memberForm, graduation_level: event.target.value as GraduationLevel })}>{graduationOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></div>
+              <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
+              <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
+              <div className="field"><label htmlFor="member-graduation">Graduação</label><Select id="member-graduation" value={memberForm.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, graduation_level: value as GraduationLevel })} /></div>
               <div className="field"><label>Ordem de graduação</label><input value={memberForm.graduation_order} onChange={(event) => setMemberForm({ ...memberForm, graduation_order: event.target.value })} /></div>
             </div>
             {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}</fieldset>}
@@ -370,7 +371,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
           <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong><small>/area-do-membro/cadastro?convite={invite.code}</small></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Desativar" onClick={() => disableInvite(invite.id)}><XCircle /></button></td></tr>)}</AdminTable>
         </div>}
 
-        {section === "documentos" && principal && <DocumentManager />}
+        {section === "documentos" && canMembers && <DocumentManager />}
       </div>
     </section>
   );

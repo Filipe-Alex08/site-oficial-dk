@@ -91,6 +91,8 @@ export type Game = {
 export type AdminRole = "principal" | "midias" | "atividades" | "membros";
 
 export type DocumentAudience = "todos" | "oficiais" | "graduacao";
+export type DocumentTrack = "cavalaria" | "arquearia";
+export type DocumentAccessRule = ({ kind: "rank"; minimum_rank: DkRank } | { kind: "graduation"; track: DocumentTrack; minimum_graduation: GraduationLevel }) & { join?: "and" | "or" };
 
 export type InternalDocument = {
   id: string;
@@ -101,6 +103,8 @@ export type InternalDocument = {
   audience: DocumentAudience;
   minimum_rank?: DkRank | null;
   minimum_graduation?: GraduationLevel | null;
+  access_logic?: "and" | "or";
+  access_rules?: DocumentAccessRule[];
   active: boolean;
   created_at: string;
 };

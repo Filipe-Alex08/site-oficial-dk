@@ -3,6 +3,7 @@
 import { Film, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Select from "@/components/ui/Select";
 import type { MediaItem, Post } from "@/lib/types";
 
 export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
@@ -65,17 +66,12 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
           <form className="admin-form compact" onSubmit={add}>
             <div className="form-grid">
               <div className="field field-full">
-                <label>Publicação</label>
-                <select value={selectedPostId} onChange={(e) => setPostId(e.target.value)}>
-                  {posts.map((post) => <option key={post.id} value={post.id}>{post.title}</option>)}
-                </select>
+                <label htmlFor="gallery-post-select">Publicação</label>
+                <Select id="gallery-post-select" value={selectedPostId} options={posts.map((post) => ({ value: post.id, label: post.title }))} onChange={setPostId} />
               </div>
               <div className="field">
-                <label>Tipo</label>
-                <select value={type} onChange={(e) => setType(e.target.value as "image" | "video")}>
-                  <option value="image">Imagem</option>
-                  <option value="video">Vídeo</option>
-                </select>
+                <label htmlFor="gallery-media-type">Tipo</label>
+                <Select id="gallery-media-type" value={type} options={[{ value: "image", label: "Imagem" }, { value: "video", label: "Vídeo" }]} onChange={(value) => setType(value as "image" | "video")} />
               </div>
               <div className="field">
                 <label>URL do arquivo</label>
