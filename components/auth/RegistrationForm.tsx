@@ -3,6 +3,7 @@
 import { CheckCircle2, UserPlus } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { graduationOptions, rankGroups } from "@/lib/member-access";
+import Select from "@/components/ui/Select";
 import { getZodiacSign } from "@/lib/zodiac";
 
 const empty = {
@@ -79,19 +80,11 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
         </div>
         <div className="field">
           <label htmlFor="rank">Patente</label>
-          <select id="rank" value={form.rank} onChange={(e) => update("rank", e.target.value)}>
-            {rankGroups.map((group) => (
-              <optgroup label={group.category} key={group.category}>
-                {group.ranks.map((rank) => <option value={rank.value} key={rank.value}>{rank.label}</option>)}
-              </optgroup>
-            ))}
-          </select>
+          <Select id="rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => update("rank", value)} />
         </div>
         <div className="field">
           <label htmlFor="graduation_level">Graduação</label>
-          <select id="graduation_level" value={form.graduation_level} onChange={(e) => update("graduation_level", e.target.value)}>
-            {graduationOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
-          </select>
+          <Select id="graduation_level" value={form.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => update("graduation_level", value)} />
         </div>
         <div className="field">
           <label htmlFor="graduation_order">Ordem de graduação</label>

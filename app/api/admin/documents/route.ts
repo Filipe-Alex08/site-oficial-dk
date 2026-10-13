@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { documentAudienceOptions, graduationOptions, rankOptions } from "@/lib/member-access";
+import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-async function authorizePrincipal() {
+async function authorizeDocumentAdmin() {
   const supabase = await createClient();
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,14 +14,14 @@ async function authorizePrincipal() {
     .from("user_admin_roles")
     .select("role")
     .eq("user_id", user.id)
-    .eq("role", "principal")
-    .maybeSingle();
-  return data ? user : null;
+    .in("role", ["principal", "membros"])
+    .limit(1);
+  return data?.length ? user : null;
 }
 
 export async function POST(request: Request) {
-  const user = await authorizePrincipal();
-  if (!user) return NextResponse.json({ error: "Acesso permitido somente ao ADM Principal." }, { status: 403 });
+  const user = await authorizeDocumentAdmin();
+  if (!user) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
 
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
@@ -31,9 +31,9 @@ export async function POST(request: Request) {
     const file = form.get("file");
     const title = String(form.get("title") || "").trim();
     const description = String(form.get("description") || "").trim() || null;
-    const audience = String(form.get("audience") || "todos");
-    const minimumRank = String(form.get("minimum_rank") || "") || null;
-    const minimumGraduation = String(form.get("minimum_graduation") || "") || null;
+    const accessLogic = String(form.get("access_logic") || "or");
+    const rawRules = String(form.get("access_rules") || "[]");
+    const rules: unknown = JSON.parse(rawRules);
 
     if (!title || !(file instanceof File)) {
       return NextResponse.json({ error: "Informe o título e selecione um PDF." }, { status: 400 });
@@ -44,14 +44,14 @@ export async function POST(request: Request) {
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       return NextResponse.json({ error: "Somente arquivos PDF são permitidos." }, { status: 400 });
     }
-    if (!documentAudienceOptions.some((item) => item.value === audience)) {
-      return NextResponse.json({ error: "Público do documento inválido." }, { status: 400 });
+    if (!Array.isArray(rules) || !["and", "or"].includes(accessLogic) || rules.length > 20) {
+      return NextResponse.json({ error: "Regras de acesso inválidas." }, { status: 400 });
     }
-    if (audience === "oficiais" && !rankOptions.some((item) => item.value === minimumRank)) {
-      return NextResponse.json({ error: "Informe a patente mínima." }, { status: 400 });
-    }
-    if (audience === "graduacao" && !graduationOptions.some((item) => item.value === minimumGraduation && item.value !== "sem_graduacao")) {
-      return NextResponse.json({ error: "Informe a graduação mínima." }, { status: 400 });
+    for (const [index, rule] of (rules as Array<Record<string, unknown>>).entries()) {
+      const validRank = rule.kind === "rank" && rankOptions.some((item) => item.value === rule.minimum_rank);
+      const validGraduation = rule.kind === "graduation" && ["cavalaria", "arquearia"].includes(String(rule.track)) && graduationOptions.some((item) => item.value === rule.minimum_graduation && item.value !== "sem_graduacao");
+      const validJoin = index === 0 || ["and", "or"].includes(String(rule.join));
+      if ((!validRank && !validGraduation) || !validJoin) return NextResponse.json({ error: "Uma regra de acesso contém valores inválidos." }, { status: 400 });
     }
 
     const filePath = `${crypto.randomUUID()}.pdf`;
@@ -67,9 +67,11 @@ export async function POST(request: Request) {
       description,
       file_name: file.name,
       file_path: filePath,
-      audience,
-      minimum_rank: audience === "oficiais" ? minimumRank : null,
-      minimum_graduation: audience === "graduacao" ? minimumGraduation : null,
+      audience: "todos",
+      minimum_rank: null,
+      minimum_graduation: null,
+      access_logic: accessLogic,
+      access_rules: rules,
       created_by: user.id,
     });
 

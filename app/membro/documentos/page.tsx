@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Download, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Download, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
-import { graduationLabels, rankLabels } from "@/lib/member-access";
+import DocumentAccessBadge from "@/components/member/DocumentAccessBadge";
 import { createClient } from "@/lib/supabase/server";
 import type { InternalDocument, MemberProfile } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Documentos internos" };
-
-function accessLabel(document: InternalDocument) {
-  if (document.audience === "todos") return "Todos os membros aprovados";
-  if (document.audience === "oficiais") return `Oficiais a partir de ${rankLabels[document.minimum_rank!]}`;
-  return `Graduação ${graduationLabels[document.minimum_graduation!]} ou superior`;
-}
 
 export default async function MemberDocumentsPage() {
   const supabase = await createClient();
@@ -41,14 +35,14 @@ export default async function MemberDocumentsPage() {
       </section>
       <section className="section">
         <div className="container">
-          <div className="access-summary"><ShieldCheck /><p>O acesso é calculado pelo tipo de membro, patente e graduação. Materiais de graduação seguem a progressão Bronze → Prata → Ouro.</p></div>
           {documents.length ? (
             <div className="document-grid">
               {documents.map((document) => (
                 <article className="document-card" key={document.id}>
                   <FileText />
-                  <div><span>{accessLabel(document)}</span><h2>{document.title}</h2><p>{document.description || "Documento interno do DK."}</p><small>{document.file_name}</small></div>
+                  <div className="document-card-content"><h2>{document.title}</h2><p>{document.description || "Documento interno do DK."}</p><small>{document.file_name}</small></div>
                   <a className="button button-primary" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer"><Download size={17} /> Abrir PDF</a>
+                  <DocumentAccessBadge rules={document.access_rules ?? []} logic={document.access_logic ?? "or"} />
                 </article>
               ))}
             </div>
