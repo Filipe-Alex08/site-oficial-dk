@@ -38,7 +38,16 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
 3. Copie todo o conteúdo desse arquivo para uma nova consulta no SQL Editor.
 4. Clique em **Run** e confirme que a execução terminou sem erro.
 
-5. Execute também as migrações adicionais em `supabase/migrations/002_...sql` até `004_...sql`, em ordem, para habilitar a importação e a proteção contra publicações repetidas.
+5. Execute as migrações restantes, uma por vez, nesta ordem exata. Há arquivos com o mesmo prefixo numérico; use o nome completo para não pular nenhum:
+
+   1. `002_document_access_rules.sql`
+   2. `002_instagram_import.sql`
+   3. `003_chained_document_rules.sql`
+   4. `003_service_role_table_access.sql`
+   5. `004_instagram_permalink_collision.sql`
+   6. `005_registration_security.sql`
+
+   Em projetos que já receberam alguma dessas alterações, confira o histórico e aplique apenas as que ainda faltam. Não reexecute scripts de criação inicial em um banco já configurado.
 
 O script cria tabelas, índices, tipos, funções e políticas de Row Level Security para:
 
