@@ -85,15 +85,13 @@ export default function Select({ id, value, options, onChange, disabled = false 
     }
   }
 
-  let lastGroup: string | undefined;
   return <div className={`site-select${open ? " is-open" : ""}`} ref={rootRef}>
     <button ref={triggerRef} id={id} type="button" className="site-select-trigger" aria-haspopup="listbox" aria-expanded={open} aria-controls={menuId} disabled={disabled} onClick={() => open ? setOpen(false) : openMenu()} onKeyDown={handleKeyDown}>
       <span>{selected?.label ?? "Selecione uma opção"}</span><ChevronDown size={17} aria-hidden="true" />
     </button>
     {open && menuStyle && createPortal(<div ref={menuRef} className="site-select-menu" style={{ position: "fixed", top: menuStyle.top, left: menuStyle.left, width: menuStyle.width, maxHeight: menuStyle.maxHeight }} id={menuId} role="listbox" aria-activedescendant={`${menuId}-${activeIndex}`} onKeyDown={handleKeyDown}>
       {options.map((option, index) => {
-        const showGroup = option.group && option.group !== lastGroup;
-        lastGroup = option.group;
+        const showGroup = option.group && option.group !== options[index - 1]?.group;
         return <div className="site-select-option-wrap" key={option.value}>
           {showGroup && <div className="site-select-group" role="presentation">{option.group}</div>}
           <button ref={(element) => { optionRefs.current[index] = element; }} id={`${menuId}-${index}`} className="site-select-option" type="button" role="option" aria-selected={option.value === value} tabIndex={-1} onMouseEnter={() => setActiveIndex(index)} onClick={() => choose(option)}>{option.label}</button>

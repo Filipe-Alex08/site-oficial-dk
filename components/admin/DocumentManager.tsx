@@ -31,7 +31,14 @@ export default function DocumentManager() {
     const { data } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
     setDocuments((data ?? []) as InternalDocument[]);
   }, [supabase]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+    supabase.from("documents").select("*").order("created_at", { ascending: false}).then(({ data }) => {
+      if (active) setDocuments((data ?? []) as InternalDocument[]);
+    });
+    return () => { active = false; };
+  }, [supabase]);
   function show(message: string) { setNotice(message); window.setTimeout(() => setNotice(""), 3500); }
   function addRule() { setRules((current) => [...current, { ...newRule(), join: "and" }]); }
   function updateRule(index: number, rule: DocumentAccessRule) { setRules((current) => current.map((item, i) => i === index ? rule : item)); }
