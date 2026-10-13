@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HeartHandshake, MapPin, ShieldCheck, Swords, Users } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { socialLinks } from "@/lib/content";
 
 export const metadata: Metadata = { title: "Sobre o DK-BH" };
@@ -45,7 +46,7 @@ export default function AboutPage() {
               <li><span>03</span><p>Participe de pelo menos três treinos.</p></li>
               <li><span>04</span><p>Converse com a recepção sobre ingresso como membro ou participação esporádica.</p></li>
             </ol>
-            <a className="button button-primary" href={socialLinks.whatsapp} target="_blank" rel="noreferrer">Falar com a equipe de recepção</a>
+            <a className="button button-primary" href={socialLinks.whatsapp} target="_blank" rel="noreferrer"><WhatsAppIcon size={18} /> Falar com a equipe de recepção</a>
           </div>
         </div>
       </section>
