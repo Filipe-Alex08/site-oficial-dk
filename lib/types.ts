@@ -115,6 +115,7 @@ export type MemberProfile = {
   email?: string;
   full_name: string;
   nickname: string;
+  avatar_path?: string | null;
   member_kind: MemberKind;
   rank: DkRank;
   graduation_level: GraduationLevel;

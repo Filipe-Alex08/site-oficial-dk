@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarDays, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
+import MemberAvatar from "@/components/member/MemberAvatar";
 import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +29,9 @@ export default async function MemberPage() {
   const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   const profile = profileData as MemberProfile | null;
   if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
+  const profileAvatarUrl = profile.avatar_path
+    ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+    : null;
 
   const { data: adminRoles } = await supabase.from("user_admin_roles").select("role").eq("user_id", user.id);
   const isAdmin = Boolean(adminRoles?.length);
@@ -43,7 +47,7 @@ export default async function MemberPage() {
       <section className="section">
         <div className="container member-grid">
           <article className="profile-card">
-            <div className="profile-avatar"><UserRound /></div>
+            <MemberAvatar avatarUrl={profileAvatarUrl} avatarPath={profile.avatar_path ?? null} nickname={profile.nickname} />
             <h2>{profile.full_name}</h2>
             <p>@{profile.nickname}</p>
             <div className="profile-badges">

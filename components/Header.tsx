@@ -53,13 +53,17 @@ export default function Header() {
       ]);
       if (!active) return;
 
+      const profile = profileData as MemberProfile | null;
+      const profileAvatarUrl = profile?.avatar_path
+        ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+        : null;
       setAccount({
         email: user.email || "",
-        profile: profileData as MemberProfile | null,
+        profile,
         roles: ((roleData || []).map((item) => item.role).filter((role): role is AdminRole =>
           adminRoleOptions.some((option) => option.value === role),
         )),
-        avatarUrl: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
+        avatarUrl: profileAvatarUrl,
       });
       setLoading(false);
     };
