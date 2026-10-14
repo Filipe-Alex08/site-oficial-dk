@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarDays, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import EditMemberProfile from "@/components/member/EditMemberProfile";
 import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +60,7 @@ export default async function MemberPage() {
               <div><dt>Build secundária</dt><dd>{profile.secondary_build || "Não informada"}</dd></div>
               <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
             </dl>
+            <EditMemberProfile profile={profile} />
           </article>
           <div className="member-options">
             <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação, consulte a lista e compartilhe pelo WhatsApp.</p></Link>

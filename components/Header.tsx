@@ -69,10 +69,15 @@ export default function Header() {
       // Let the auth callback finish before querying Supabase again.
       window.setTimeout(() => void loadAccount(session?.user ?? null), 0);
     });
+    const refreshProfile = () => {
+      void supabase.auth.getUser().then(({ data: { user } }) => loadAccount(user));
+    };
+    window.addEventListener("dk-profile-updated", refreshProfile);
 
     return () => {
       active = false;
       subscription.unsubscribe();
+      window.removeEventListener("dk-profile-updated", refreshProfile);
     };
   }, []);
 

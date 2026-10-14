@@ -138,6 +138,9 @@ export async function POST(request: Request) {
         failed_user_id: authData.user.id,
       });
       await admin.auth.admin.deleteUser(authData.user.id);
+      if (profileError.code === "23505") {
+        return NextResponse.json({ error: "Esse apelido já está em uso. Escolha outro." }, { status: 409 });
+      }
       return NextResponse.json({ error: "Não foi possível registrar o perfil." }, { status: 400 });
     }
 
