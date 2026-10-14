@@ -40,12 +40,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-        </div>
-
-        <div className="container hero-signature">
-          <span>Disciplina hoje</span>
-          <span>Guerreiros melhores amanhã</span>
-        </div>
+        </div>       
       </section>
 
       <section className="home-portals" aria-label="Principais áreas do site">
