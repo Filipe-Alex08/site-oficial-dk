@@ -62,7 +62,7 @@ export default function Footer() {
           © {new Date().getFullYear()} DK — Death Knights. Todos os direitos
           reservados.
         </p>
-        <p>Disciplina • Movimento • Comunidade</p>
+        <p>Humildade • Honra • Respeito</p>
       </div>
     </footer>
   );

@@ -21,7 +21,7 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">
-            <p className="eyebrow">Um lugar para aprender, se movimentar e criar laços.</p>
+            <p className="eyebrow">Aqui não é só esporte. É nossa jornada.</p>       
             <h1>
               Swordplay
               <span>com propósito</span>
@@ -40,12 +40,6 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-
-          <aside className="hero-manifesto" aria-label="Valores do DK">
-            <p>Pessoas reais</p>
-            <p>Combate recreativo</p>
-            <p>Amizades duradouras</p>
-          </aside>
         </div>
 
         <div className="container hero-signature">
