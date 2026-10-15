@@ -130,8 +130,8 @@ export default function Header() {
         </button>
 
         <nav className={"main-nav " + (open ? "is-open" : "")} aria-label="Menu principal">
-          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Página Inicial</Link>
-          <Link className={active("/sobre") ? "active" : ""} href="/sobre" onClick={() => setOpen(false)}>Sobre o DK</Link>
+          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Home</Link>
+          <Link className={active("/sobre") ? "active" : ""} href="/sobre" onClick={() => setOpen(false)}>Sobre</Link>
           <div className="nav-dropdown">
             <button className={active("/atividades") ? "active" : ""} type="button">Atividades <ChevronDown size={15} /></button>
             <div className="dropdown-panel">
