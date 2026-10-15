@@ -273,7 +273,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   return (
     <section className="admin-shell">
       <aside className="admin-sidebar">
-        <div><p className="eyebrow">CMS do DK</p><h1>Administração</h1><p>{roles.map((role) => `ADM ${role}`).join(" • ")}</p></div>
+        <div><p className="eyebrow">CMS do DK</p><h1>Administração</h1></div>
         <nav>
           <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
           {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
