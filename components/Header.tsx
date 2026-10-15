@@ -140,7 +140,6 @@ export default function Header() {
           </div>
           <Link className={active("/midias") ? "active" : ""} href="/midias" onClick={() => setOpen(false)}>Mídias</Link>
           <Link className={active("/eventos") ? "active" : ""} href="/eventos" onClick={() => setOpen(false)}>Eventos</Link>
-          <Link className="member-link" href="/membro" onClick={() => setOpen(false)}>Área do Membro</Link>
         </nav>
 
         <div className="header-account" ref={accountRef}>

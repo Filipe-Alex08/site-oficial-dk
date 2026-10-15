@@ -1,7 +1,8 @@
 "use client";
 
 import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DocumentManager from "@/components/admin/DocumentManager";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
@@ -99,7 +100,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     await Promise.all(jobs);
   }, [supabase, canMedia, canCalendar, canMembers, principal]);
 
-  useEffect(() => { void load(); }, [load]);
+  const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
 
   function show(text: string) {
     setNotice(text);
@@ -115,7 +116,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     setPostForm(emptyPost);
     setEditingPost(null);
     show("Publicação salva.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function removePost(id: string) {
@@ -123,7 +124,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     const { error } = await supabase.from("posts").delete().eq("id", id);
     setSelectedPostIds((current) => { const next = new Set(current); next.delete(id); return next; });
     show(error ? error.message : "Publicação excluída.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   function togglePostSelection(id: string) {
@@ -148,7 +149,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     const { error } = await supabase.from("posts").delete().in("id", Array.from(selectedPostIds));
     if (!error) setSelectedPostIds(new Set());
     show(error ? error.message : `${count} publicação(ões) excluída(s).`);
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function syncInstagram() {
@@ -165,7 +166,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível sincronizar o Instagram.");
       show(`${result.imported} nova(s), ${result.refreshed || 0} atualizada(s) e ${result.skipped} sem alteração.${result.failed ? ` Falhas: ${result.failed}.` : ""}`);
-      await load();
+      await dashboardQuery.refetch();
     } catch (error) {
       show(error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram.");
     } finally {
@@ -186,21 +187,21 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     setActivityForm(emptyActivity);
     setEditingActivity(null);
     show("Atividade salva.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function removeActivity(id: string) {
     if (!supabase || !window.confirm("Excluir esta atividade e sua lista de presença?")) return;
     const { error } = await supabase.from("activities").delete().eq("id", id);
     show(error ? error.message : "Atividade excluída.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function updateMemberStatus(id: string, status: string) {
     const response = await fetch(`/api/admin/members/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     const result = await response.json();
     show(response.ok ? "Cadastro atualizado." : result.error);
-    await load();
+    await dashboardQuery.refetch();
   }
 
   function editMember(member: MemberProfile) {
@@ -231,7 +232,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     if (!response.ok) return show(result.error);
     show("Acessos internos atualizados.");
     setMemberForm(null);
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function toggleAdminRole(userId: string, role: AdminRole, enabled: boolean) {
@@ -241,7 +242,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
       ? await supabase.from("user_admin_roles").insert({ user_id: userId, role })
       : await supabase.from("user_admin_roles").delete().eq("user_id", userId).eq("role", role);
     show(result.error ? result.error.message : "Permissão administrativa atualizada.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function deleteMember(id: string) {
@@ -249,7 +250,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     const response = await fetch(`/api/admin/members/${id}`, { method: "DELETE" });
     const result = await response.json();
     show(response.ok ? "Membro excluído." : result.error);
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function createInvite() {
@@ -259,7 +260,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     expires.setDate(expires.getDate() + 15);
     const { error } = await supabase.from("invites").insert({ code, expires_at: expires.toISOString(), max_uses: 1 });
     show(error ? error.message : "Convite criado.");
-    await load();
+    await dashboardQuery.refetch();
   }
 
   async function disableInvite(id: string) {
@@ -285,6 +286,9 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
 
       <div className="admin-content">
         {notice && <div className="admin-notice">{notice}</div>}
+        {dashboardQuery.isPending && <div className="admin-notice" role="status"><span className="inline-spinner" /> Carregando dados administrativos…</div>}
+        {dashboardQuery.isError && <div className="admin-notice" role="alert">Não foi possível atualizar os dados. <button className="text-button" onClick={() => void dashboardQuery.refetch()}>Tentar novamente</button></div>}
+        {dashboardQuery.isFetching && !dashboardQuery.isPending && <div className="admin-notice" role="status"><span className="inline-spinner" /> Atualizando…</div>}
         {section === "resumo" && <div>
           <AdminTitle title="Visão geral" description="Acesse somente as áreas permitidas para o seu perfil administrativo." />
           <div className="metric-grid">

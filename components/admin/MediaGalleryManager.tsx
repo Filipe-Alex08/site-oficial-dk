@@ -1,57 +1,66 @@
 "use client";
 
 import { Film, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import Select from "@/components/ui/Select";
 import type { MediaItem, Post } from "@/lib/types";
 
 export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
   const supabase = useMemo(() => createClient(), []);
-  const [items, setItems] = useState<MediaItem[]>([]);
   const [postId, setPostId] = useState("");
   const [type, setType] = useState<"image" | "video">("image");
   const [url, setUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [message, setMessage] = useState("");
 
-  const load = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from("media_items").select("*").order("sort_order");
-    setItems((data || []) as MediaItem[]);
-  }, [supabase]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    let active = true;
-    supabase.from("media_items").select("*").order("sort_order").then(({ data }) => {
-      if (active) setItems((data || []) as MediaItem[]);
-    });
-    return () => { active = false; };
-  }, [supabase]);
+  const queryClient = useQueryClient();
+  const itemsQuery = useQuery({
+    queryKey: ["admin-media-items"],
+    enabled: Boolean(supabase),
+    queryFn: async () => {
+      if (!supabase) throw new Error("Banco não configurado.");
+      const { data, error } = await supabase.from("media_items").select("*").order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as MediaItem[];
+    },
+  });
+  const items = itemsQuery.data ?? [];
 
   const selectedPostId = postId || posts[0]?.id || "";
 
-  async function add(event: FormEvent) {
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      if (!supabase || !selectedPostId) throw new Error("Selecione uma publicação.");
+      const sort = items.filter((item) => item.post_id === selectedPostId).length;
+      const { error } = await supabase.from("media_items").insert({ post_id: selectedPostId, type, url, caption: caption || null, sort_order: sort });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setMessage("Mídia adicionada à publicação."); setUrl(""); setCaption("");
+      await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] });
+    },
+    onError: (error: Error) => setMessage(error.message),
+  });
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!supabase) throw new Error("Banco não configurado.");
+      const { error } = await supabase.from("media_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: async () => { setMessage("Mídia removida."); await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); },
+    onError: (error: Error) => setMessage(error.message),
+  });
+
+  function add(event: FormEvent) {
     event.preventDefault();
-    if (!supabase || !selectedPostId) return;
-    const sort = items.filter((item) => item.post_id === selectedPostId).length;
-    const { error } = await supabase.from("media_items").insert({
-      post_id: selectedPostId,
-      type,
-      url,
-      caption: caption || null,
-      sort_order: sort,
-    });
-    setMessage(error ? error.message : "Mídia adicionada à publicação.");
-    if (!error) { setUrl(""); setCaption(""); await load(); }
+    addMutation.mutate();
   }
 
-  async function remove(id: string) {
+  function remove(id: string) {
     if (!supabase || !window.confirm("Remover este item da galeria?")) return;
-    const { error } = await supabase.from("media_items").delete().eq("id", id);
-    setMessage(error ? error.message : "Mídia removida.");
-    await load();
+    removeMutation.mutate(id);
   }
 
   const visible = items.filter((item) => item.post_id === selectedPostId);
@@ -82,7 +91,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
                 <input value={caption} onChange={(e) => setCaption(e.target.value)} />
               </div>
             </div>
-            <button className="button button-primary" type="submit"><Plus size={17} /> Adicionar mídia</button>
+            <button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus size={17} /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button>
             {message && <p className="form-message success">{message}</p>}
           </form>
           <div className="gallery-admin-grid">
@@ -90,10 +99,12 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
               <article key={item.id}>
                 {item.type === "image" ? <ImageIcon /> : <Film />}
                 <div><strong>{item.caption || (item.type === "image" ? "Imagem" : "Vídeo")}</strong><small>{item.url}</small></div>
-                <button title="Excluir mídia" onClick={() => remove(item.id)}><Trash2 /></button>
+                <button title="Excluir mídia" disabled={removeMutation.isPending} onClick={() => remove(item.id)}>{removeMutation.isPending ? <span className="inline-spinner" /> : <Trash2 />}</button>
               </article>
             ))}
-            {!visible.length && <p className="empty-state">Nenhuma mídia vinculada a esta publicação.</p>}
+            {itemsQuery.isPending && <p className="empty-state" role="status">Carregando mídias…</p>}
+            {itemsQuery.isError && <p className="empty-state" role="alert">Falha ao carregar mídias. <button className="text-button" onClick={() => void itemsQuery.refetch()}>Tentar novamente</button></p>}
+            {!itemsQuery.isPending && !visible.length && <p className="empty-state">Nenhuma mídia vinculada a esta publicação.</p>}
           </div>
         </>
       ) : <p className="empty-state">Crie uma publicação antes de adicionar fotos ou vídeos.</p>}

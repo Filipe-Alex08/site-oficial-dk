@@ -1,7 +1,8 @@
 "use client";
 
 import { Award, CircleHelp, Download, FileText, FileUp, Pencil, Plus, Shield, Trash2, Upload, X } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { graduationLabels, graduationOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import Select from "@/components/ui/Select";
@@ -20,25 +21,52 @@ function accessLabel(document: InternalDocument) {
 export default function DocumentManager() {
   const supabase = useMemo(() => createClient(), []);
   const formRef = useRef<HTMLFormElement>(null);
-  const [documents, setDocuments] = useState<InternalDocument[]>([]);
   const [rules, setRules] = useState<DocumentAccessRule[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [fileName, setFileName] = useState("");
-  const load = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
-    setDocuments((data ?? []) as InternalDocument[]);
-  }, [supabase]);
-  useEffect(() => {
-    if (!supabase) return;
-    let active = true;
-    supabase.from("documents").select("*").order("created_at", { ascending: false}).then(({ data }) => {
-      if (active) setDocuments((data ?? []) as InternalDocument[]);
-    });
-    return () => { active = false; };
-  }, [supabase]);
+  const queryClient = useQueryClient();
+  const documentsQuery = useQuery({
+    queryKey: ["admin-documents"],
+    enabled: Boolean(supabase),
+    queryFn: async () => {
+      if (!supabase) throw new Error("Banco não configurado.");
+      const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as InternalDocument[];
+    },
+  });
+  const documents = documentsQuery.data ?? [];
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch("/api/admin/documents", { method: "POST", body: formData });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível enviar o documento.");
+    },
+    onSuccess: async () => {
+      show("Documento enviado e protegido."); formRef.current?.reset(); setFileName(""); setRules([]);
+      await queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
+    },
+    onError: (error: Error) => show(error.message),
+  });
+  const saveRulesMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: rules }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível atualizar as regras.");
+    },
+    onSuccess: async () => { show("Regras de acesso atualizadas."); setEditing(null); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
+    onError: (error: Error) => show(error.message),
+  });
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/documents/${id}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível excluir o documento.");
+    },
+    onSuccess: async () => { show("Documento excluído."); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
+    onError: (error: Error) => show(error.message),
+  });
   function show(message: string) { setNotice(message); window.setTimeout(() => setNotice(""), 3500); }
   function addRule() { setRules((current) => [...current, { ...newRule(), join: "and" }]); }
   function updateRule(index: number, rule: DocumentAccessRule) { setRules((current) => current.map((item, i) => i === index ? rule : item)); }
@@ -68,24 +96,17 @@ export default function DocumentManager() {
     </div>;
   }
   async function upload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true);
+    event.preventDefault();
     const formData = new FormData(event.currentTarget);
     formData.set("access_logic", "or"); formData.set("access_rules", JSON.stringify(rules));
-    const response = await fetch("/api/admin/documents", { method: "POST", body: formData });
-    const result = await response.json();
-    if (!response.ok) show(result.error || "Não foi possível enviar o documento.");
-    else { show("Documento enviado e protegido."); formRef.current?.reset(); setFileName(""); setRules([]); await load(); }
-    setBusy(false);
+    uploadMutation.mutate(formData);
   }
-  async function saveRules(id: string) {
-    const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: rules }) });
-    const result = await response.json(); show(response.ok ? "Regras de acesso atualizadas." : result.error);
-    if (response.ok) { setEditing(null); await load(); }
+  function saveRules(id: string) {
+    saveRulesMutation.mutate(id);
   }
-  async function remove(id: string) {
+  function remove(id: string) {
     if (!window.confirm("Excluir permanentemente este documento?")) return;
-    const response = await fetch(`/api/admin/documents/${id}`, { method: "DELETE" }); const result = await response.json();
-    show(response.ok ? "Documento excluído." : result.error); if (response.ok) await load();
+    removeMutation.mutate(id);
   }
   return <div>
     {notice && <div className="admin-notice">{notice}</div>}
@@ -97,14 +118,16 @@ export default function DocumentManager() {
         <div className="field field-full"><label>Descrição</label><textarea name="description" /></div>
         <div className="field field-full">{renderRules()}</div>
       </div>
-      <button className="button button-primary" type="submit" disabled={busy}><Upload size={17} /> {busy ? "Enviando..." : "Enviar PDF"}</button>
+      <button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando..." : "Enviar PDF"}</button>
     </form>
+    {documentsQuery.isPending && <p className="empty-state" role="status">Carregando documentos…</p>}
+    {documentsQuery.isError && <p className="empty-state" role="alert">Falha ao carregar documentos. <button className="text-button" onClick={() => void documentsQuery.refetch()}>Tentar novamente</button></p>}
     {documents.length ? <div className="document-admin-list">{documents.map((document) => <article key={document.id}>
       <FileText /><div><strong>{document.title}</strong><span>{accessLabel(document)}</span><small>{document.file_name}</small>
-      {editing === document.id && <div className="document-edit-rules">{renderRules()}<div className="document-rule-actions"><button className="button button-primary" type="button" onClick={() => void saveRules(document.id)}>Salvar regras</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div></div>}</div>
+      {editing === document.id && <div className="document-edit-rules">{renderRules()}<div className="document-rule-actions"><button className="button button-primary" type="button" disabled={saveRulesMutation.isPending} onClick={() => saveRules(document.id)}>{saveRulesMutation.isPending ? "Salvando…" : "Salvar regras"}</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div></div>}</div>
       <a href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" title="Abrir"><Download /></a>
       {editing !== document.id && <button className="document-edit-access" type="button" onClick={() => { const savedRules = document.access_rules ?? []; const normalized = savedRules.map((rule, index) => index === 0 ? rule : { ...rule, join: rule.join ?? document.access_logic ?? "or" }); setRules(normalized); setEditing(document.id); }} title="Editar acesso" aria-label={`Editar acesso de ${document.title}`}><Pencil size={17} /></button>}
-      <button type="button" onClick={() => void remove(document.id)} title="Excluir"><Trash2 /></button>
-    </article>)}</div> : <div className="empty-state"><FileText /><h3>Nenhum documento cadastrado</h3><p>Envie o primeiro PDF usando o formulário acima.</p></div>}
+      <button type="button" disabled={removeMutation.isPending} onClick={() => remove(document.id)} title="Excluir">{removeMutation.isPending && removeMutation.variables === document.id ? <span className="inline-spinner" /> : <Trash2 />}</button>
+    </article>)}</div> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento cadastrado</h3><p>Envie o primeiro PDF usando o formulário acima.</p></div> : null}
   </div>;
 }

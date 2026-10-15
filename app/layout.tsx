@@ -6,6 +6,7 @@ import "./auth.css";
 import "./admin.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import QueryProvider from "@/components/QueryProvider";
 
 const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-display" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -24,9 +25,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body className={cinzel.variable + " " + inter.variable}>
+        <QueryProvider>
         <Header />
         <main>{children}</main>
         <Footer />
+        </QueryProvider>
       </body>
     </html>
   );

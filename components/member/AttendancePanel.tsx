@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, Clipboard, MessageCircle, Users, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
@@ -59,26 +60,50 @@ function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: 
 
 export default function AttendancePanel({ activities, userId }: { activities: Activity[]; userId: string }) {
   const supabase = useMemo(() => createClient(), []);
-  const [entries, setEntries] = useState<Record<string, AttendanceEntry[]>>({});
   const [forms, setForms] = useState<Record<string, ResponseForm>>({});
-  const [roster, setRoster] = useState<RosterEntry[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const queryClient = useQueryClient();
+  const queryKey = ["attendance", userId, activities.map((activity) => activity.id)];
 
-  const loadAttendance = useCallback(async (activityId: string) => {
-    if (!supabase) return;
-    const { data } = await supabase.rpc("get_activity_attendance", { requested_activity_id: activityId });
-    const nextEntries = (data ?? []) as AttendanceEntry[];
-    setEntries((current) => ({ ...current, [activityId]: nextEntries }));
-    const own = nextEntries.find((entry) => entry.user_id === userId);
-    if (own) setForms((current) => ({ ...current, [activityId]: { guest_count: own.guest_count, note: own.note || "" } }));
-  }, [supabase, userId]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    void Promise.all(activities.map((activity) => loadAttendance(activity.id)));
-    void supabase.rpc("get_member_roster").then(({ data }) => setRoster((data ?? []) as RosterEntry[]));
-  }, [activities, loadAttendance, supabase]);
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey,
+    enabled: Boolean(supabase),
+    queryFn: async () => {
+      if (!supabase) throw new Error("Banco não configurado.");
+      const [attendanceResults, rosterResult] = await Promise.all([
+        Promise.all(activities.map(async (activity) => {
+          const { data: rows, error } = await supabase.rpc("get_activity_attendance", { requested_activity_id: activity.id });
+          if (error) throw error;
+          return [activity.id, (rows ?? []) as AttendanceEntry[]] as const;
+        })),
+        supabase.rpc("get_member_roster"),
+      ]);
+      if (rosterResult.error) throw rosterResult.error;
+      return { entries: Object.fromEntries(attendanceResults) as Record<string, AttendanceEntry[]>, roster: (rosterResult.data ?? []) as RosterEntry[] };
+    },
+  });
+  const entries = data?.entries ?? {};
+  const roster = data?.roster ?? [];
+  const responseMutation = useMutation({
+    mutationFn: async ({ activity, response }: { activity: Activity; response: AttendanceResponse | null }) => {
+      if (!supabase) throw new Error("Banco não configurado.");
+      if (response) {
+        const form = forms[activity.id] ?? { guest_count: 0, note: "" };
+        const { error } = await supabase.from("activity_attendance").upsert({ activity_id: activity.id, user_id: userId, response, guest_count: response === "vai" ? form.guest_count : 0, note: form.note.trim() || null }, { onConflict: "activity_id,user_id" });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("activity_attendance").delete().eq("activity_id", activity.id).eq("user_id", userId);
+        if (error) throw error;
+      }
+      return { activity, response };
+    },
+    onSuccess: ({ activity, response }) => {
+      show(response === null ? "Resposta removida." : response === "vai" ? "Presença confirmada." : "Ausência registrada.");
+      void queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error: Error) => show(error.message),
+  });
+  const busy = responseMutation.isPending ? responseMutation.variables?.activity.id ?? null : null;
 
   function show(message: string) {
     setNotice(message);
@@ -86,7 +111,9 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   }
 
   function formFor(activityId: string) {
-    return forms[activityId] ?? { guest_count: 0, note: "" };
+    if (forms[activityId]) return forms[activityId];
+    const own = entries[activityId]?.find((entry) => entry.user_id === userId);
+    return own ? { guest_count: own.guest_count, note: own.note || "" } : { guest_count: 0, note: "" };
   }
 
   function updateForm(activityId: string, update: Partial<ResponseForm>) {
@@ -97,34 +124,12 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   }
 
   async function saveResponse(activity: Activity, response: AttendanceResponse) {
-    if (!supabase) return;
-    setBusy(activity.id);
-    const form = formFor(activity.id);
-    const { error } = await supabase.from("activity_attendance").upsert({
-      activity_id: activity.id,
-      user_id: userId,
-      response,
-      guest_count: response === "vai" ? form.guest_count : 0,
-      note: form.note.trim() || null,
-    }, { onConflict: "activity_id,user_id" });
-    if (error) show(error.message);
-    else {
-      show(response === "vai" ? "Presença confirmada." : "Ausência registrada.");
-      await loadAttendance(activity.id);
-    }
-    setBusy(null);
+    responseMutation.mutate({ activity, response });
   }
 
   async function removeResponse(activityId: string) {
-    if (!supabase) return;
-    setBusy(activityId);
-    const { error } = await supabase.from("activity_attendance").delete().eq("activity_id", activityId).eq("user_id", userId);
-    if (error) show(error.message);
-    else {
-      show("Resposta removida.");
-      await loadAttendance(activityId);
-    }
-    setBusy(null);
+    const activity = activities.find((item) => item.id === activityId);
+    if (activity) responseMutation.mutate({ activity, response: null });
   }
 
   function listText(activity: Activity) {
@@ -148,9 +153,12 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
     return <div className="empty-state"><Users /><h2>Nenhuma atividade disponível</h2><p>As atividades abertas para confirmação aparecerão aqui.</p></div>;
   }
 
+  if (isPending) return <div className="empty-state" role="status">Carregando presenças…</div>;
+
   return (
     <div className="attendance-list">
       {notice && <div className="admin-notice">{notice}</div>}
+      {isError && <div className="admin-notice" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
       {activities.map((activity) => {
         const activityEntries = entries[activity.id] ?? [];
         const own = activityEntries.find((entry) => entry.user_id === userId);
@@ -169,9 +177,9 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
               <div className="field"><label>Convidados ou recrutas com você</label><input type="number" min="0" max="30" value={formFor(activity.id).guest_count} disabled={isClosed} onChange={(event) => updateForm(activity.id, { guest_count: Number(event.target.value) })} /></div>
               <div className="field"><label>Observação pública (opcional)</label><input maxLength={180} value={formFor(activity.id).note} disabled={isClosed} onChange={(event) => updateForm(activity.id, { note: event.target.value })} placeholder="Ex.: imprevisto, trabalhando..." /></div>
               <div className="attendance-actions">
-                <button className={`button ${own?.response === "vai" ? "button-primary" : "button-ghost"}`} disabled={isClosed || busy === activity.id} onClick={() => saveResponse(activity, "vai")}><Check size={17} /> Vou</button>
+                <button className={`button ${own?.response === "vai" ? "button-primary" : "button-ghost"}`} disabled={isClosed || busy === activity.id} onClick={() => saveResponse(activity, "vai")}>{busy === activity.id ? <span className="inline-spinner" aria-label="Salvando" /> : <Check size={17} />} {busy === activity.id ? "Salvando…" : "Vou"}</button>
                 <button className={`button ${own?.response === "nao_vai" ? "button-danger" : "button-ghost"}`} disabled={isClosed || busy === activity.id} onClick={() => saveResponse(activity, "nao_vai")}><X size={17} /> Não vou</button>
-                {own && <button className="text-button" disabled={isClosed || busy === activity.id} onClick={() => removeResponse(activity.id)}>Remover resposta</button>}
+                {own && <button className="text-button" disabled={isClosed || busy === activity.id} onClick={() => removeResponse(activity.id)}>{busy === activity.id ? "Salvando…" : "Remover resposta"}</button>}
               </div>
             </div>
 
