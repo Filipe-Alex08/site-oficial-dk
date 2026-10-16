@@ -4,13 +4,14 @@ import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, S
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DocumentManager from "@/components/admin/DocumentManager";
+import AttendanceManager from "@/components/admin/AttendanceManager";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
 import { adminRoleOptions, graduationLabels, graduationOptions, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
 
-type Section = "resumo" | "midias" | "calendario" | "membros" | "convites" | "documentos";
+type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos";
 type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
 type MemberAccessForm = {
   id: string;
@@ -55,7 +56,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   const allowed: Section[] = [
     "resumo",
     ...(canMedia ? ["midias" as const] : []),
-    ...(canCalendar ? ["calendario" as const] : []),
+    ...(canCalendar ? ["calendario" as const, "presencas" as const] : []),
     ...(canMembers ? ["membros" as const, "convites" as const] : []),
     ...(canMembers ? ["documentos" as const] : []),
   ];
@@ -76,6 +77,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   const [syncingInstagram, setSyncingInstagram] = useState(false);
   const [instagramDateRange, setInstagramDateRange] = useState(defaultInstagramDateRange);
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
+  const [inviteBusy, setInviteBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -254,20 +256,36 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   }
 
   async function createInvite() {
-    if (!supabase) return;
-    const code = `DK-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 15);
-    const { error } = await supabase.from("invites").insert({ code, expires_at: expires.toISOString(), max_uses: 1 });
-    show(error ? error.message : "Convite criado.");
-    await dashboardQuery.refetch();
+    if (!supabase || inviteBusy) return;
+    setInviteBusy("create");
+    try {
+      const code = `DK-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 15);
+      const { data, error } = await supabase.from("invites").insert({ code, expires_at: expires.toISOString(), max_uses: 1 }).select("*").single();
+      if (error) throw error;
+      setInvites((current) => [data as Invite, ...current]);
+      show("Convite criado.");
+    } catch (error) {
+      show(error instanceof Error || (error && typeof error === "object" && "message" in error) ? String(error.message) : "Não foi possível criar o convite.");
+    } finally {
+      setInviteBusy(null);
+    }
   }
 
   async function disableInvite(id: string) {
-    if (!supabase) return;
-    const { error } = await supabase.from("invites").update({ active: false }).eq("id", id);
-    show(error ? error.message : "Convite desativado.");
-    await load();
+    if (!supabase || inviteBusy) return;
+    setInviteBusy(id);
+    try {
+      const { data, error } = await supabase.from("invites").update({ active: false }).eq("id", id).select("*").single();
+      if (error) throw error;
+      setInvites((current) => current.map((invite) => invite.id === id ? data as Invite : invite));
+      show("Convite desativado.");
+    } catch (error) {
+      show(error instanceof Error || (error && typeof error === "object" && "message" in error) ? String(error.message) : "Não foi possível desativar o convite.");
+    } finally {
+      setInviteBusy(null);
+    }
   }
 
   return (
@@ -278,6 +296,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
           <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
           {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
           {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
+          {canCalendar && <AdminNav icon={<ShieldCheck />} label="Presenças" active={section === "presencas"} onClick={() => setSection("presencas")} />}
           {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} />}
           {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
           {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
@@ -285,6 +304,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
       </aside>
 
       <div className="admin-content">
+        {section === "presencas" && canCalendar && <AttendanceManager />}
         {notice && <div className="admin-notice">{notice}</div>}
         {dashboardQuery.isPending && <div className="admin-notice" role="status"><span className="inline-spinner" /> Carregando dados administrativos…</div>}
         {dashboardQuery.isError && <div className="admin-notice" role="alert">Não foi possível atualizar os dados. <button className="text-button" onClick={() => void dashboardQuery.refetch()}>Tentar novamente</button></div>}
@@ -371,8 +391,8 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
         </div>}
 
         {section === "convites" && canMembers && <div>
-          <AdminTitle title="Convites" description="Gere links individuais para novos cadastros." action={<button className="button button-primary" onClick={createInvite}><TicketPlus size={18} /> Gerar convite</button>} />
-          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong><small>/area-do-membro/cadastro?convite={invite.code}</small></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Desativar" onClick={() => disableInvite(invite.id)}><XCircle /></button></td></tr>)}</AdminTable>
+          <AdminTitle title="Convites" description="Gere links individuais para novos cadastros." action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>} />
+          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong><small>/area-do-membro/cadastro?convite={invite.code}</small></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"} disabled={Boolean(inviteBusy) || !invite.active} onClick={() => disableInvite(invite.id)}>{inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle />}</button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "documentos" && canMembers && <DocumentManager />}
