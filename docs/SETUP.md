@@ -210,3 +210,7 @@ npm.cmd run lint
 npm.cmd run build
 npm.cmd start
 ```
+
+### Aniversários dos membros
+
+Execute também `supabase/migrations/008_member_birthdays.sql` no SQL Editor. Essa migração permite consultar apelido, dia e mês dos aniversariantes somente com uma sessão de membro aprovado. O ano de nascimento não é exposto no calendário. Enquanto essa função não estiver disponível, o servidor pode consultar os dados usando `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY`), após validar a sessão e o status aprovado do membro. Apenas apelido, dia e mês são enviados ao calendário. Falhas de consulta exibem um aviso de indisponibilidade.

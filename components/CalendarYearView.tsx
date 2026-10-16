@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ArrowRight, Cake, CalendarDays, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
+
+import type { MemberBirthday } from "@/lib/birthdays";
 
 const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
 const statusLabel: Record<ActivityStatus, string> = {
@@ -31,7 +33,7 @@ function eventTimes(activity: Activity) {
   return { start, end };
 }
 
-export default function CalendarYearView({ activities, initialYear, isApprovedMember, attendanceByActivity }: { activities: Activity[]; initialYear: number; isApprovedMember: boolean; attendanceByActivity: Record<string, AttendanceResponse> }) {
+export default function CalendarYearView({ activities, initialYear, isApprovedMember, attendanceByActivity, birthdays }: { birthdays: MemberBirthday[]; activities: Activity[]; initialYear: number; isApprovedMember: boolean; attendanceByActivity: Record<string, AttendanceResponse> }) {
   const [year, setYear] = useState(initialYear);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const activitiesByDate = useMemo(() => {
@@ -56,6 +58,7 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
     return { month, cells };
   });
   const selectedActivities = selectedDate ? activitiesByDate.get(selectedDate) || [] : [];
+  const selectedBirthdays = isApprovedMember && selectedDate ? birthdays.filter((member) => member.month === Number(selectedDate.slice(5, 7)) && member.day === Number(selectedDate.slice(8, 10))) : [];
   const selectedLabel = selectedDate
     ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeZone: "UTC" }).format(new Date(`${selectedDate}T12:00:00Z`))
     : "";
@@ -80,15 +83,19 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
               {cells.map((cell, index) => {
                 if (!cell) return <span className="year-calendar-empty" key={`empty-${index}`} />;
                 const dayActivities = activitiesByDate.get(cell.key) || [];
-                return dayActivities.length ? (
+                const dayBirthdays = isApprovedMember ? birthdays.filter((member) => member.month === month + 1 && member.day === cell.day) : [];
+                return dayActivities.length || dayBirthdays.length ? (
                   <button
                     className={`year-calendar-day has-events${selectedDate === cell.key ? " selected" : ""}`}
                     key={cell.key}
                     type="button"
-                    aria-label={`${cell.day}: ${dayActivities.map((activity) => activity.title).join(", ")}`}
+                    aria-label={`${cell.day}: ${[...dayActivities.map((activity) => activity.title), ...dayBirthdays.map((member) => `Aniversário de ${member.nickname}`)].join(", ")}`}
                     aria-pressed={selectedDate === cell.key}
                     onClick={() => setSelectedDate(selectedDate === cell.key ? null : cell.key)}
-                  >{cell.day}<span>{dayActivities.length}</span></button>
+                  >{cell.day}
+                    {dayActivities.length > 0 && <span>{dayActivities.length}</span>}
+                    {dayBirthdays.length > 0 && <Cake className="calendar-birthday-marker" size={12} aria-hidden="true" />}
+                  </button>
                 ) : <span className="year-calendar-day" key={cell.key}>{cell.day}</span>;
               })}
             </div>
@@ -100,10 +107,8 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
         <section className="year-calendar-selected" aria-live="polite">
           <div className="year-calendar-selected-heading">
             <div className="year-calendar-selected-title"><CalendarDays /><h4>{selectedLabel}</h4></div>
-            <div className="year-calendar-selected-statuses">
-              {selectedActivities.map((activity) => <span className={`badge ${activity.status}`} key={activity.id}>{statusLabel[activity.status]}</span>)}
-            </div>
           </div>
+          {selectedBirthdays.map((member) => <article className="year-calendar-event" key={`birthday-${member.user_id}`}><div><h5><Cake size={18} aria-hidden="true" /> Aniversário de {member.nickname}</h5><p>Feliz aniversário! 🎉</p></div></article>)}
           {selectedActivities.length ? selectedActivities.map((activity) => {
             const { start } = eventTimes(activity);
             return (
@@ -111,6 +116,7 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
                 <div className="year-calendar-event-info">
                   <div className="year-calendar-event-topline">
                     <span>{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })} · {activity.type}</span>
+                    <span className={`badge ${activity.status}`}>{statusLabel[activity.status]}</span>
                   </div>
                   <h5>{activity.title}</h5><p>{activity.location}</p>{activity.description && <p>{activity.description}</p>}
                 </div>
@@ -127,7 +133,7 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
                 </div>
               </article>
             );
-          }) : <p>Nenhuma atividade nesta data.</p>}
+          }) : !selectedBirthdays.length && <p>Nenhuma atividade nesta data.</p>}
         </section>
       )}
     </div>

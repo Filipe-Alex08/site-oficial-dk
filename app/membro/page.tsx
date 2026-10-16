@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarDays, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
+import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
 import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
@@ -49,6 +50,7 @@ export default async function MemberPage() {
           <article className="profile-card">
             <MemberAvatar avatarUrl={profileAvatarUrl} avatarPath={profile.avatar_path ?? null} nickname={profile.nickname} />
             <h2>{profile.full_name}</h2>
+            <BirthdayBadge birthDate={profile.birth_date} />
             <p>@{profile.nickname}</p>
             <div className="profile-badges">
               <span className="badge aprovado">{memberKindLabels[profile.member_kind]}</span>

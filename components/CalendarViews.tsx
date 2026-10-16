@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CalendarRange, Check, Clock3, List, MapPin, X } from "lucide-react";
+import { ArrowRight, Cake, CalendarDays, CalendarRange, Check, Clock3, List, MapPin, X } from "lucide-react";
+import type { MemberBirthday } from "@/lib/birthdays";
 import CalendarYearView from "@/components/CalendarYearView";
 import type { Activity, ActivityStatus, AttendanceResponse } from "@/lib/types";
 
@@ -20,14 +21,21 @@ export default function CalendarViews({
   isApprovedMember,
   attendanceByActivity,
   initialYear,
+  birthdays,
+  birthdaysUnavailable,
+  currentMonth,
 }: {
   activities: Activity[];
   upcomingActivities: Activity[];
   isApprovedMember: boolean;
   attendanceByActivity: Record<string, AttendanceResponse>;
   initialYear: number;
+  birthdays: MemberBirthday[];
+  birthdaysUnavailable: boolean;
+  currentMonth: number;
 }) {
   const [view, setView] = useState<"cronograma" | "agenda">("cronograma");
+  const monthBirthdays = isApprovedMember ? birthdays.filter((member) => member.month === currentMonth) : [];
 
   return (
     <>
@@ -39,6 +47,15 @@ export default function CalendarViews({
           <CalendarRange size={17} /> Agenda
         </button>
       </div>
+
+      {isApprovedMember && view === "agenda" && birthdaysUnavailable && <p role="status">Não foi possível carregar os aniversários. Tente atualizar a página em alguns instantes.</p>}
+      {isApprovedMember && !birthdaysUnavailable && !birthdays.length && view === "agenda" && <p role="status">Nenhum aniversário cadastrado para os membros aprovados.</p>}
+      {isApprovedMember && view === "cronograma" && <section className="calendar-birthdays" aria-label="Aniversariantes do mês">
+        <h3><Cake size={20} aria-hidden="true" /> Aniversariantes do mês</h3>
+        {birthdaysUnavailable ? <p role="status">Aniversários temporariamente indisponíveis.</p> : monthBirthdays.length ? <ul>
+          {monthBirthdays.map((member) => <li key={member.user_id}><strong>{String(member.day).padStart(2, "0")}/{String(member.month).padStart(2, "0")}</strong> {member.nickname}</li>)}
+        </ul> : <p>Nenhum aniversário cadastrado neste mês.</p>}
+      </section>}
 
       {view === "cronograma" ? (
         <div className="activity-list">
@@ -86,7 +103,7 @@ export default function CalendarViews({
             );
           })}
         </div>
-      ) : <CalendarYearView activities={activities} initialYear={initialYear} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} />}
+      ) : <CalendarYearView activities={activities} initialYear={initialYear} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} birthdays={isApprovedMember ? birthdays : []} />}
     </>
   );
 }
