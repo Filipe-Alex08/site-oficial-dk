@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import DocumentManager from "@/components/admin/DocumentManager";
@@ -23,7 +23,7 @@ type MemberAccessForm = {
   graduation_order: string;
 };
 
-const emptyPost = { title: "", slug: "", excerpt: "", content: "", category: "Treinos", cover_url: "", published: false };
+const emptyPost = { title: "", slug: "", excerpt: "", content: "", category: "Treinos", cover_url: "", youtube_url: "", tiktok_url: "", published: false };
 const emptyActivity = { title: "", starts_at: "", ends_at: "", location: "", type: "Treino", status: "confirmado" as ActivityStatus, description: "", attendance_open: true };
 
 function slugify(value: string) {
@@ -76,6 +76,9 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [syncingInstagram, setSyncingInstagram] = useState(false);
+  const [quota, setQuota] = useState<{ used: number; limit: number; start: string | null; end: string | null } | null>(null);
+  const [quotaError, setQuotaError] = useState("");
+  const [loadingQuota, setLoadingQuota] = useState(false);
   const [instagramDateRange, setInstagramDateRange] = useState(defaultInstagramDateRange);
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
@@ -113,7 +116,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
   async function savePost(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
-    const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, published_at: new Date().toISOString() };
+    const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, published_at: new Date().toISOString() };
     const result = editingPost ? await supabase.from("posts").update(payload).eq("id", editingPost) : await supabase.from("posts").insert(payload);
     if (result.error) return show(result.error.message);
     setPostForm(emptyPost);
@@ -174,8 +177,31 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
       show(error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram.");
     } finally {
       setSyncingInstagram(false);
+      void refreshQuota();
     }
   }
+
+  const refreshQuota = useCallback(async () => {
+    setLoadingQuota(true);
+    setQuotaError("");
+    try {
+      const response = await fetch("/api/admin/instagram/quota", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Falha ao consultar a cota.");
+      setQuota(result);
+    } catch (error) {
+      setQuotaError(error instanceof Error ? error.message : "Falha ao consultar a cota.");
+    } finally {
+      setLoadingQuota(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (section !== "midias" || !canMedia) return;
+    void refreshQuota();
+    const interval = window.setInterval(() => void refreshQuota(), 5 * 60 * 1000);
+    return () => window.clearInterval(interval);
+  }, [section, canMedia, refreshQuota]);
 
   async function saveActivity(event: FormEvent) {
     event.preventDefault();
@@ -323,8 +349,13 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
 
         {section === "midias" && canMedia && <div>
           <AdminTitle title="Mídias" description="Crie, edite, publique ou remova postagens da linha do tempo." />
-          <div className="instagram-sync-panel">
-            <div className="instagram-sync-heading"><h3>Sincronizar publicações do Instagram</h3><p>Importa automaticamente todas as publicações encontradas no intervalo selecionado.</p></div>
+          <section className="apify-quota-panel" aria-labelledby="apify-quota-title">
+            <div className="apify-quota-heading"><h3 id="apify-quota-title">Cota da Apify</h3><button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button></div>
+            {quotaError && <p className="apify-quota-error" role="alert">{quotaError}</p>}
+            {quota ? <div className="apify-quota-metric"><div className="apify-quota-values"><div><span>Utilizado neste ciclo</span><strong>US$ {quota.used.toFixed(2)}</strong></div><div><span>Limite mensal</span><strong>{quota.limit > 0 ? `US$ ${quota.limit.toFixed(2)}` : "Indisponível"}</strong></div></div>{quota.limit > 0 && <div className="apify-quota-progress" role="progressbar" aria-label="Cota mensal utilizada" aria-valuenow={Math.min(100, Math.round(quota.used / quota.limit * 100))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.min(100, Math.max(0, quota.used / quota.limit * 100))}%` }} /></div>}<div className="apify-quota-footer"><span>{quota.limit > 0 ? `${Math.round(quota.used / quota.limit * 100)}% do limite utilizado` : "Limite não informado pela Apify"}</span>{quota.start && quota.end && <span>Ciclo: {new Date(quota.start).toLocaleDateString("pt-BR")} a {new Date(quota.end).toLocaleDateString("pt-BR")}</span>}</div></div> : !quotaError && <p className="apify-quota-empty">{loadingQuota ? "Consultando a cota…" : "Cota ainda não consultada."}</p>}
+          </section>
+          <section className="instagram-sync-panel" aria-labelledby="instagram-sync-title">
+            <div className="instagram-sync-heading"><h3 id="instagram-sync-title">Sincronizar publicações do Instagram</h3><p>Importa automaticamente todas as publicações encontradas no intervalo selecionado.</p></div>
             <div className="instagram-import-controls">
               <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
               <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
@@ -333,7 +364,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
                 {syncingInstagram ? "Buscando publicações…" : "Importar do Instagram"}
               </button>
             </div>
-          </div>
+          </section>
           <div className="manual-post-heading"><h3>Criar publicação manualmente</h3><p>Cadastre uma publicação do site sem sincronizar com o Instagram.</p></div>
           <form className="admin-form" onSubmit={savePost}>
             <div className="form-grid">
@@ -341,6 +372,8 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
               <div className="field"><label>Slug</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
               <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
               <div className="field"><label>Imagem de capa (URL)</label><input type="url" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
+              <div className="field"><label>YouTube (URL)</label><input type="url" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
+              <div className="field"><label>TikTok (URL)</label><input type="url" value={postForm.tiktok_url} onChange={(event) => setPostForm({ ...postForm, tiktok_url: event.target.value })} /></div>
               <div className="field field-full"><label>Resumo</label><textarea value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
               <div className="field field-full"><label>Conteúdo</label><textarea value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
               <label className="check-field"><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /> Publicar agora</label>
@@ -353,7 +386,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
               <Trash2 size={17} /> Excluir selecionados{selectedPostIds.size ? ` (${selectedPostIds.size})` : ""}
             </button>
           </div>
-          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
           <MediaGalleryManager posts={posts} />
         </div>}
 

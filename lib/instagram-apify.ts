@@ -24,6 +24,20 @@ export type InstagramScrapedPost = {
 
 export type ScrapedMedia = { type: "image" | "video"; url: string; caption: string | null };
 
+function socialVideoUrl(caption: string, platform: "youtube" | "tiktok") {
+  const candidates = caption.match(/https?:\/\/[^\s<>]+/gi) || [];
+  for (const candidate of candidates) {
+    try {
+      const url = new URL(candidate.replace(/[.,;!?]+$/, ""));
+      const host = url.hostname.toLowerCase();
+      if (url.protocol !== "https:") continue;
+      if (platform === "youtube" && (host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com"))) return url.toString();
+      if (platform === "tiktok" && (host === "tiktok.com" || host.endsWith(".tiktok.com"))) return url.toString();
+    } catch { /* Ignore invalid links in captions. */ }
+  }
+  return null;
+}
+
 function toUrl(value: unknown) {
   if (typeof value !== "string") return null;
   try {
@@ -119,6 +133,8 @@ export function normalizeInstagramPost(raw: InstagramScrapedPost, expectedUserna
     title: `Instagram — ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(publishedAtIso))}`,
     excerpt,
     content: caption || "Publicação importada automaticamente do Instagram.",
+    youtubeUrl: socialVideoUrl(caption, "youtube"),
+    tiktokUrl: socialVideoUrl(caption, "tiktok"),
     coverUrl,
     publishedAt: publishedAtIso,
     media,

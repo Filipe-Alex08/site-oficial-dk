@@ -176,6 +176,8 @@ CRON_SECRET=um_segredo_longo_aleatorio
 
 O `CRON_SECRET` é opcional e permite que um agendador externo chame `GET /api/admin/instagram/sync` com o cabeçalho `Authorization: Bearer <CRON_SECRET>`. A chamada manual é feita pelo painel e não exige esse segredo. Para ativar a importação automática periódica, configure esse agendador no provedor de hospedagem; o site não assume um provedor específico.
 
+Para usar os campos de links para YouTube e TikTok em Mídias, aplique também `supabase/migrations/005_post_video_links.sql`. O importador identifica links dessas plataformas quando eles aparecem como URLs completas na legenda retornada pelo Apify.
+
 Antes de sincronizar, aplique a migração `supabase/migrations/002_instagram_import.sql` no projeto Supabase. A sincronização importa apenas URLs de mídia retornadas pelo ator; como elas são servidas pelo Instagram, podem expirar ou mudar. Para uma cópia durável dos arquivos, será necessário adicionar uma etapa de download e armazenamento próprio.
 
 Se o projeto foi criado antes das migrações `supabase/migrations/003_service_role_table_access.sql` e `supabase/migrations/004_instagram_permalink_collision.sql`, aplique também esses arquivos no SQL Editor, em ordem. A migração 003 concede privilégios de tabela ao papel `service_role`, usado apenas pelo servidor para operações administrativas e importações. A 004 também impede que a mesma URL do Instagram seja cadastrada duas vezes.

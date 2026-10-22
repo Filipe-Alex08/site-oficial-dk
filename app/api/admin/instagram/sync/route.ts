@@ -8,7 +8,7 @@ export const maxDuration = 240;
 
 type ScrapedPost = Awaited<ReturnType<typeof fetchInstagramPosts>>[number];
 
-async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAdminClient>>, postId: string, currentPost: { cover_url: string | null; excerpt: string }, item: ScrapedPost) {
+async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAdminClient>>, postId: string, currentPost: { cover_url: string | null; excerpt: string; youtube_url: string | null; tiktok_url: string | null }, item: ScrapedPost) {
   const { data: currentMedia, error: readError } = await admin.from("media_items")
     .select("type,url,caption,sort_order")
     .eq("post_id", postId)
@@ -20,6 +20,7 @@ async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAd
   const mediaChanged = currentKey !== nextKey;
   const coverChanged = Boolean(item.coverUrl && item.coverUrl !== currentPost.cover_url);
   const excerptChanged = currentPost.excerpt !== item.excerpt;
+  const linksChanged = Boolean((item.youtubeUrl && currentPost.youtube_url !== item.youtubeUrl) || (item.tiktokUrl && currentPost.tiktok_url !== item.tiktokUrl));
 
   if (mediaChanged) {
     const { error: deleteError } = await admin.from("media_items").delete().eq("post_id", postId);
@@ -37,14 +38,16 @@ async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAd
     }
   }
 
-  if (coverChanged || excerptChanged) {
-    const updates: { cover_url?: string; excerpt?: string } = {};
+  if (coverChanged || excerptChanged || linksChanged) {
+    const updates: { cover_url?: string; excerpt?: string; youtube_url?: string | null; tiktok_url?: string | null } = {};
     if (coverChanged && item.coverUrl) updates.cover_url = item.coverUrl;
     if (excerptChanged) updates.excerpt = item.excerpt;
+    if (item.youtubeUrl && currentPost.youtube_url !== item.youtubeUrl) updates.youtube_url = item.youtubeUrl;
+    if (item.tiktokUrl && currentPost.tiktok_url !== item.tiktokUrl) updates.tiktok_url = item.tiktokUrl;
     const { error } = await admin.from("posts").update(updates).eq("id", postId);
     if (error) throw new Error(error.message);
   }
-  return mediaChanged || coverChanged || excerptChanged;
+  return mediaChanged || coverChanged || excerptChanged || linksChanged;
 }
 
 function isDateOnly(value: unknown): value is string {
@@ -99,7 +102,7 @@ async function syncInstagram(startDate?: string, endDate?: string) {
       seenSourceUrls.add(sourceUrlKey);
 
       const findExisting = async (column: "source_id" | "source_url", value: string) => admin.from("posts")
-        .select("id,cover_url,excerpt")
+        .select("id,cover_url,excerpt,youtube_url,tiktok_url")
         .eq("source", "instagram")
         .eq(column, value)
         .maybeSingle();
@@ -138,6 +141,8 @@ async function syncInstagram(startDate?: string, endDate?: string) {
         source: "instagram",
         source_id: item.sourceId,
         source_url: item.sourceUrl,
+        youtube_url: item.youtubeUrl,
+        tiktok_url: item.tiktokUrl,
       }, { onConflict: "source,source_id", ignoreDuplicates: true })
         .select("id,source_id")
         .maybeSingle();

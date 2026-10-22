@@ -65,6 +65,8 @@ export type Post = {
   published_at: string;
   source?: string | null;
   source_url?: string | null;
+  youtube_url?: string | null;
+  tiktok_url?: string | null;
   media_items?: MediaItem[];
 };
 

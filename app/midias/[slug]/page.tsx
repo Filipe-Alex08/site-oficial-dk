@@ -45,6 +45,11 @@ export default async function PostPage({ params }: Props) {
       <section className="section"><div className="container post-layout"><div className="prose">
         {post.source !== "instagram" && post.excerpt && <p className="lead">{post.excerpt}</p>}
         {post.content && <p>{post.content}</p>}
+        {(post.youtube_url || post.tiktok_url) && <section aria-label="Vídeos em outras plataformas">
+          <h2>Vídeos em outras plataformas</h2>
+          {post.youtube_url && <p><a className="text-link" href={post.youtube_url} target="_blank" rel="noopener noreferrer">Assistir no YouTube <ExternalLink size={16} /></a></p>}
+          {post.tiktok_url && <p><a className="text-link" href={post.tiktok_url} target="_blank" rel="noopener noreferrer">Assistir no TikTok <ExternalLink size={16} /></a></p>}
+        </section>}
         <h2>Fotos e vídeos</h2>
         {post.media_items?.length ? (
           <div className="media-gallery">{[...post.media_items].sort((a,b) => a.sort_order-b.sort_order).map((item, index) => (
