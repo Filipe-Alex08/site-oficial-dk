@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
+import { CalendarDays, ClipboardCheck, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
@@ -34,8 +34,11 @@ export default async function MemberPage() {
     ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
 
-  const { data: adminRoles } = await supabase.from("user_admin_roles").select("role").eq("user_id", user.id);
-  const isAdmin = Boolean(adminRoles?.length);
+  const [{ data: adminRoles }, { data: canManageAssessments }] = await Promise.all([
+    supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
+    supabase.rpc("can_manage_assessments"),
+  ]);
+  const isAdmin = Boolean(adminRoles?.length) || Boolean(canManageAssessments);
 
   return (
     <>
@@ -72,6 +75,7 @@ export default async function MemberPage() {
             <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação, consulte a lista e compartilhe pelo WhatsApp.</p></Link>
             <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos internos</h3><p>Acesse somente os documentos liberados para seu perfil e sua patente.</p></Link>
             <Link className="card" href="/membro/documentos"><span className="card-icon"><Shield /></span><h3>Conteúdos de graduação</h3><p>Consulte os materiais disponíveis para seu nível de Bronze, Prata ou Ouro.</p></Link>
+            <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações e simulados</h3><p>Acesse suas indicações, realize avaliações e acompanhe o histórico de resultados.</p></Link>
             {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Gerencie as áreas permitidas para seu perfil.</p></Link>}
           </div>
         </div>

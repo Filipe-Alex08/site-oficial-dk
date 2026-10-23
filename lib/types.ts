@@ -93,6 +93,91 @@ export type Game = {
 
 export type AdminRole = "principal" | "midias" | "atividades" | "membros";
 
+export type AssessmentQuestionType = "objetiva" | "aberta";
+export type AssessmentScopeType = "patente" | "graduacao";
+export type AssessmentTrack = "geral" | "cavalaria" | "arquearia";
+export type AssessmentDifficulty = "basica" | "intermediaria" | "avancada";
+export type AssessmentStatus = "rascunho" | "publicado" | "arquivado";
+export type AssessmentAssignmentStatus =
+  | "convidado"
+  | "em_andamento"
+  | "aguardando_correcao"
+  | "corrigido"
+  | "cancelado"
+  | "expirado";
+
+export type AssessmentQuestion = {
+  id: string;
+  prompt: string;
+  question_type: AssessmentQuestionType;
+  options: string[];
+  correct_option?: number | null;
+  expected_answer?: string | null;
+  explanation?: string | null;
+  manual_title: string;
+  source_chapter?: string | null;
+  source_page?: string | null;
+  scope_type: AssessmentScopeType;
+  rank_scopes: DkRank[];
+  graduation_scopes: GraduationLevel[];
+  track: AssessmentTrack;
+  difficulty: AssessmentDifficulty;
+  active: boolean;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Assessment = {
+  id: string;
+  title: string;
+  description?: string | null;
+  target_type: AssessmentScopeType;
+  target_rank?: DkRank | null;
+  target_graduation?: GraduationLevel | null;
+  content_type: AssessmentScopeType;
+  content_rank_scopes: DkRank[];
+  content_graduation_scopes: GraduationLevel[];
+  track: AssessmentTrack;
+  question_count: number;
+  passing_score: number;
+  duration_minutes?: number | null;
+  status: AssessmentStatus;
+  created_by?: string | null;
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssessmentAssignment = {
+  id: string;
+  assessment_id: string;
+  member_id: string;
+  indication_number: number;
+  access_token: string;
+  status: AssessmentAssignmentStatus;
+  assigned_by?: string | null;
+  expires_at?: string | null;
+  started_at?: string | null;
+  submitted_at?: string | null;
+  graded_at?: string | null;
+  score_percent?: number | null;
+  correct_count?: number | null;
+  incorrect_count?: number | null;
+  pending_open_count: number;
+  passed?: boolean | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssessmentManagerPermission = {
+  user_id: string;
+  granted_by?: string | null;
+  active: boolean;
+  granted_at: string;
+  revoked_at?: string | null;
+};
+
 export type DocumentAudience = "todos" | "oficiais" | "graduacao";
 export type DocumentTrack = "cavalaria" | "arquearia";
 export type DocumentAccessRule = ({ kind: "rank"; minimum_rank: DkRank } | { kind: "graduation"; track: DocumentTrack; minimum_graduation: GraduationLevel }) & { join?: "and" | "or" };

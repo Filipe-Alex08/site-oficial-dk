@@ -4,6 +4,7 @@ import "./globals.css";
 import "./public.css";
 import "./auth.css";
 import "./admin.css";
+import "./assessment.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QueryProvider from "@/components/QueryProvider";

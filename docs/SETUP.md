@@ -45,7 +45,12 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
    3. `003_chained_document_rules.sql`
    4. `003_service_role_table_access.sql`
    5. `004_instagram_permalink_collision.sql`
-   6. `005_registration_security.sql`
+   6. `005_post_video_links.sql`
+   7. `005_registration_security.sql`
+   8. `006_member_profile_edit_and_unique_nickname.sql`
+   9. `007_member_profile_avatar.sql`
+   10. `008_member_birthdays.sql`
+   11. `009_assessment_module.sql`
 
    Em projetos que já receberam alguma dessas alterações, confira o histórico e aplique apenas as que ainda faltam. Não reexecute scripts de criação inicial em um banco já configurado.
 
@@ -58,6 +63,7 @@ O script cria tabelas, índices, tipos, funções e políticas de Row Level Secu
 - documentos privados em PDF;
 - confirmação de presença nas atividades;
 - bucket privado `dk-documents` no Supabase Storage.
+- banco de questões, avaliações, indicações e resultados internos.
 
 Não execute `supabase/seed.sql` nesta etapa. Esse arquivo é opcional e insere conteúdo demonstrativo; o banco do DK começará vazio para receber eventos e publicações reais.
 
@@ -155,7 +161,29 @@ O ADM de Atividades informa início, término, local e se a confirmação está 
 
 O WhatsApp recebe o texto formatado, mas não permite que o site crie marcações reais com `@`. Essas marcações precisam ser adicionadas manualmente depois que a mensagem for aberta.
 
-## 10. Imagens e vídeos públicos
+## 10. Avaliações e simulados
+
+Execute `supabase/migrations/009_assessment_module.sql` para ativar o módulo. Ele cria:
+
+- banco de questões objetivas e abertas;
+- classificação por patente ou graduação;
+- áreas Geral, Cavalaria e Arquearia;
+- avaliações com 10, 20, 30, 50 ou 100 questões;
+- indicações individuais com link exclusivo;
+- uma tentativa por indicação;
+- correção automática das objetivas e manual das abertas;
+- resultados vinculados ao perfil;
+- histórico de ações dos responsáveis.
+
+O acesso administrativo é independente dos quatro papéis de ADM:
+
+- General de Brigada, General de Divisão e General de Exército possuem acesso automático;
+- Major, Tenente-Coronel e Coronel precisam receber a permissão **Gestor de Avaliações** de um General;
+- ser ADM Principal, isoladamente, não permite criar ou corrigir avaliações.
+
+As questões, alternativas corretas e gabaritos não possuem permissão de leitura direta para o navegador. Todas as operações passam por rotas do servidor que validam a sessão, o perfil aprovado e a indicação individual.
+
+## 11. Imagens e vídeos públicos
 
 O CMS atual aceita URLs de capa, imagens e vídeos. A tabela `media_items` já suporta galerias.
 
@@ -182,7 +210,7 @@ Antes de sincronizar, aplique a migração `supabase/migrations/002_instagram_im
 
 Se o projeto foi criado antes das migrações `supabase/migrations/003_service_role_table_access.sql` e `supabase/migrations/004_instagram_permalink_collision.sql`, aplique também esses arquivos no SQL Editor, em ordem. A migração 003 concede privilégios de tabela ao papel `service_role`, usado apenas pelo servidor para operações administrativas e importações. A 004 também impede que a mesma URL do Instagram seja cadastrada duas vezes.
 
-## 11. Ordem de validação
+## 12. Ordem de validação
 
 Depois da configuração inicial, os testes devem seguir esta ordem:
 
@@ -198,10 +226,16 @@ Depois da configuração inicial, os testes devem seguir esta ordem:
 10. envio de PDFs gerais, de Oficial e de cada graduação;
 11. tentativa de abertura de cada PDF com perfis permitidos e bloqueados;
 12. criação de uma publicação real como rascunho e posterior publicação.
+13. cadastro de dez questões objetivas e uma questão aberta;
+14. criação de uma avaliação e indicação para uma conta de teste;
+15. tentativa de abrir o link com outra conta;
+16. entrega da avaliação e verificação do bloqueio de segunda tentativa;
+17. correção da questão aberta e conferência do resultado no perfil;
+18. delegação e revogação do Gestor de Avaliações para um Oficial Superior.
 
 O roteiro completo, com a matriz de permissões esperada, está em `docs/TESTES-ACESSO.md`.
 
-## 12. Publicação futura
+## 13. Publicação futura
 
 Quando chegar a etapa de colocar o site na internet, cadastre as mesmas variáveis de ambiente no provedor de hospedagem e altere `NEXT_PUBLIC_SITE_URL` para o domínio definitivo.
 

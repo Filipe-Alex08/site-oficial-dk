@@ -32,6 +32,8 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - Nome, apelido, patente, ordem, casa, camisa e builds
 - Identificação automática do signo pela data de nascimento
 - Painel interno e perfil do membro
+- Avaliações por indicação com link individual e tentativa única
+- Questões objetivas e abertas, correção e histórico de resultados
 
 ### CMS
 
@@ -40,6 +42,8 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - ADM de Atividades: calendário
 - ADM de Membros: cadastros, convites e exclusão
 - ADM Principal: documentos privados e atribuição dos quatro papéis de ADM
+- Gestores de Avaliações: Generais e Oficiais Superiores autorizados
+- Banco de questões por patente, graduação, Cavalaria e Arquearia
 - Controle por Row Level Security no banco
 
 ## Tecnologias
@@ -79,6 +83,8 @@ Depois da configuração, valide as permissões seguindo `docs/TESTES-ACESSO.md`
 - Chave secreta utilizada somente em rotas de servidor.
 - PDFs armazenados em bucket privado e liberados por links temporários.
 - Acesso a documentos verificado também no banco por Row Level Security.
+- Gabaritos de avaliações disponíveis somente nas rotas protegidas do servidor.
+- Links de indicação vinculados ao usuário autenticado e bloqueados após a entrega.
 
 ## Links do DK
 
