@@ -12,8 +12,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
   if (profile?.status !== "aprovado") redirect("/area-do-membro/login");
 
-  const { data: roles } = await supabase.from("user_admin_roles").select("role").eq("user_id", user.id);
-  if (!roles?.length) redirect("/membro");
+  const [{ data: roles }, { data: canManageAssessments }] = await Promise.all([
+    supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
+    supabase.rpc("can_manage_assessments"),
+  ]);
+  if (!roles?.length && !canManageAssessments) redirect("/membro");
 
   return children;
 }

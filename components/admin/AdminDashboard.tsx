@@ -1,18 +1,19 @@
 "use client";
 
-import { CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { BookOpenCheck, CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import DocumentManager from "@/components/admin/DocumentManager";
 import AttendanceManager from "@/components/admin/AttendanceManager";
+import AssessmentAdmin from "@/components/admin/AssessmentAdmin";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
 import { adminRoleOptions, graduationLabels, graduationOptions, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
 
-type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos";
+type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados";
 type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
 type MemberAccessForm = {
   id: string;
@@ -48,7 +49,7 @@ function defaultInstagramDateRange() {
   return { start: toDateInput(start), end: toDateInput(end) };
 }
 
-export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
+export default function AdminDashboard({ roles, canManageAssessments = false }: { roles: AdminRole[]; canManageAssessments?: boolean }) {
   const supabase = useMemo(() => createClient(), []);
   const principal = roles.includes("principal");
   const canMedia = principal || roles.includes("midias");
@@ -60,6 +61,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
     ...(canCalendar ? ["calendario" as const, "presencas" as const] : []),
     ...(canMembers ? ["membros" as const, "convites" as const] : []),
     ...(canMembers ? ["documentos" as const] : []),
+    ...(canManageAssessments ? ["simulados" as const] : []),
   ];
 
   const [section, setSection] = useState<Section>("resumo");
@@ -327,6 +329,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
           {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} />}
           {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
           {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
+          {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} />}
         </nav>
       </aside>
 
@@ -430,6 +433,7 @@ export default function AdminDashboard({ roles }: { roles: AdminRole[] }) {
         </div>}
 
         {section === "documentos" && canMembers && <DocumentManager />}
+        {section === "simulados" && canManageAssessments && <AssessmentAdmin />}
       </div>
     </section>
   );

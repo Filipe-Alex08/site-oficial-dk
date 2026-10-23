@@ -18,8 +18,11 @@ export default async function AdminPage() {
   }
 
   const { data: { user } } = await supabase.auth.getUser();
-  const { data } = await supabase.from("user_admin_roles").select("role").eq("user_id", user!.id);
+  const [{ data }, { data: canManageAssessments }] = await Promise.all([
+    supabase.from("user_admin_roles").select("role").eq("user_id", user!.id),
+    supabase.rpc("can_manage_assessments"),
+  ]);
   const roles = (data?.map((item) => item.role) || []) as AdminRole[];
 
-  return <AdminDashboard roles={roles} />;
+  return <AdminDashboard roles={roles} canManageAssessments={Boolean(canManageAssessments)} />;
 }
