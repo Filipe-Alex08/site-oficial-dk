@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAssessmentManager } from "@/lib/assessment-server";
+import { submitAssessmentAttempt } from "@/lib/assessment-scoring";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,6 +21,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (error) return NextResponse.json({ error: "Não foi possível cancelar a indicação." }, { status: 400 });
     await actor.admin.from("assessment_audit_log").insert({ action: "indicacao_cancelada", actor_id: actor.user.id, subject_user_id: assignment.member_id, assessment_id: assignment.assessment_id, assignment_id: id });
     return NextResponse.json({ success: true });
+  }
+
+  if (action === "close") {
+    if (assignment.status !== "em_andamento") {
+      return NextResponse.json({ error: "Somente uma avaliação em andamento pode ser encerrada pelo responsável." }, { status: 409 });
+    }
+    try {
+      await submitAssessmentAttempt(actor.admin, assignment.id);
+      const { data: closedAssignment } = await actor.admin
+        .from("assessment_assignments")
+        .select("*")
+        .eq("id", assignment.id)
+        .single();
+      await actor.admin.from("assessment_audit_log").insert({
+        action: "avaliacao_encerrada_pelo_gestor",
+        actor_id: actor.user.id,
+        subject_user_id: assignment.member_id,
+        assessment_id: assignment.assessment_id,
+        assignment_id: assignment.id,
+        details: { previous_status: assignment.status },
+      });
+      return NextResponse.json({ assignment: closedAssignment });
+    } catch (error) {
+      return NextResponse.json({
+        error: error instanceof Error ? error.message : "Não foi possível encerrar a avaliação.",
+      }, { status: 400 });
+    }
   }
 
   if (action === "reset") {

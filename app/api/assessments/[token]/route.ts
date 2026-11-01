@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApprovedAssessmentActor } from "@/lib/assessment-server";
 import { submitAssessmentAttempt } from "@/lib/assessment-scoring";
+import { loadAssignmentItems } from "@/lib/assessment-assignment-items";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -84,8 +85,8 @@ async function candidatePayload(initialContext: CandidateContext) {
   };
 
   if (assignment.status === "em_andamento") {
-    const [{ data: items }, { data: answers }] = await Promise.all([
-      actor.admin.from("assessment_items").select("id,sort_order,prompt,question_type,options,source_manual_title,source_chapter,source_page").eq("assessment_id", assessment.id).order("sort_order"),
+    const [items, { data: answers }] = await Promise.all([
+      loadAssignmentItems(actor.admin, assignment.id, "id,prompt,question_type,options,source_manual_title,source_chapter,source_page"),
       actor.admin.from("assessment_answers").select("item_id,selected_option,open_answer").eq("assignment_id", assignment.id),
     ]);
     payload.questions = (items ?? []).map((item) => ({ ...item, options: item.question_type === "objetiva" ? item.options : [] }));
@@ -164,13 +165,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const itemId = String(body?.item_id ?? "");
   if (!uuid.test(itemId)) return NextResponse.json({ error: "Questão inválida." }, { status: 400 });
+  const { data: assignmentItem } = await checked.actor.admin
+    .from("assessment_assignment_items")
+    .select("item_id")
+    .eq("assignment_id", checked.assignment.id)
+    .eq("item_id", itemId)
+    .maybeSingle();
+  if (!assignmentItem) return NextResponse.json({ error: "Questão não encontrada nesta indicação." }, { status: 404 });
   const { data: item } = await checked.actor.admin
     .from("assessment_items")
     .select("id,question_type")
     .eq("id", itemId)
     .eq("assessment_id", checked.assessment.id)
     .maybeSingle();
-  if (!item) return NextResponse.json({ error: "Questão não encontrada nesta avaliação." }, { status: 404 });
+  if (!item) return NextResponse.json({ error: "Questão inválida para esta avaliação." }, { status: 404 });
 
   const answer: Record<string, unknown> = {
     assignment_id: checked.assignment.id,

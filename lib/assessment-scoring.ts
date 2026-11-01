@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { loadAssignmentItems } from "@/lib/assessment-assignment-items";
 
 type AssessmentAdmin = NonNullable<ReturnType<typeof createAdminClient>>;
 
@@ -10,12 +11,12 @@ export async function recalculateAssessmentResult(admin: AssessmentAdmin, assign
     .maybeSingle();
   if (!assignment) throw new Error("Indicação não encontrada.");
 
-  const [{ data: assessment }, { data: items }, { data: answers }] = await Promise.all([
+  const [{ data: assessment }, items, { data: answers }] = await Promise.all([
     admin.from("assessments").select("passing_score").eq("id", assignment.assessment_id).single(),
-    admin.from("assessment_items").select("id,question_type").eq("assessment_id", assignment.assessment_id),
+    loadAssignmentItems(admin, assignmentId, "id,question_type"),
     admin.from("assessment_answers").select("item_id,is_correct,open_answer").eq("assignment_id", assignmentId),
   ]);
-  if (!assessment || !items) throw new Error("Avaliação incompleta.");
+  if (!assessment || !items.length) throw new Error("Avaliação incompleta.");
 
   const answersByItem = new Map((answers ?? []).map((answer) => [answer.item_id, answer]));
   let correctCount = 0;
@@ -55,8 +56,8 @@ export async function submitAssessmentAttempt(admin: AssessmentAdmin, assignment
   }
   if (assignment.status !== "em_andamento") throw new Error("Esta avaliação não está em andamento.");
 
-  const [{ data: items }, { data: answers }] = await Promise.all([
-    admin.from("assessment_items").select("id,question_type,correct_option").eq("assessment_id", assignment.assessment_id).order("sort_order"),
+  const [items, { data: answers }] = await Promise.all([
+    loadAssignmentItems(admin, assignmentId, "id,question_type,correct_option"),
     admin.from("assessment_answers").select("item_id,selected_option,open_answer").eq("assignment_id", assignmentId),
   ]);
   if (!items?.length) throw new Error("A avaliação não possui questões.");

@@ -2,6 +2,7 @@ import type {
   AssessmentAssignmentStatus,
   AssessmentDifficulty,
   AssessmentQuestionType,
+  AssessmentSelectionMode,
   AssessmentScopeType,
   AssessmentTrack,
   DkRank,
@@ -30,7 +31,22 @@ export const assessmentDifficultyOptions: Array<{ value: AssessmentDifficulty; l
   { value: "avancada", label: "Avançada" },
 ];
 
-export const assessmentQuestionCountOptions = [10, 20, 30, 50, 100] as const;
+export const assessmentSelectionModeOptions: Array<{ value: AssessmentSelectionMode; label: string; description: string }> = [
+  {
+    value: "manual",
+    label: "Seleção manual",
+    description: "O responsável escolhe e revisa exatamente quais questões farão parte da avaliação.",
+  },
+  {
+    value: "sorteio_individual",
+    label: "Sorteio individual por filtro",
+    description: "Cada integrante recebe um conjunto aleatório de questões objetivas compatíveis com as categorias escolhidas.",
+  },
+];
+
+// Mantemos 100 para compatibilidade com avaliações já publicadas e acrescentamos
+// 40, solicitado para as novas aplicações.
+export const assessmentQuestionCountOptions = [10, 20, 30, 40, 50, 100] as const;
 
 export const assessmentAssignmentStatusLabels: Record<AssessmentAssignmentStatus, string> = {
   convidado: "Disponível",
@@ -63,6 +79,10 @@ export function isDelegableAssessmentRank(rank: DkRank) {
 
 export function isAssessmentQuestionCount(value: number): value is (typeof assessmentQuestionCountOptions)[number] {
   return assessmentQuestionCountOptions.includes(value as (typeof assessmentQuestionCountOptions)[number]);
+}
+
+export function isAssessmentSelectionMode(value: unknown): value is AssessmentSelectionMode {
+  return assessmentSelectionModeOptions.some((item) => item.value === value);
 }
 
 export function isAssessmentTrack(value: unknown): value is AssessmentTrack {

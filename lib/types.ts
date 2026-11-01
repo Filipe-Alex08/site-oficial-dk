@@ -98,6 +98,7 @@ export type AssessmentScopeType = "patente" | "graduacao";
 export type AssessmentTrack = "geral" | "cavalaria" | "arquearia";
 export type AssessmentDifficulty = "basica" | "intermediaria" | "avancada";
 export type AssessmentStatus = "rascunho" | "publicado" | "arquivado";
+export type AssessmentSelectionMode = "manual" | "sorteio_individual";
 export type AssessmentAssignmentStatus =
   | "convidado"
   | "em_andamento"
@@ -140,6 +141,7 @@ export type Assessment = {
   content_graduation_scopes: GraduationLevel[];
   track: AssessmentTrack;
   question_count: number;
+  selection_mode: AssessmentSelectionMode;
   passing_score: number;
   duration_minutes?: number | null;
   status: AssessmentStatus;
