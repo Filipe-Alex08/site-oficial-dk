@@ -18,6 +18,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
   const { id } = await params;
   const body = await request.json();
+  if (body.access_request_action !== undefined) {
+    if (!["approve", "reject"].includes(body.access_request_action) || typeof body.access_request_id !== "string") {
+      return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+    }
+    const { data: profile } = await admin.from("profiles")
+      .select("access_request_id, requested_rank, requested_graduation_level, requested_graduation_order")
+      .eq("id", id).eq("access_request_id", body.access_request_id).maybeSingle();
+    if (!profile) return NextResponse.json({ error: "Solicitação alterada ou já analisada. Atualize a lista." }, { status: 409 });
+    const changes = {
+      ...(body.access_request_action === "approve" ? {
+        rank: profile.requested_rank,
+        graduation_level: profile.requested_graduation_level,
+        graduation_order: profile.requested_graduation_order,
+      } : {}),
+      access_request_id: null,
+      requested_rank: null,
+      requested_graduation_level: null,
+      requested_graduation_order: null,
+    };
+    const { data, error } = await admin.from("profiles").update(changes)
+      .eq("id", id).eq("access_request_id", body.access_request_id).select("id");
+    if (error) return NextResponse.json({ error: "Não foi possível analisar a solicitação." }, { status: 400 });
+    if (!data?.length) return NextResponse.json({ error: "Solicitação alterada. Atualize a lista." }, { status: 409 });
+    return NextResponse.json({ success: true });
+  }
   const allowedStatuses = ["pendente", "aprovado", "recusado", "suspenso", "desativado"];
   const update: Record<string, string> = {};
 

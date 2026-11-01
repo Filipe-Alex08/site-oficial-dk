@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZodiacSign } from "@/lib/zodiac";
 import { createHash } from "node:crypto";
 
 async function readRegistrationBody(request: Request) {
@@ -66,11 +64,11 @@ export async function POST(request: Request) {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return NextResponse.json({ error: "Dados de cadastro inválidos." }, { status: 400 });
     }
-    const required = ["invite_code", "email", "password", "full_name", "nickname", "birth_date"];
+    const required = ["invite_code", "email", "password", "full_name", "nickname"];
     if (required.some((field) => !String(body[field] || "").trim())) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 });
     }
-    const fields = [body.invite_code, body.email, body.password, body.full_name, body.nickname, body.birth_date];
+    const fields = [body.invite_code, body.email, body.password, body.full_name, body.nickname];
     if (fields.some((value) => typeof value !== "string") || String(body.password).length < 8 || String(body.password).length > 128) {
       return NextResponse.json({ error: "Verifique os campos e use uma senha entre 8 e 128 caracteres." }, { status: 400 });
     }
@@ -105,28 +103,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
     }
 
-    const requestedRank = String(body.rank || "recruta");
-    const requestedGraduation = String(body.graduation_level || "sem_graduacao");
-    const rank = rankOptions.some((item) => item.value === requestedRank) ? requestedRank : "recruta";
-    const graduationLevel = graduationOptions.some((item) => item.value === requestedGraduation)
-      ? requestedGraduation
-      : "sem_graduacao";
-
     const profile = {
       id: authData.user.id,
       email: String(body.email).trim().toLowerCase(),
       full_name: String(body.full_name).trim(),
       nickname: String(body.nickname).trim(),
       member_kind: "membro",
-      rank,
-      graduation_level: graduationLevel,
-      graduation_order: String(body.graduation_order || "").trim() || null,
-      house: String(body.house || "").trim() || null,
-      shirt_number: body.shirt_number ? Number(body.shirt_number) : null,
-      primary_build: String(body.primary_build || "").trim() || null,
-      secondary_build: String(body.secondary_build || "").trim() || null,
-      birth_date: body.birth_date,
-      zodiac_sign: getZodiacSign(body.birth_date),
+      rank: "recruta",
+      graduation_level: "sem_graduacao",
       status: "pendente",
       invited_by: consumed.invited_by,
     };

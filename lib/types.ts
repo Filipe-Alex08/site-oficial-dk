@@ -209,6 +209,10 @@ export type MemberProfile = {
   rank: DkRank;
   graduation_level: GraduationLevel;
   graduation_order?: string | null;
+  access_request_id?: string | null;
+  requested_rank?: DkRank | null;
+  requested_graduation_level?: GraduationLevel | null;
+  requested_graduation_order?: string | null;
   house?: string | null;
   shirt_number?: number | null;
   primary_build?: string | null;

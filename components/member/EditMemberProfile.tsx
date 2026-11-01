@@ -4,16 +4,22 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { MemberProfile } from "@/lib/types";
+import { getZodiacSign } from "@/lib/zodiac";
+import Select from "@/components/ui/Select";
+import { graduationOptions, rankGroups } from "@/lib/member-access";
+import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house" | "shirt_number" | "primary_build" | "secondary_build">;
 
-export default function EditMemberProfile({ profile }: { profile: EditableProfile }) {
+export default function EditMemberProfile({ profile, canEditAccessDirectly = false }: { profile: MemberProfile; canEditAccessDirectly?: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
+    rank: profile.requested_rank ?? profile.rank,
+    graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
+    graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
     full_name: profile.full_name,
     nickname: profile.nickname,
     birth_date: profile.birth_date || "",
@@ -39,7 +45,10 @@ export default function EditMemberProfile({ profile }: { profile: EditableProfil
       primary_build: form.primary_build.trim() || null,
       secondary_build: form.secondary_build.trim() || null,
     };
-    const { error } = await supabase.rpc("update_own_member_profile", {
+    const { error } = await supabase.rpc("update_own_member_profile_with_access_request", {
+      requested_rank: form.rank,
+      requested_graduation_level: form.graduation_level,
+      requested_graduation_order: form.graduation_order.trim() || null,
       requested_full_name: updated.full_name,
       requested_nickname: updated.nickname,
       requested_birth_date: updated.birth_date,
@@ -60,6 +69,9 @@ export default function EditMemberProfile({ profile }: { profile: EditableProfil
     }
 
     setForm({
+      rank: form.rank,
+      graduation_level: form.graduation_level,
+      graduation_order: form.graduation_order,
       full_name: updated.full_name,
       nickname: updated.nickname,
       birth_date: updated.birth_date || "",
@@ -77,6 +89,9 @@ export default function EditMemberProfile({ profile }: { profile: EditableProfil
 
   function cancel() {
     setForm({
+      rank: profile.requested_rank ?? profile.rank,
+      graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
+      graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
       full_name: profile.full_name,
       nickname: profile.nickname,
       birth_date: profile.birth_date || "",
@@ -91,18 +106,23 @@ export default function EditMemberProfile({ profile }: { profile: EditableProfil
 
   return (
     <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
-      {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { setMessage(""); setEditing(true); }}><Edit3 size={14} /></button> : (
+      {profile.access_request_id && <p className="profile-edit-help" role="status">Patente, graduação e ordem aguardando aprovação do administrador.</p>}
+      {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button> : (
         <form onSubmit={submit}>
           <div className="profile-edit-fields">
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
+            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
+            <div className="field"><label htmlFor="profile-graduation">Graduação</label><Select id="profile-graduation" value={form.graduation_level} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, graduation_level: value as GraduationLevel }))} /></div>
+            <div className="field"><label htmlFor="profile-graduation-order">Ordem de graduação</label><input id="profile-graduation-order" value={form.graduation_order} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, graduation_order: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
+            <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
             <div className="field"><label htmlFor="member-house">Casa</label><input id="member-house" value={form.house} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, house: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
           </div>
-          <p className="profile-edit-help">E-mail, nível interno, patente e graduação são gerenciados pela equipe do DK.</p>
+          <p className="profile-edit-help">{canEditAccessDirectly ? "Como administrador, suas alterações de patente, graduação e ordem são aplicadas diretamente ao seu perfil." : "Patente, graduação e ordem serão enviadas para aprovação do administrador. Seus acessos atuais permanecem até a aprovação."}</p>
           <div className="profile-edit-actions">
             <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
             <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving}><X size={16} /> Cancelar</button>

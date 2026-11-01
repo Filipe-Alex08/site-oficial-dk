@@ -1,15 +1,10 @@
 "use client";
 
 import { CheckCircle2, UserPlus } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
-import { graduationOptions, rankGroups } from "@/lib/member-access";
-import Select from "@/components/ui/Select";
-import { getZodiacSign } from "@/lib/zodiac";
+import { FormEvent, useState } from "react";
 
 const empty = {
   invite_code: "", email: "", password: "", full_name: "", nickname: "",
-  rank: "recruta", graduation_level: "sem_graduacao", graduation_order: "", house: "", shirt_number: "",
-  primary_build: "", secondary_build: "", birth_date: "",
 };
 
 export default function RegistrationForm({ initialCode = "" }: { initialCode?: string }) {
@@ -17,7 +12,6 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
-  const zodiac = useMemo(() => getZodiacSign(form.birth_date), [form.birth_date]);
 
   function update(name: string, value: string) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -31,7 +25,7 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
     const response = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, zodiac_sign: zodiac }),
+      body: JSON.stringify(form),
     });
     const result = await response.json();
 
@@ -78,43 +72,7 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
           <label htmlFor="nickname">Apelido</label>
           <input id="nickname" value={form.nickname} onChange={(e) => update("nickname", e.target.value)} required />
         </div>
-        <div className="field">
-          <label htmlFor="rank">Patente</label>
-          <Select id="rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => update("rank", value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="graduation_level">Graduação</label>
-          <Select id="graduation_level" value={form.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => update("graduation_level", value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="graduation_order">Ordem de graduação</label>
-          <input id="graduation_order" value={form.graduation_order} onChange={(e) => update("graduation_order", e.target.value)} placeholder="Ex.: Cavaleiro de Bronze" />
-        </div>
-        <div className="field">
-          <label htmlFor="house">Casa</label>
-          <input id="house" value={form.house} onChange={(e) => update("house", e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="shirt_number">Número da camisa</label>
-          <input id="shirt_number" type="number" min="0" value={form.shirt_number} onChange={(e) => update("shirt_number", e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="primary_build">Build principal</label>
-          <input id="primary_build" value={form.primary_build} onChange={(e) => update("primary_build", e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="secondary_build">Build secundária</label>
-          <input id="secondary_build" value={form.secondary_build} onChange={(e) => update("secondary_build", e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="birth_date">Data de nascimento</label>
-          <input id="birth_date" type="date" value={form.birth_date} onChange={(e) => update("birth_date", e.target.value)} required />
-        </div>
-        <div className="field">
-          <label htmlFor="zodiac_sign">Signo do Zodíaco</label>
-          <input id="zodiac_sign" value={zodiac} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" />
-        </div>
-        <p className="form-help field-full">A patente e a graduação informadas serão conferidas pelo ADM de Membros antes da liberação do acesso.</p>
+        <p className="form-help field-full">Após a aprovação e o login, complete seu perfil na área do membro.</p>
       </div>
       <button className="button button-primary" type="submit" disabled={loading}>
         <UserPlus size={18} /> {loading ? "Enviando..." : "Enviar cadastro"}

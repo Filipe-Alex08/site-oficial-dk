@@ -12,7 +12,7 @@ export default async function RegisterPage({
   const { convite = "" } = await searchParams;
   return (
     <>
-      <PageHero eyebrow="Cadastro restrito" title="Cadastro por convite" description="Preencha seu perfil. O acesso será liberado somente após a aprovação de um administrador." />
+      <PageHero eyebrow="Cadastro restrito" title="Cadastro por convite" description="Crie sua conta com um convite. Após a aprovação de um administrador e o login, você poderá completar seu perfil." />
       <section className="section"><div className="container auth-wrap"><RegistrationForm initialCode={convite} /></div></section>
     </>
   );

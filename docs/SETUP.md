@@ -251,6 +251,12 @@ npm.cmd run build
 npm.cmd start
 ```
 
+### Complementação de perfil após o login
+
+Aplique `supabase/migrations/011_member_access_requests.sql` após as migrações anteriores e antes de disponibilizar a nova edição de perfil. O cadastro pede somente convite, e-mail, senha, nome e apelido. Patente e graduação começam como Recruta e Sem graduação; os demais dados ficam vazios.
+
+Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros. Administradores com um papel em `user_admin_roles` podem alterar diretamente esses três campos do próprio perfil. A autorização é conferida no banco, independentemente da interface. Ser gestor de avaliações sem papel de ADM não concede essa exceção.
+
 ### Aniversários dos membros
 
 Execute também `supabase/migrations/008_member_birthdays.sql` no SQL Editor. Essa migração permite consultar apelido, dia e mês dos aniversariantes somente com uma sessão de membro aprovado. O ano de nascimento não é exposto no calendário. Enquanto essa função não estiver disponível, o servidor pode consultar os dados usando `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY`), após validar a sessão e o status aprovado do membro. Apenas apelido, dia e mês são enviados ao calendário. Falhas de consulta exibem um aviso de indisponibilidade.

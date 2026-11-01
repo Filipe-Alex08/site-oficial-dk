@@ -246,6 +246,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     });
   }
 
+  async function reviewAccessRequest(member: MemberProfile, action: "approve" | "reject") {
+    const response = await fetch(`/api/admin/members/${member.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_request_action: action, access_request_id: member.access_request_id }),
+    });
+    const result = await response.json();
+    show(response.ok ? (action === "approve" ? "Dados aprovados e acessos atualizados." : "Solicitação recusada.") : result.error);
+    await dashboardQuery.refetch();
+  }
+
   async function saveMemberAccess(event: FormEvent) {
     event.preventDefault();
     if (!memberForm) return;
@@ -413,6 +424,15 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
 
         {section === "membros" && canMembers && <div>
           <AdminTitle title="Membros" description="Confirme patente, graduação, nível interno e permissões administrativas." />
+          {members.filter((member) => member.access_request_id).map((member) => <article className="admin-form" key={member.access_request_id}>
+            <h3>Conferência de {member.full_name} (@{member.nickname})</h3>
+            <p>Atual: {rankLabels[member.rank]} · {graduationLabels[member.graduation_level]} · {member.graduation_order || "Sem ordem"}</p>
+            <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {member.requested_graduation_level && graduationLabels[member.requested_graduation_level]} · {member.requested_graduation_order || "Sem ordem"}</p>
+            <div className="form-actions">
+              <button className="button button-primary" type="button" onClick={() => reviewAccessRequest(member, "approve")}>Aprovar dados</button>
+              <button className="button button-ghost" type="button" onClick={() => reviewAccessRequest(member, "reject")}>Recusar dados</button>
+            </div>
+          </article>)}
           {memberForm && <form className="admin-form access-form" onSubmit={saveMemberAccess}>
             <h3>Acessos de {memberForm.full_name}</h3>
             <div className="form-grid">

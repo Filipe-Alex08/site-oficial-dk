@@ -2,6 +2,17 @@
 
 Use este roteiro somente depois de configurar o Supabase e criar o primeiro ADM Principal.
 
+## Cadastro e complementação de perfil
+
+1. Aplique a migração 011 e abra o cadastro sem sessão. Confira que só existem convite, e-mail, senha, nome e apelido. Cadastre uma conta sem data de nascimento.
+2. Confirme que a conta começa pendente, como Recruta e Sem graduação, sem os demais dados de perfil. Campos extras enviados diretamente a `/api/register` devem ser ignorados.
+3. Após aprovar a conta e fazer login, preencha casa, camisa, builds e nascimento. Confira o signo automático, inclusive ao apagar a data.
+4. Como membro comum, informe patente, graduação e ordem. Salve e confira que os valores efetivos e os documentos acessíveis permanecem iguais, com aviso de aprovação pendente.
+5. Como ADM de Membros ou Principal, confira os valores atuais e os informados na seção Membros. Recuse uma solicitação e confirme que os acessos permanecem iguais. Envie outra, aprove e confira os novos valores efetivos.
+6. Altere uma solicitação enquanto outro administrador visualiza a versão anterior. A tentativa de aprovar a versão antiga deve falhar sem sobrescrever os novos dados.
+7. Como administrador, altere a própria patente, graduação e ordem no perfil. Confira a aplicação direta, sem solicitação pendente. Repita com ADM de Mídias e de Atividades.
+8. Como membro sem papel de ADM, tente chamar a função de edição diretamente. Os campos de acesso devem continuar pendentes. Usuários sem sessão ou suspensos não podem editar. Um gestor de avaliações sem papel de ADM deve seguir o fluxo de aprovação.
+
 ## 1. Regras esperadas
 
 | Perfil | Área do membro | Documentos gerais | Documentos de Oficial | Documentos de graduação | Avaliação indicada | Gestão de avaliações | CMS |
