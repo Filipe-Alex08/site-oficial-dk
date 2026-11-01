@@ -66,19 +66,22 @@ Depois, tente abrir cada arquivo com perfis permitidos e bloqueados. Um usuário
 Prepare duas contas aprovadas: um General e um integrante indicado. Para validar a delegação, prepare também um Major, Tenente-Coronel ou Coronel.
 
 1. Entre como General e abra **Administração > Avaliações**.
-2. Cadastre dez questões objetivas com cinco alternativas e somente uma correta.
+2. Cadastre ao menos vinte questões objetivas com cinco alternativas e somente uma correta, distribuídas entre duas ou mais patentes/graduações.
 3. Cadastre ao menos uma questão aberta com gabarito esperado.
-4. Crie uma avaliação de dez questões, escolhendo objetivo, conteúdos e área.
-5. Indique o integrante e copie o link individual.
-6. Abra o link sem sessão e confirme o redirecionamento ao login.
-7. Entre com uma conta diferente da indicada e confirme o bloqueio.
-8. Entre como o integrante correto, inicie a avaliação e responda algumas questões.
-9. Feche a página, abra novamente e confirme que a mesma tentativa continua.
-10. Entregue a avaliação e confirme que as respostas não podem ser alteradas.
-11. Se houver resposta aberta, confirme a situação **Aguardando correção**.
-12. Entre como General, corrija a resposta e confira o resultado final no histórico do integrante.
-13. Gere uma nova indicação para o mesmo integrante e confirme que ela recebe outro número e outro link.
-14. Conceda a permissão de Gestor de Avaliações ao Oficial Superior e teste o acesso.
-15. Revogue a permissão e confirme que o painel deixa de ser acessível.
+4. Crie uma avaliação manual de dez questões, escolhendo objetivo, conteúdos e área.
+5. Crie outra avaliação de dez questões com **Sorteio individual por filtro** e confirme que o banco compatível possui mais de dez questões.
+6. Indique dois integrantes para a avaliação sorteada, copie os links e confirme no banco que cada indicação possui um conjunto próprio e fixo de questões.
+7. Abra um link sem sessão e confirme o redirecionamento ao login.
+8. Entre com uma conta diferente da indicada e confirme o bloqueio.
+9. Entre como o integrante correto, inicie a avaliação e responda algumas questões.
+10. Feche a página, abra novamente e confirme que a mesma tentativa e as mesmas questões continuam.
+11. No painel do responsável, confirme que a situação muda automaticamente para **Em andamento**.
+12. Use **Encerrar avaliação** em uma tentativa de teste e confirme que respostas não preenchidas contam como erro.
+13. Entregue a outra avaliação normalmente e confirme que as respostas não podem ser alteradas.
+14. Se houver resposta aberta, confirme a situação **Aguardando correção**.
+15. Entre como General, corrija a resposta e confira o resultado final no histórico do integrante.
+16. Gere uma nova indicação para o mesmo integrante e confirme que ela recebe outro número, outro link e um novo sorteio.
+17. Conceda a permissão de Gestor de Avaliações ao Oficial Superior e teste o acesso.
+18. Revogue a permissão e confirme que o painel deixa de ser acessível.
 
 O ADM Principal sem uma patente autorizada e sem delegação não deve acessar o módulo de avaliações. O gabarito também não deve aparecer nas respostas das rotas usadas pelo integrante.

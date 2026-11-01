@@ -51,6 +51,7 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
    9. `007_member_profile_avatar.sql`
    10. `008_member_birthdays.sql`
    11. `009_assessment_module.sql`
+   12. `010_assessment_random_assignments.sql`
 
    Em projetos que já receberam alguma dessas alterações, confira o histórico e aplique apenas as que ainda faltam. Não reexecute scripts de criação inicial em um banco já configurado.
 
@@ -163,14 +164,17 @@ O WhatsApp recebe o texto formatado, mas não permite que o site crie marcaçõe
 
 ## 10. Avaliações e simulados
 
-Execute `supabase/migrations/009_assessment_module.sql` para ativar o módulo. Ele cria:
+Execute `supabase/migrations/009_assessment_module.sql` e depois `supabase/migrations/010_assessment_random_assignments.sql` para ativar o módulo. Eles criam:
 
 - banco de questões objetivas e abertas;
 - classificação por patente ou graduação;
 - áreas Geral, Cavalaria e Arquearia;
-- avaliações com 10, 20, 30, 50 ou 100 questões;
+- avaliações com 10, 20, 30, 40, 50 ou 100 questões;
+- seleção manual ou sorteio individual por filtros combinados de patente/graduação;
 - indicações individuais com link exclusivo;
+- conjunto aleatório e imutável de questões para cada indicação sorteada;
 - uma tentativa por indicação;
+- acompanhamento da situação e encerramento da tentativa pelo responsável;
 - correção automática das objetivas e manual das abertas;
 - resultados vinculados ao perfil;
 - histórico de ações dos responsáveis.

@@ -2,6 +2,7 @@ import {
   isAssessmentDifficulty,
   isAssessmentQuestionCount,
   isAssessmentQuestionType,
+  isAssessmentSelectionMode,
   isAssessmentScope,
   isAssessmentTrack,
   isGraduationScope,
@@ -94,6 +95,7 @@ export function validateAssessmentDefinition(body: unknown): ValidationResult<{
   const targetType = input.target_type;
   const track = input.track;
   const questionCount = Number(input.question_count);
+  const selectionMode = input.selection_mode ?? "manual";
   const passingScore = Number(input.passing_score);
   const rawDuration = input.duration_minutes;
   const duration = rawDuration === "" || rawDuration === null || rawDuration === undefined ? null : Number(rawDuration);
@@ -102,8 +104,10 @@ export function validateAssessmentDefinition(body: unknown): ValidationResult<{
   if (title.length < 3 || title.length > 180) return { error: "O título deve ter entre 3 e 180 caracteres." };
   if (!isAssessmentScope(targetType)) return { error: "Objetivo da avaliação inválido." };
   if (!isAssessmentTrack(track)) return { error: "Área da avaliação inválida." };
-  if (!isAssessmentQuestionCount(questionCount)) return { error: "Escolha 10, 20, 30, 50 ou 100 questões." };
-  if (questionIds.length !== questionCount) return { error: `Selecione exatamente ${questionCount} questões diferentes.` };
+  if (!isAssessmentQuestionCount(questionCount)) return { error: "Escolha 10, 20, 30, 40, 50 ou 100 questões." };
+  if (!isAssessmentSelectionMode(selectionMode)) return { error: "Forma de seleção das questões inválida." };
+  if (selectionMode === "manual" && questionIds.length !== questionCount) return { error: `Selecione exatamente ${questionCount} questões diferentes.` };
+  if (selectionMode === "sorteio_individual" && questionIds.length) return { error: "O sorteio individual deve usar o banco filtrado, sem uma lista fixa de questões." };
   if (!Number.isFinite(passingScore) || passingScore < 0 || passingScore > 100) return { error: "O percentual de aprovação deve ficar entre 0 e 100." };
   if (duration !== null && (!Number.isInteger(duration) || duration < 5 || duration > 360)) return { error: "O tempo deve ficar entre 5 e 360 minutos." };
 
@@ -145,6 +149,7 @@ export function validateAssessmentDefinition(body: unknown): ValidationResult<{
         content_graduation_scopes: contentType === "graduacao" ? contentGraduations : [],
         track,
         question_count: questionCount,
+        selection_mode: selectionMode,
         passing_score: passingScore,
         duration_minutes: duration,
       },

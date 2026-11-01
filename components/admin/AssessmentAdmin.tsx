@@ -17,7 +17,9 @@ import {
   Search,
   Send,
   ShieldCheck,
+  Shuffle,
   Sparkles,
+  Square,
   UserCheck,
   X,
 } from "lucide-react";
@@ -28,6 +30,7 @@ import {
   assessmentDifficultyOptions,
   assessmentQuestionCountOptions,
   assessmentQuestionTypeOptions,
+  assessmentSelectionModeOptions,
   assessmentScopeOptions,
   assessmentTrackOptions,
   delegableAssessmentRanks,
@@ -40,6 +43,7 @@ import type {
   AssessmentManagerPermission,
   AssessmentQuestion,
   AssessmentQuestionType,
+  AssessmentSelectionMode,
   AssessmentScopeType,
   AssessmentTrack,
   DkRank,
@@ -98,6 +102,7 @@ type AssessmentForm = {
   content_type: AssessmentScopeType;
   content_ranks: DkRank[];
   content_graduations: GraduationLevel[];
+  selection_mode: AssessmentSelectionMode;
 };
 
 const emptyQuestion: QuestionForm = {
@@ -131,6 +136,7 @@ const emptyAssessment: AssessmentForm = {
   content_type: "patente",
   content_ranks: ["terceiro_sargento", "segundo_sargento", "primeiro_sargento"],
   content_graduations: [],
+  selection_mode: "sorteio_individual",
 };
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -171,6 +177,7 @@ export default function AssessmentAdmin() {
   const assessmentQuery = useQuery({
     queryKey: ["assessment-admin"],
     queryFn: () => requestJson<AssessmentAdminData>("/api/admin/assessments", { cache: "no-store" }),
+    refetchInterval: tab === "indicacoes" ? 10_000 : false,
   });
   const data = assessmentQuery.data ?? null;
   const loading = assessmentQuery.isPending || assessmentQuery.isFetching;
@@ -182,6 +189,7 @@ export default function AssessmentAdmin() {
 
   const eligibleQuestions = useMemo(() => (data?.questions ?? []).filter((question) => {
     if (!question.active || question.scope_type !== assessmentForm.content_type) return false;
+    if (assessmentForm.selection_mode === "sorteio_individual" && question.question_type !== "objetiva") return false;
     const scopeMatches = question.scope_type === "patente"
       ? question.rank_scopes.some((rank) => assessmentForm.content_ranks.includes(rank))
       : question.graduation_scopes.some((level) => assessmentForm.content_graduations.includes(level));
@@ -189,7 +197,7 @@ export default function AssessmentAdmin() {
       ? question.track === "geral"
       : question.track === "geral" || question.track === assessmentForm.track;
     return scopeMatches && trackMatches;
-  }), [data?.questions, assessmentForm.content_type, assessmentForm.content_ranks, assessmentForm.content_graduations, assessmentForm.track]);
+  }), [data?.questions, assessmentForm.content_type, assessmentForm.content_ranks, assessmentForm.content_graduations, assessmentForm.track, assessmentForm.selection_mode]);
 
   const filteredQuestions = useMemo(() => {
     const search = questionSearch.trim().toLocaleLowerCase("pt-BR");
@@ -281,9 +289,10 @@ export default function AssessmentAdmin() {
           content_graduation_scopes: assessmentForm.content_type === "graduacao" ? assessmentForm.content_graduations : [],
           track: assessmentForm.track,
           question_count: assessmentForm.question_count,
+          selection_mode: assessmentForm.selection_mode,
           passing_score: assessmentForm.passing_score,
           duration_minutes: assessmentForm.duration_minutes,
-          question_ids: Array.from(selectedQuestionIds),
+          question_ids: assessmentForm.selection_mode === "manual" ? Array.from(selectedQuestionIds) : [],
         }),
       });
       setAssessmentForm(emptyAssessment);
@@ -337,9 +346,10 @@ export default function AssessmentAdmin() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
 
-  async function changeAssignment(assignment: AssessmentAssignment, action: "cancel" | "reset") {
+  async function changeAssignment(assignment: AssessmentAssignment, action: "cancel" | "close" | "reset") {
     let reason = "";
     if (action === "cancel" && !window.confirm("Cancelar esta indicação antes do início? O link deixará de funcionar.")) return;
+    if (action === "close" && !window.confirm("Encerrar esta avaliação agora? As respostas já salvas serão corrigidas e as não respondidas contarão como erro.")) return;
     if (action === "reset") {
       if (!window.confirm("A liberação excepcional apagará as respostas e o resultado desta tentativa. Deseja continuar?")) return;
       reason = window.prompt("Informe o motivo técnico ou administrativo da nova liberação:")?.trim() ?? "";
@@ -353,7 +363,11 @@ export default function AssessmentAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, reason }),
       });
-      showNotice(action === "cancel" ? "Indicação cancelada." : "Tentativa liberada excepcionalmente e registrada na auditoria.");
+      showNotice(action === "cancel"
+        ? "Indicação cancelada."
+        : action === "close"
+          ? "Avaliação encerrada pelo responsável e resultado calculado."
+          : "Tentativa liberada excepcionalmente e registrada na auditoria.");
       await assessmentQuery.refetch();
     } catch (reasonCaught) {
       setError(reasonCaught instanceof Error ? reasonCaught.message : "Não foi possível alterar a indicação.");
@@ -400,7 +414,7 @@ export default function AssessmentAdmin() {
   }
 
   if (loading && !data) return <div className="assessment-loading"><LoaderCircle className="spin" /><p>Carregando o módulo de avaliações…</p></div>;
-  if (!data) return <div className="empty-state"><FileQuestion /><h2>Módulo indisponível</h2><p>{error || (assessmentQuery.error instanceof Error ? assessmentQuery.error.message : "Aplique a migração 009 no Supabase para ativar esta área.")}</p><button className="button button-primary" type="button" onClick={() => void assessmentQuery.refetch()}><RefreshCw /> Tentar novamente</button></div>;
+  if (!data) return <div className="empty-state"><FileQuestion /><h2>Módulo indisponível</h2><p>{error || (assessmentQuery.error instanceof Error ? assessmentQuery.error.message : "Aplique as migrações 009 e 010 no Supabase para ativar esta área.")}</p><button className="button button-primary" type="button" onClick={() => void assessmentQuery.refetch()}><RefreshCw /> Tentar novamente</button></div>;
 
   const publishedAssessments = data.assessments.filter((assessment) => assessment.status === "publicado");
   const completedAssignments = data.assignments.filter((assignment) => assignment.status === "corrigido");
@@ -434,9 +448,9 @@ export default function AssessmentAdmin() {
       <div className="assessment-guidance-card"><ShieldCheck /><div><h3>Permissão independente</h3><p>Você acessa este módulo como {rankLabels[data.actor.rank]}. Ser ADM Principal não concede automaticamente a criação de avaliações; esta regra segue a hierarquia definida para o DK.</p></div></div>
       <div className="assessment-workflow-list">
         <span><b>1</b> Cadastre as questões com a fonte do manual.</span>
-        <span><b>2</b> Monte e publique uma avaliação com 10 a 100 questões.</span>
+        <span><b>2</b> Escolha as categorias e use seleção manual ou sorteio individual.</span>
         <span><b>3</b> Selecione os indicados e compartilhe os links individuais.</span>
-        <span><b>4</b> Corrija as respostas abertas e consulte os resultados.</span>
+        <span><b>4</b> Acompanhe a aplicação, encerre quando necessário e consulte as notas.</span>
       </div>
     </section>}
 
@@ -481,12 +495,15 @@ export default function AssessmentAdmin() {
           <label className="field"><span>Tipo dos conteúdos</span><select value={assessmentForm.content_type} onChange={(event) => { const type = event.target.value as AssessmentScopeType; setAssessmentForm({ ...assessmentForm, content_type: type, content_ranks: type === "patente" ? ["terceiro_sargento"] : [], content_graduations: type === "graduacao" ? ["bronze"] : [] }); setSelectedQuestionIds(new Set()); }}>{assessmentScopeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
         </div>
         <fieldset className="assessment-checkbox-fieldset"><legend>Conteúdos cobrados</legend>{assessmentForm.content_type === "patente" ? rankGroups.map((group) => <div className="assessment-checkbox-group" key={group.category}><strong>{group.category}</strong><div>{group.ranks.map((rank) => <label key={rank.value}><input type="checkbox" checked={assessmentForm.content_ranks.includes(rank.value)} onChange={() => { setAssessmentForm({ ...assessmentForm, content_ranks: toggleValue(assessmentForm.content_ranks, rank.value) }); setSelectedQuestionIds(new Set()); }} /> {rank.label}</label>)}</div></div>) : <div className="assessment-checkbox-group"><div>{graduationOptions.filter((item) => item.value !== "sem_graduacao").map((level) => <label key={level.value}><input type="checkbox" checked={assessmentForm.content_graduations.includes(level.value)} onChange={() => { setAssessmentForm({ ...assessmentForm, content_graduations: toggleValue(assessmentForm.content_graduations, level.value) }); setSelectedQuestionIds(new Set()); }} /> {level.label}</label>)}</div></div>}</fieldset>
-        <div className="assessment-selection-heading"><div><h4>Seleção das questões</h4><p>{eligibleQuestions.length} compatíveis · {selectedQuestionIds.size} de {assessmentForm.question_count} selecionadas</p></div><button className="button button-ghost" type="button" onClick={selectAutomatically}><Sparkles /> Selecionar automaticamente</button></div>
-        <div className="assessment-question-selector">{eligibleQuestions.length ? eligibleQuestions.map((question) => <label className={selectedQuestionIds.has(question.id) ? "selected" : ""} key={question.id}><input type="checkbox" checked={selectedQuestionIds.has(question.id)} disabled={!selectedQuestionIds.has(question.id) && selectedQuestionIds.size >= assessmentForm.question_count} onChange={() => setSelectedQuestionIds((current) => { const next = new Set(current); if (next.has(question.id)) next.delete(question.id); else next.add(question.id); return next; })} /><span><strong>{question.prompt}</strong><small>{question.manual_title} · {question.question_type === "objetiva" ? "Objetiva" : "Aberta"}</small></span></label>) : <div className="assessment-inline-empty"><FileQuestion /><p>Nenhuma questão ativa corresponde aos conteúdos e à área escolhidos.</p></div>}</div>
-        <button className="button button-primary" type="submit" disabled={busy || selectedQuestionIds.size !== assessmentForm.question_count}>{busy ? <LoaderCircle className="spin" /> : <BookOpenCheck />} Publicar avaliação</button>
+        <fieldset className="assessment-selection-mode"><legend>Forma de montagem</legend><div>{assessmentSelectionModeOptions.map((mode) => <label className={assessmentForm.selection_mode === mode.value ? "selected" : ""} key={mode.value}><input type="radio" name="assessment-selection-mode" value={mode.value} checked={assessmentForm.selection_mode === mode.value} onChange={() => { setAssessmentForm({ ...assessmentForm, selection_mode: mode.value }); setSelectedQuestionIds(new Set()); }} /><span>{mode.value === "manual" ? <BookOpenCheck /> : <Shuffle />}<strong>{mode.label}</strong><small>{mode.description}</small></span></label>)}</div></fieldset>
+        {assessmentForm.selection_mode === "manual" ? <>
+          <div className="assessment-selection-heading"><div><h4>Seleção manual das questões</h4><p>{eligibleQuestions.length} compatíveis · {selectedQuestionIds.size} de {assessmentForm.question_count} selecionadas</p></div><button className="button button-ghost" type="button" onClick={selectAutomatically}><Sparkles /> Preencher automaticamente</button></div>
+          <div className="assessment-question-selector">{eligibleQuestions.length ? eligibleQuestions.map((question) => <label className={selectedQuestionIds.has(question.id) ? "selected" : ""} key={question.id}><input type="checkbox" checked={selectedQuestionIds.has(question.id)} disabled={!selectedQuestionIds.has(question.id) && selectedQuestionIds.size >= assessmentForm.question_count} onChange={() => setSelectedQuestionIds((current) => { const next = new Set(current); if (next.has(question.id)) next.delete(question.id); else next.add(question.id); return next; })} /><span><strong>{question.prompt}</strong><small>{question.manual_title} · {question.question_type === "objetiva" ? "Objetiva" : "Aberta"}</small></span></label>) : <div className="assessment-inline-empty"><FileQuestion /><p>Nenhuma questão ativa corresponde aos conteúdos e à área escolhidos.</p></div>}</div>
+        </> : <div className={`assessment-random-summary ${eligibleQuestions.length < assessmentForm.question_count ? "insufficient" : ""}`}><Shuffle /><div><strong>{eligibleQuestions.length} questões objetivas no banco filtrado</strong><p>Cada indicado receberá {assessmentForm.question_count} questões sorteadas ao gerar o link. O conjunto fica fixo para aquela indicação e uma nova indicação gera um novo sorteio.</p>{eligibleQuestions.length < assessmentForm.question_count && <small>Cadastre mais {assessmentForm.question_count - eligibleQuestions.length} questão(ões) compatível(is) antes de publicar.</small>}</div></div>}
+        <button className="button button-primary" type="submit" disabled={busy || (assessmentForm.selection_mode === "manual" ? selectedQuestionIds.size !== assessmentForm.question_count : eligibleQuestions.length < assessmentForm.question_count)}>{busy ? <LoaderCircle className="spin" /> : <BookOpenCheck />} Publicar avaliação</button>
       </form>
       <div className="assessment-list-heading"><div><h3>Avaliações publicadas</h3><p>As questões ficam congeladas na versão utilizada na publicação.</p></div></div>
-      <div className="assessment-template-grid">{publishedAssessments.map((assessment) => <article key={assessment.id}><header><BookOpenCheck /><span>{assessment.question_count} questões</span></header><h4>{assessment.title}</h4><p>{assessment.description || "Sem descrição adicional."}</p><dl><div><dt>Objetivo</dt><dd>{assessment.target_type === "patente" ? rankLabels[assessment.target_rank!] : graduationLabels[assessment.target_graduation!]}</dd></div><div><dt>Conteúdos</dt><dd>{assessment.content_type === "patente" ? assessment.content_rank_scopes.map((rank) => rankLabels[rank]).join(", ") : assessment.content_graduation_scopes.map((level) => graduationLabels[level]).join(", ")}</dd></div><div><dt>Área</dt><dd>{assessmentTrackOptions.find((item) => item.value === assessment.track)?.label}</dd></div><div><dt>Aprovação</dt><dd>{Number(assessment.passing_score)}%</dd></div><div><dt>Tempo</dt><dd>{assessment.duration_minutes ? `${assessment.duration_minutes} min` : "Livre"}</dd></div></dl></article>)}</div>
+      <div className="assessment-template-grid">{publishedAssessments.map((assessment) => <article key={assessment.id}><header>{assessment.selection_mode === "sorteio_individual" ? <Shuffle /> : <BookOpenCheck />}<span>{assessment.question_count} questões</span></header><h4>{assessment.title}</h4><p>{assessment.description || "Sem descrição adicional."}</p><dl><div><dt>Objetivo</dt><dd>{assessment.target_type === "patente" ? rankLabels[assessment.target_rank!] : graduationLabels[assessment.target_graduation!]}</dd></div><div><dt>Conteúdos</dt><dd>{assessment.content_type === "patente" ? assessment.content_rank_scopes.map((rank) => rankLabels[rank]).join(", ") : assessment.content_graduation_scopes.map((level) => graduationLabels[level]).join(", ")}</dd></div><div><dt>Montagem</dt><dd>{assessment.selection_mode === "sorteio_individual" ? "Sorteio individual" : "Questões fixas"}</dd></div><div><dt>Área</dt><dd>{assessmentTrackOptions.find((item) => item.value === assessment.track)?.label}</dd></div><div><dt>Aprovação</dt><dd>{Number(assessment.passing_score)}%</dd></div><div><dt>Tempo</dt><dd>{assessment.duration_minutes ? `${assessment.duration_minutes} min` : "Livre"}</dd></div></dl></article>)}</div>
     </section>}
 
     {tab === "indicacoes" && <section className="assessment-admin-panel">
@@ -499,8 +516,8 @@ export default function AssessmentAdmin() {
         <fieldset className="assessment-member-selector"><legend>Integrantes indicados</legend><div>{data.members.map((member) => <label className={assignmentMemberIds.has(member.id) ? "selected" : ""} key={member.id}><input type="checkbox" checked={assignmentMemberIds.has(member.id)} onChange={() => setAssignmentMemberIds((current) => { const next = new Set(current); if (next.has(member.id)) next.delete(member.id); else next.add(member.id); return next; })} /><span><strong>{member.nickname}</strong><small>{member.full_name} · {rankLabels[member.rank]}</small></span></label>)}</div></fieldset>
         <button className="button button-primary" type="submit" disabled={busy || !effectiveAssignmentAssessmentId || !assignmentMemberIds.size}>{busy ? <LoaderCircle className="spin" /> : <Link2 />} Gerar {assignmentMemberIds.size || ""} link(s)</button>
       </form>
-      <div className="assessment-list-heading"><div><h3>Indicações registradas</h3><p>O mesmo integrante pode receber uma nova indicação posteriormente.</p></div></div>
-      <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Situação</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>{data.assignments.map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td><span className={`assessment-status status-${assignment.status}`}>{assessmentAssignmentStatusLabels[assignment.status]}</span></td><td>{formatDate(assignment.expires_at)}</td><td className="row-actions"><button type="button" onClick={() => void copyAssignmentLink(assignment)} aria-label="Copiar link"><Copy /></button><button type="button" onClick={() => shareAssignment(assignment)} aria-label="Compartilhar no WhatsApp"><MessageCircle /></button>{assignment.status === "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "cancel")} aria-label="Cancelar indicação"><X /></button>}{data.actor.canDelegate && assignment.status !== "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "reset")} aria-label="Liberar nova tentativa excepcional"><RefreshCw /></button>}</td></tr>)}</tbody></table></div>
+      <div className="assessment-list-heading"><div><h3>Indicações registradas</h3><p>Situações atualizadas automaticamente a cada 10 segundos durante a aplicação.</p></div></div>
+      <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Situação</th><th>Início / conclusão</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>{data.assignments.map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td><span className={`assessment-status status-${assignment.status}`}>{assessmentAssignmentStatusLabels[assignment.status]}</span></td><td><small>{assignment.started_at ? `Início: ${formatDate(assignment.started_at)}` : "Ainda não iniciou"}</small><small>{assignment.submitted_at ? `Fim: ${formatDate(assignment.submitted_at)}` : "Ainda não concluiu"}</small></td><td>{formatDate(assignment.expires_at)}</td><td className="row-actions"><button type="button" onClick={() => void copyAssignmentLink(assignment)} aria-label="Copiar link"><Copy /></button><button type="button" onClick={() => shareAssignment(assignment)} aria-label="Compartilhar no WhatsApp"><MessageCircle /></button>{assignment.status === "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "cancel")} aria-label="Cancelar indicação"><X /></button>}{assignment.status === "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "close")} aria-label="Encerrar avaliação e calcular resultado"><Square /></button>}{data.actor.canDelegate && assignment.status !== "convidado" && assignment.status !== "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "reset")} aria-label="Liberar nova tentativa excepcional"><RefreshCw /></button>}</td></tr>)}</tbody></table></div>
     </section>}
 
     {tab === "correcoes" && <section className="assessment-admin-panel">
