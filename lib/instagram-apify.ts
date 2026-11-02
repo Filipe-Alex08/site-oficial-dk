@@ -141,7 +141,7 @@ export function normalizeInstagramPost(raw: InstagramScrapedPost, expectedUserna
   };
 }
 
-export async function fetchInstagramPosts(username: string) {
+export async function fetchInstagramPosts(username: string, postUrls?: string[]) {
   const token = process.env.APIFY_TOKEN;
   const actorId = (process.env.APIFY_INSTAGRAM_ACTOR_ID || "apify~instagram-scraper").replace(/\//g, "~");
   if (!token) throw new Error("O token do Apify não está configurado no servidor.");
@@ -150,7 +150,7 @@ export async function fetchInstagramPosts(username: string) {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      directUrls: [`https://www.instagram.com/${encodeURIComponent(username)}/`],
+      directUrls: postUrls?.length ? postUrls : [`https://www.instagram.com/${encodeURIComponent(username)}/`],
       resultsType: "posts",
       resultsLimit: 50,
       addParentData: false,

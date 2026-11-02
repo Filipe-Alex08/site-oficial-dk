@@ -5,13 +5,11 @@ import MediaCover from "@/components/MediaCover";
 
 export default function MediaCard({ post }: { post: Post }) {
   const date = new Date(post.published_at);
-  const videoCover = !post.cover_url
-    ? post.media_items?.find((item) => item.type === "video")?.url
-    : null;
+  const videoCover = post.media_items?.find((item) => item.type === "video")?.url;
   return (
     <article className="media-card">
       <div className="media-cover">
-        <MediaCover title={post.title} coverUrl={post.cover_url} videoUrl={videoCover} />
+        <MediaCover key={post.cover_url} title={post.title} coverUrl={post.cover_url || post.media_items?.find((item) => item.type === "image")?.url} videoUrl={videoCover} />
         <span className="media-category">{post.category}</span>
       </div>
       <div className="media-body">

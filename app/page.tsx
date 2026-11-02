@@ -20,14 +20,13 @@ export default function HomePage() {
     <>
       <section className="home-hero">
         <div className="container home-hero-layout">
-          <div className="home-hero-content">
-            <p className="eyebrow">Aqui não é só esporte. É nossa jornada.</p>       
+          <div className="home-hero-content">  
             <h1>
               Swordplay
               <span>com propósito</span>
             </h1>
             <p>
-              Bem-vindo ao DK — Death Knights Swordplay. Aqui, técnica,
+              Bem-vindo ao DK. Death Knights Swordplay. Aqui, técnica,
               estratégia e comunidade se encontram em uma experiência esportiva
               e recreativa.
             </p>

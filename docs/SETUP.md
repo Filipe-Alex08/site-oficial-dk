@@ -94,6 +94,41 @@ Depois de salvar `.env.local`, reinicie o servidor:
 npm.cmd run dev
 ```
 
+## Armazenamento das mídias do Instagram
+
+A sincronização copia capas, fotos e vídeos para o bucket público `instagram-media`.
+O bucket é criado automaticamente pela chave administrativa, ou pela migração
+`012_instagram_media_storage.sql`. Somente o servidor deve ter permissão de escrita.
+Os links salvos nas publicações são permanentes e não dependem da validade das URLs do Instagram.
+Cada arquivo salvo tem limite de 50 MB, sujeito também ao limite global do Storage.
+Vídeos acima de 50 MB e até 250 MB são comprimidos automaticamente com FFmpeg
+para MP4 (H.264 e áudio AAC), preservando a duração e a proporção. A resolução
+é limitada a 1280 pixels e a qualidade é ajustada para caber no armazenamento.
+O binário do FFmpeg é instalado por `ffmpeg-static`; a hospedagem precisa permitir
+executá-lo, gravar arquivos temporários e concluir a conversão. Os temporários
+são removidos ao terminar ou falhar. Há limite de três minutos por etapa de conversão.
+Falhas de transferência são reportadas sem substituir a galeria existente.
+Se a capa foi copiada mas um vídeo não pode ser comprimido, a capa é recuperada
+separadamente e a pendência do vídeo aparece no resultado da sincronização.
+
+Para recuperar publicações antigas e sincronizar os últimos 50 posts do perfil configurado:
+
+```powershell
+npm.cmd run sync:instagram
+```
+
+O comando usa `.env.local`, executa o Apify e pode consumir créditos dessa conta.
+Ele reutiliza arquivos já armazenados. A sincronização pela tela administrativa
+e pelo agendador usa o mesmo processo. Publicações fora dos últimos 50 resultados
+podem ser recuperadas por link com `npm.cmd run sync:instagram -- --repair`.
+Esse modo coleta somente publicações já cadastradas com mídias temporárias.
+A hospedagem precisa permitir o tempo
+de execução necessário para coletar e transferir os arquivos.
+
+Instalações sem as colunas opcionais `youtube_url` e `tiktok_url` continuam
+sincronizando capas e galerias. Aplique `005_post_video_links.sql` para habilitar
+também os links para YouTube e TikTok.
+
 ## 6. Criar o primeiro ADM Principal
 
 O cadastro público direto não existe. Para iniciar o sistema:
