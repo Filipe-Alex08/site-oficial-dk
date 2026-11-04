@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Award, BookOpenCheck, ShieldCheck } from "lucide-react";
+import { GraduationInsignia } from "@/components/member/Insignia";
 import PageHero from "@/components/PageHero";
 
 export const metadata: Metadata = { title: "Graduações" };
@@ -17,9 +17,7 @@ export default function GraduationPage() {
         <div className="container">
           <div className="card-grid">
             <article className="card graduation bronze">
-              <span className="card-icon">
-                <Award />
-              </span>
+              <div className="graduation-insignias"><GraduationInsignia level="bronze" track="cavalaria" variant="badge" /><GraduationInsignia level="bronze" track="arquearia" variant="badge" /></div>
               <h3>Bronze</h3>
               <p>
                 Representa o integrante que já superou a fase inicial e adquiriu
@@ -31,9 +29,7 @@ export default function GraduationPage() {
               </p>
             </article>
             <article className="card graduation silver">
-              <span className="card-icon">
-                <ShieldCheck />
-              </span>
+              <div className="graduation-insignias"><GraduationInsignia level="prata" track="cavalaria" variant="badge" /><GraduationInsignia level="prata" track="arquearia" variant="badge" /></div>
               <h3>Prata</h3>
               <p>
                 Representa um nível intermediário de domínio técnico. O
@@ -46,9 +42,7 @@ export default function GraduationPage() {
               </p>
             </article>
             <article className="card graduation gold">
-              <span className="card-icon">
-                <BookOpenCheck />
-              </span>
+              <div className="graduation-insignias"><GraduationInsignia level="ouro" track="cavalaria" variant="badge" /><GraduationInsignia level="ouro" track="arquearia" variant="badge" /></div>
               <h3>Ouro</h3>
               <p>
                 Representa um nível avançado de experiência, domínio técnico e

@@ -1,0 +1,162 @@
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  vertical-align: middle;
+  color: inherit;
+  line-height: 1.35;
+}
+.insignia-art {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 34px;
+}
+.insignia-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.insignia-art svg {
+  width: 75%;
+  height: 75%;
+  color: var(--accent-bright);
+}
+/* One shared drawing keeps the three archery medals geometrically identical. */
+.insignia-color-filters {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+.archery-prata img {
+  filter: url(#insignia-archery-silver);
+}
+.archery-ouro img {
+  filter: url(#insignia-archery-gold);
+}
+.insignia-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.insignia-label > small {
+  display: block;
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: .6rem;
+  font-weight: 500;
+}
+.profile-insignias {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 8px;
+  margin: 20px 0;
+}
+.insignia-badge {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  flex-direction: column;
+  gap: 0;
+  width: 64px;
+  height: 52px;
+  flex: 0 0 64px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  text-align: center;
+  font-size: .65rem;
+  font-weight: 650;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.insignia-badge:focus-visible {
+  outline: 1px solid var(--accent-bright);
+  outline-offset: 4px;
+}
+.insignia-badge .insignia-art {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 3px 5px #0006);
+  transition: transform .24s ease;
+}
+.insignia-badge[data-expanded="true"] .insignia-art {
+  transform: translateY(-4px);
+}
+.insignia-reveal {
+  position: absolute;
+  z-index: 3;
+  top: 100%;
+  left: 50%;
+  width: max-content;
+  max-width: min(160px, calc(100vw - 48px));
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  box-shadow: 0 6px 18px #0006;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) scaleY(0);
+  transform-origin: top center;
+  transition: transform .28s ease, opacity .28s ease, visibility 0s linear .28s;
+}
+.insignia-reveal-content {
+  min-height: 0;
+  overflow: hidden;
+}
+.insignia-reveal .insignia-label {
+  display: block;
+  padding: 7px 10px;
+}
+.insignia-badge[data-expanded="true"] {
+  z-index: 2;
+}
+.insignia-badge[data-expanded="true"] .insignia-reveal {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scaleY(1);
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .insignia-badge .insignia-art,
+  .insignia-reveal {
+    transition: none;
+  }
+}
+.profile-card dd .insignia {
+  justify-content: flex-end;
+}
+.account-insignias {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: .76rem;
+}
+.graduation-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.table-wrap .insignia-art {
+  width: 28px;
+  height: 34px;
+}
+.table-wrap .insignia + .insignia {
+  margin-top: 8px;
+}
+.table-wrap .member-rank-insignias {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}

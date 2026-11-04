@@ -89,6 +89,12 @@ export type Game = {
   victory: string;
   equipment: string;
   safety: string;
+  media?: Array<{
+    type: "image" | "video";
+    url: string;
+    caption?: string;
+    poster?: string;
+  }>;
 };
 
 export type AdminRole = "principal" | "midias" | "atividades" | "membros";

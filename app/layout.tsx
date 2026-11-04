@@ -5,9 +5,11 @@ import "./public.css";
 import "./auth.css";
 import "./admin.css";
 import "./assessment.css";
+import "./insignias.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QueryProvider from "@/components/QueryProvider";
+import { InsigniaColorFilters } from "@/components/member/Insignia";
 
 const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-display" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -32,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body className={cinzel.variable + " " + inter.variable}>
+        <InsigniaColorFilters />
         <QueryProvider>
         <Header />
         <main>{children}</main>

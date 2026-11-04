@@ -6,8 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, UserPlus, X } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { adminRoleOptions, getMemberTheme, graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
+import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 
 const activityLinks = [
   ["Swordplay/Boffering", "/atividades/swordplay"],
@@ -172,7 +173,7 @@ export default function Header() {
               <div className="account-summary">
                 <strong>{displayName}</strong>
                 <span>{account.email}</span>
-                {approved && account.profile && <small>{rankLabels[account.profile.rank]} · {memberKindLabels[account.profile.member_kind]}{account.profile.graduation_level !== "sem_graduacao" ? ` · ${graduationLabels[account.profile.graduation_level]}` : ""}</small>}
+                {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} />{account.profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={account.profile.graduation_level} order={account.profile.graduation_order} />}</div>}
                 {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
                 {!account.profile && <small className="account-status">Perfil não localizado</small>}
               </div>

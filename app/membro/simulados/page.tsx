@@ -7,6 +7,7 @@ import { graduationLabels, rankLabels } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Assessment, AssessmentAssignment, MemberProfile } from "@/lib/types";
+import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 
 export const metadata: Metadata = { title: "Avaliações e simulados" };
 
@@ -60,7 +61,11 @@ export default async function MemberAssessmentsPage() {
                 <h2>{assessment.title}</h2>
                 <p>{assessment.description || `Avaliação de indicação para ${target}.`}</p>
                 <dl>
-                  <div><dt>Objetivo</dt><dd>{target}</dd></div>
+                  <div><dt>Objetivo</dt><dd>{assessment.target_type === "patente" && assessment.target_rank
+                    ? <RankInsignia rank={assessment.target_rank} />
+                    : assessment.target_graduation
+                      ? <GraduationInsignia level={assessment.target_graduation} track={assessment.track === "geral" ? undefined : assessment.track} />
+                      : target}</dd></div>
                   <div><dt>Área</dt><dd>{track}</dd></div>
                   <div><dt>Questões</dt><dd>{assessment.question_count}</dd></div>
                   <div><dt>Indicação</dt><dd>nº {assignment.indication_number}</dd></div>

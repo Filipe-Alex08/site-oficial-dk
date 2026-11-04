@@ -6,6 +6,8 @@ import PageHero from "@/components/PageHero";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
+import { BuildInsignia, GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
+import { getBuildIcon } from "@/lib/insignias";
 import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -55,18 +57,21 @@ export default async function MemberPage() {
             <h2>{profile.full_name}</h2>
             <BirthdayBadge birthDate={profile.birth_date} />
             <p>@{profile.nickname}</p>
-            <div className="profile-badges">
-              <span className="badge aprovado">{memberKindLabels[profile.member_kind]}</span>
-              <span className="badge graduation">{graduationLabels[profile.graduation_level]}</span>
+            <div className="profile-insignias" role="group" aria-label="Patente, graduação e builds">
+              <RankInsignia rank={profile.rank} variant="badge" />
+              {profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={profile.graduation_level} order={profile.graduation_order} variant="badge" />}
+              {getBuildIcon(profile.primary_build) && <BuildInsignia build={profile.primary_build} variant="badge" caption="Principal" />}
+              {getBuildIcon(profile.secondary_build) && <BuildInsignia build={profile.secondary_build} variant="badge" caption="Secundária" />}
             </div>
             <dl>
+              <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
               <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
               <div><dt>Graduação</dt><dd>{graduationLabels[profile.graduation_level]}</dd></div>
               <div><dt>Ordem</dt><dd>{profile.graduation_order || "Não informada"}</dd></div>
               <div><dt>Casa</dt><dd>{profile.house || "Não informada"}</dd></div>
               <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
-              <div><dt>Build principal</dt><dd>{profile.primary_build || "Não informada"}</dd></div>
-              <div><dt>Build secundária</dt><dd>{profile.secondary_build || "Não informada"}</dd></div>
+              <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
+              <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
               <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
             </dl>
             <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)} />

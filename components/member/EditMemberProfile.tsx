@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { buildOptions } from "@/lib/insignias";
+
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +18,11 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (message !== "Perfil atualizado.") return;
+    const timeout = window.setTimeout(() => setMessage(""), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [message]);
   const [form, setForm] = useState({
     rank: profile.requested_rank ?? profile.rank,
     graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
@@ -105,8 +112,9 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   }
 
   return (
+    <>
+    {profile.access_request_id && <p className="profile-edit-help" role="status">Patente, graduação e ordem aguardando aprovação do administrador.</p>}
     <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
-      {profile.access_request_id && <p className="profile-edit-help" role="status">Patente, graduação e ordem aguardando aprovação do administrador.</p>}
       {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button> : (
         <form onSubmit={submit}>
           <div className="profile-edit-fields">
@@ -119,8 +127,9 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
             <div className="field"><label htmlFor="member-house">Casa</label><input id="member-house" value={form.house} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, house: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
+            <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
+            <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
+            <datalist id="member-build-options">{buildOptions.map((build) => <option key={build} value={build} />)}</datalist>
           </div>
           <p className="profile-edit-help">{canEditAccessDirectly ? "Como administrador, suas alterações de patente, graduação e ordem são aplicadas diretamente ao seu perfil." : "Patente, graduação e ordem serão enviadas para aprovação do administrador. Seus acessos atuais permanecem até a aprovação."}</p>
           <div className="profile-edit-actions">
@@ -131,5 +140,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       )}
       {message && <p className={`profile-edit-message ${message === "Perfil atualizado." ? "success" : "error"}`} role="status">{message}</p>}
     </div>
+    </>
   );
 }

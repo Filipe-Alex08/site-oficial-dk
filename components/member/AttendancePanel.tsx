@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
+import { RankInsignia } from "@/components/member/Insignia";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -184,8 +185,8 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
             </div>
 
             <div className="attendance-columns">
-              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small>{rankLabels[entry.rank]}</small></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
-              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small>{rankLabels[entry.rank]}</small></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
+              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
+              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
             </div>
 
             <footer>
