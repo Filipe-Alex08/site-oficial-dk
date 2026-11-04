@@ -34,7 +34,7 @@ export function getGraduationTrack(order?: string | null): DocumentTrack | null 
 
 export function getGraduationIcon(level: GraduationLevel, track: DocumentTrack | null) {
   if (level === "sem_graduacao" || !track) return null;
-  if (track === "arquearia") return `${base}/graduacoes/arquearia-bronze.webp`;
+  if (track === "arquearia") return `${base}/graduacoes/arquearia-bronze-nocked.webp`;
   return `${base}/graduacoes/${track}-${level}.webp`;
 }
 
