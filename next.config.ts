@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/admin/instagram/sync": ["./node_modules/ffmpeg-static/ffmpeg", "./node_modules/ffmpeg-static/ffmpeg.exe"],
   },
+  experimental: {
+    agentUpgrade: "security",
+  },
   async headers() {
     return [{
       source: "/(.*)",
