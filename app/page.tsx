@@ -1,3 +1,4 @@
+import { pageMetadata, jsonLd, siteUrl, siteDescription } from "@/lib/seo";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -15,9 +16,15 @@ import {
 import CalendarSection from "@/components/CalendarSection";
 import { socialLinks } from "@/lib/content";
 
+export const metadata = pageMetadata("Swordplay em Belo Horizonte | DK Death Knights", "Treine Swordplay e boffering com o DK em Belo Horizonte. Conheça os jogos, acompanhe o calendário e saiba como participar, mesmo sem experiência.", "/");
+
 export default function HomePage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ "@context": "https://schema.org", "@graph": [
+        { "@type": "SportsOrganization", "@id": `${siteUrl}/#organization`, name: "DK Death Knights", alternateName: "DK-BH", url: siteUrl, description: siteDescription, logo: `${siteUrl}/images/dk-emblem.webp`, sport: "Swordplay", areaServed: { "@type": "City", name: "Belo Horizonte" }, sameAs: [socialLinks.instagram, ...(socialLinks.youtube ? [socialLinks.youtube] : [])] },
+        { "@type": "WebSite", "@id": `${siteUrl}/#website`, name: "DK Death Knights", url: siteUrl, inLanguage: "pt-BR", publisher: { "@id": `${siteUrl}/#organization` } },
+      ] }) }} />
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">  

@@ -1,3 +1,5 @@
+import { privateRobots } from "@/lib/seo";
+export const metadata = { robots: privateRobots };
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";

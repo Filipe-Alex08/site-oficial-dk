@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 export default function GeekEventsPage() {
-  redirect("/eventos#eventos-e-aniversarios");
+  permanentRedirect("/eventos#eventos-e-aniversarios");
 }

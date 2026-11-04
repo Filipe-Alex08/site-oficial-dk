@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Flag, Handshake, Medal, Route, Swords, Users } from "lucide-react";
 import PageHero from "@/components/PageHero";
 
-export const metadata: Metadata = { title: "Tipos de Atividades" };
 
 const activities = [
   [
@@ -36,6 +35,8 @@ const activities = [
     Handshake,
   ],
 ];
+
+export const metadata = pageMetadata("Atividades de Swordplay do DK", "Conheça os tipos de atividades do DK: treinos e experiências de Swordplay para desenvolver técnica, estratégia e trabalho em equipe.", "/atividades/tipos");
 
 export default function ActivityTypesPage() {
   return (

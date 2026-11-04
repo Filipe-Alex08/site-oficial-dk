@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import {
   ArrowUpRight,
   Award,
@@ -16,11 +16,6 @@ import {
 import PageHero from "@/components/PageHero";
 import { socialLinks } from "@/lib/content";
 
-export const metadata: Metadata = {
-  title: "Eventos",
-  description:
-    "Eventos internos, encontros externos e experiências do DK para eventos e aniversários.",
-};
 
 const internalEvents = [
   [
@@ -49,6 +44,8 @@ const internalEvents = [
     Users,
   ],
 ] as const;
+
+export const metadata = pageMetadata("Eventos de Swordplay em Belo Horizonte", "Conheça os encontros do DK, eventos externos e experiências de Swordplay para eventos geek e aniversários em Belo Horizonte.", "/eventos");
 
 export default function EventsPage() {
   return (

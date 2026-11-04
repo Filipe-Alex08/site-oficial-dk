@@ -11,7 +11,7 @@ export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
 
   if (coverUrl && !coverFailed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={coverUrl} alt="" onError={() => setCoverFailed(true)} />;
+    return <img src={coverUrl} alt={title} loading="lazy" decoding="async" onError={() => setCoverFailed(true)} />;
   }
 
   if (videoUrl && !videoFailed) {
@@ -20,10 +20,9 @@ export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
         src={videoUrl}
         muted
         playsInline
-        autoPlay
-        preload="auto"
+        preload="metadata"
         aria-label={`Frame do vídeo: ${title}`}
-        onLoadedData={(event) => {
+        onLoadedMetadata={(event) => {
           const video = event.currentTarget;
           video.pause();
           if (video.duration > 0) video.currentTime = Math.min(0.1, video.duration);

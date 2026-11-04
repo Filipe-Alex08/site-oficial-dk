@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { HeartHandshake, MapPin, ShieldCheck, Swords, Users } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { socialLinks } from "@/lib/content";
 
-export const metadata: Metadata = { title: "Sobre o DK-BH" };
+
+export const metadata = pageMetadata("Sobre o DK-BH e como participar", "Conheça a história do Death Knights em Belo Horizonte, onde treinamos e como começar no Swordplay. Iniciantes recebem orientação e equipamentos.", "/sobre");
 
 export default function AboutPage() {
   return (

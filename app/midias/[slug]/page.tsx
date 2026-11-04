@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import { demoPosts } from "@/lib/content";
 import type { Post } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { cache } from "react";
+import { pageMetadata, jsonLd, siteUrl, siteName, socialImage } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
-async function loadPost(slug: string) {
+const loadPost = cache(async (slug: string) => {
   const supabase = await createClient();
   if (!supabase) return demoPosts.find((item) => item.slug === slug);
 
@@ -20,12 +22,19 @@ async function loadPost(slug: string) {
     .maybeSingle();
 
   return data ? data as Post : undefined;
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await loadPost(slug);
-  return { title: post?.title ?? "Publicação", description: post?.excerpt };
+  if (!post) notFound();
+  const path = `/midias/${encodeURIComponent(post.slug)}`;
+  const description = (post.excerpt || post.content || `Publicação do ${siteName}: ${post.title}`).replace(/\s+/g, " ").trim().slice(0, 160);
+  const image = post.cover_url || socialImage.url;
+  return { ...pageMetadata(post.title, description, path),
+    openGraph: { type: "article", locale: "pt_BR", siteName, title: post.title, description, url: path, publishedTime: post.published_at, images: [{ url: image, alt: post.title }] },
+    twitter: { card: "summary_large_image", title: post.title, description, images: [image] },
+  };
 }
 
 export default async function PostPage({ params }: Props) {
@@ -36,6 +45,10 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <article>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ "@context": "https://schema.org", "@graph": [
+        { "@type": "Article", headline: post.title, description: post.excerpt || post.content.slice(0, 160), datePublished: post.published_at, image: new URL(post.cover_url || socialImage.url, siteUrl).href, mainEntityOfPage: `${siteUrl}/midias/${encodeURIComponent(post.slug)}`, inLanguage: "pt-BR", author: { "@type": "Organization", name: siteName, url: siteUrl }, publisher: { "@type": "Organization", name: siteName, url: siteUrl, logo: { "@type": "ImageObject", url: `${siteUrl}/images/dk-emblem.webp` } } },
+        { "@type": "BreadcrumbList", itemListElement: [ { "@type": "ListItem", position: 1, name: "Início", item: siteUrl }, { "@type": "ListItem", position: 2, name: "Mídias", item: `${siteUrl}/midias` }, { "@type": "ListItem", position: 3, name: post.title, item: `${siteUrl}/midias/${encodeURIComponent(post.slug)}` } ] },
+      ] }) }} />
       <section className="post-hero"><div className="container post-hero-content">
         <Link className="back-link" href="/midias"><ArrowLeft size={17} /> Voltar para Mídias</Link>
         <h1>{post.title}</h1>

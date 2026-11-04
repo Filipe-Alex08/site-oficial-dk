@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { CircleDot, Shield, Swords, Target } from "lucide-react";
 import PageHero from "@/components/PageHero";
 
-export const metadata: Metadata = { title: "Swordplay e Boffering" };
+
+export const metadata = pageMetadata("Swordplay e Boffering em Belo Horizonte", "Entenda o Swordplay e o boffering: equipamentos acolchoados, regras de segurança e combate esportivo medieval com o DK em Belo Horizonte.", "/atividades/swordplay");
 
 export default function SwordplayPage() {
   return (

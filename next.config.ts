@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ...(process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
       ],
-    }];
+    }, ...["/membro/:path*", "/admin/:path*", "/area-do-membro/:path*", "/api/:path*", "/auth/:path*"].map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] }))];
   },
 };
 

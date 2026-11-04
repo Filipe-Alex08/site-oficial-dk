@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Image as ImageIcon } from "lucide-react";
 import MediaCard from "@/components/MediaCard";
 import PageHero from "@/components/PageHero";
@@ -6,7 +6,8 @@ import { demoPosts } from "@/lib/content";
 import type { Post } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Mídias" };
+
+export const metadata = pageMetadata("Fotos e vídeos de Swordplay do DK", "Acompanhe fotos, vídeos e publicações de treinos, jogos e eventos do DK Death Knights e da comunidade de Swordplay em Belo Horizonte.", "/midias");
 
 export default async function MediaPage() {
   let posts: Post[] = demoPosts;

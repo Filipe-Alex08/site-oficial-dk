@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { GraduationInsignia } from "@/components/member/Insignia";
 import PageHero from "@/components/PageHero";
 
-export const metadata: Metadata = { title: "Graduações" };
+
+export const metadata = pageMetadata("Graduações do DK: Bronze, Prata e Ouro", "Conheça as graduações Bronze, Prata e Ouro do DK e o caminho de evolução em Cavalaria e Arquearia, da iniciação ao domínio técnico.", "/atividades/graduacoes");
 
 export default function GraduationPage() {
   return (

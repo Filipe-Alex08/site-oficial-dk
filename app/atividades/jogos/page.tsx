@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import GameCard from "@/components/GameCard";
 import PageHero from "@/components/PageHero";
 import { games } from "@/lib/content";
 
-export const metadata: Metadata = { title: "Jogos" };
+
+export const metadata = pageMetadata("Jogos de Swordplay: regras e objetivos", "Veja como jogar Trollball, Captura da Bandeira, Archery Tag e outros jogos de Swordplay do DK. Consulte regras, equipes, equipamentos e segurança.", "/atividades/jogos");
 
 export default function GamesPage() {
   return (
