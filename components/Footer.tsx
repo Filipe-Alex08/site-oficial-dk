@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Instagram, Youtube } from "lucide-react";
 import { socialLinks } from "@/lib/content";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
@@ -8,8 +9,13 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="container footer-main">
         <div className="footer-brand">
-          <strong>DK — Death Knights</strong>
-          <p>Swordplay e comunidade em Belo Horizonte.</p>
+          <Link href="/" aria-label="Death Knights, página inicial">
+            <Image className="footer-emblem" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={64} height={64} />
+          </Link>
+          <div>
+            <strong>DK — Death Knights</strong>
+            <p>Swordplay e comunidade em Belo Horizonte.</p>
+          </div>
         </div>
 
         <nav className="footer-links" aria-label="Links do rodapé">

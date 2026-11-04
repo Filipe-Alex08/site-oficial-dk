@@ -1,4 +1,10 @@
-import type { AdminRole, DkRank, DocumentAudience, GraduationLevel, MemberKind } from "@/lib/types";
+import type { AdminRole, DkRank, DocumentAudience, GraduationLevel, MemberKind, MemberProfile } from "@/lib/types";
+
+export function getMemberTheme(profile: Pick<MemberProfile, "status" | "graduation_level" | "graduation_order"> | null | undefined): "padrao" | "bronze" | "prata" | "ouro" {
+  if (profile?.status !== "aprovado") return "padrao";
+  const level = profile.graduation_level;
+  return level === "bronze" || level === "prata" || level === "ouro" ? level : "padrao";
+}
 
 export const memberKindOptions: Array<{ value: MemberKind; label: string }> = [
   { value: "membro", label: "Membro" },

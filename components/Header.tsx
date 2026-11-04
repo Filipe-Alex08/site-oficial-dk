@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, UserPlus, X } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { adminRoleOptions, graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { adminRoleOptions, getMemberTheme, graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
 
 const activityLinks = [
@@ -33,6 +33,12 @@ export default function Header() {
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [signingOut, setSigningOut] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const isMemberArea = pathname === "/membro" || pathname.startsWith("/membro/");
+    document.documentElement.dataset.memberTheme = isMemberArea ? getMemberTheme(account?.profile) : "padrao";
+    return () => { delete document.documentElement.dataset.memberTheme; };
+  }, [account?.profile, pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -123,8 +129,8 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <Link className="brand" href="/" onClick={() => setOpen(false)}>
-          <span className="brand-mark" aria-hidden="true">DK</span>
+        <Link className="brand" href="/" aria-label="Death Knights, página inicial" onClick={() => setOpen(false)}>
+          <Image className="brand-mark" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={64} height={64} />
           <span className="brand-copy"><strong>Death Knights</strong><small>Swordplay • Belo Horizonte</small></span>
         </Link>
 
