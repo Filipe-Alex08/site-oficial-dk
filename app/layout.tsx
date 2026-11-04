@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     "Site oficial do DK em Belo Horizonte: Swordplay, atividades, jogos, eventos e registros da comunidade.",
   icons: {
     icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-32-round.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192-round.png", sizes: "192x192", type: "image/png" },
     ],
     apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
   },
