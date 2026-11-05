@@ -8,3 +8,7 @@ npm-debug.log*
 .DS_Store
 .vercel
 tsconfig.tsbuildinfo
+# Qualquer outro arquivo .env* (por exemplo .env.test.google) fica fora do Git; só o .env.example é versionado
+.env*
+!.env.example
+test-tools
