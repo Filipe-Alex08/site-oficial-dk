@@ -295,3 +295,122 @@ Depois da aprovação da conta e do login, o membro pode preencher os dados no p
 ### Aniversários dos membros
 
 Execute também `supabase/migrations/008_member_birthdays.sql` no SQL Editor. Essa migração permite consultar apelido, dia e mês dos aniversariantes somente com uma sessão de membro aprovado. O ano de nascimento não é exposto no calendário. Enquanto essa função não estiver disponível, o servidor pode consultar os dados usando `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY`), após validar a sessão e o status aprovado do membro. Apenas apelido, dia e mês são enviados ao calendário. Falhas de consulta exibem um aviso de indisponibilidade.
+
+## 14. Login com Google
+
+O botão **Entrar com Google** é um acesso adicional ao e-mail e senha e só deixa entrar quem já é membro aprovado:
+
+- o e-mail da conta Google precisa ser o mesmo do cadastro. O Supabase vincula a identidade do Google ao usuário que tem esse e-mail verificado, então o login cai no mesmo usuário e no mesmo perfil;
+- a situação do perfil continua mandando. **Aprovado** entra em `/membro`; **pendente** volta ao login com "Seu cadastro ainda está aguardando aprovação."; recusado, suspenso e desativado voltam com "Seu acesso ainda não está liberado.";
+- um Gmail que não é de nenhum membro não cria cadastro: o site encerra a sessão, apaga a conta que o Google acabou de criar no Supabase e mostra "Não encontramos um cadastro de membro para esta conta Google.". Usuário que tem perfil nunca é apagado.
+
+Novos membros continuam se cadastrando por convite. Nenhuma política de acesso (RLS) foi alterada e não há migração nova: a segurança segue em `profiles.status` e em `is_approved_member()`.
+
+O site não guarda credenciais do Google; o ID e o segredo do cliente ficam só no Supabase. A rota `/auth/callback` usa `SUPABASE_SECRET_KEY` para consultar o perfil e apagar a conta criada pelo Google. Sem essa chave o login com Google fica indisponível.
+
+### 14.1 Google Cloud Console
+
+1. Acesse <https://console.cloud.google.com/> e crie ou escolha um projeto.
+2. Em **Google Auth Platform**, configure:
+   - **Branding**: nome do aplicativo e e-mail de suporte. A verificação de marca é opcional;
+   - **Audience**: tipo **Externo**, porque os membros usam o Gmail pessoal. Publique o aplicativo (**Em produção**); enquanto estiver em **Teste**, só entram os e-mails cadastrados como usuários de teste;
+   - **Data Access**: mantenha apenas `openid` (adicione manualmente), `.../auth/userinfo.email` e `.../auth/userinfo.profile`.
+3. Em **Clients**, crie um cliente do tipo **Web application**:
+   - **Authorized JavaScript origins**: `https://death-knights.com.br` e, para desenvolvimento, `http://localhost:3000`;
+   - **Authorized redirect URIs**: `<URL_DO_SUPABASE>/auth/v1/callback`, em HTTPS. No Supabase hospedado, copie o valor mostrado na página do provedor Google. No auto-hospedado, é o valor de `API_EXTERNAL_URL` seguido de `/callback` (seção 14.3).
+4. Copie o **Client ID** e o **Client Secret**. O segredo não vai para o Git, para o chat nem para o `.env.local` do site.
+
+### 14.2 Supabase hospedado
+
+1. No painel do projeto, abra **Authentication > Sign In / Providers** (em painéis antigos, **Authentication > Providers**) e selecione **Google**.
+2. Ative o provedor, cole o **Client ID** e o **Client Secret** e salve.
+3. Configure as URLs de redirecionamento (seção 14.4).
+
+### 14.3 Supabase auto-hospedado (servidor do Diogo)
+
+O provedor é ligado por variáveis do GoTrue, o serviço `auth`. Os nomes abaixo vêm da documentação oficial (<https://supabase.com/docs/guides/self-hosting/self-hosted-oauth>) e do `docker-compose.yml` oficial:
+
+1. No `.env` da pasta do Supabase, o mesmo arquivo que tem `SITE_URL` e `API_EXTERNAL_URL`, confira que `API_EXTERNAL_URL` é o endereço público em HTTPS (por exemplo `https://<dominio-do-supabase>/auth/v1`) e acrescente:
+
+   ```env
+   GOOGLE_ENABLED=true
+   GOOGLE_CLIENT_ID=<client-id-do-google>
+   GOOGLE_SECRET=<client-secret-do-google>
+   ```
+
+2. No `docker-compose.yml`, no serviço `auth`, em `environment`, descomente estas linhas (ou acrescente, se o arquivo for antigo e não as tiver). Sem a linha no compose, a variável do `.env` não chega ao contêiner:
+
+   ```yaml
+   GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ENABLED}
+   GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+   GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_SECRET}
+   GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${API_EXTERNAL_URL}/callback
+   ```
+
+3. **Recrie** o serviço, porque reiniciar não relê o `.env`: `sh run.sh recreate auth` ou, em instalações sem o `run.sh`, `docker compose up -d --force-recreate auth`.
+4. Confira sem expor o segredo. A resposta deve ter `"google": true` dentro de `external`:
+
+   ```powershell
+   curl.exe -s -H "apikey: <CHAVE_PUBLICAVEL>" "<URL_DO_SUPABASE>/auth/v1/settings"
+   ```
+
+A URI autorizada no Google é `<API_EXTERNAL_URL>/callback`, por exemplo `https://<dominio-do-supabase>/auth/v1/callback`. A maioria dos provedores OAuth recusa callbacks `http://`, exceto em `localhost`.
+
+### 14.4 URLs de redirecionamento
+
+O Google devolve o usuário ao Supabase e o Supabase o devolve ao site em `/auth/callback`. Essa URL precisa estar na lista de permitidas; senão o Supabase ignora o `redirectTo` e manda o usuário para a **Site URL**.
+
+| Campo | Valor |
+|---|---|
+| Site URL | `https://death-knights.com.br` |
+| Redirect URLs | `https://death-knights.com.br/auth/callback` |
+| Redirect URLs (desenvolvimento) | `http://localhost:3000/auth/callback` |
+
+- **Hospedado:** **Authentication > URL Configuration**, campos *Site URL* e *Redirect URLs*.
+- **Auto-hospedado:** no `.env` do Supabase, `SITE_URL=https://death-knights.com.br` e `ADDITIONAL_REDIRECT_URLS=https://death-knights.com.br/auth/callback,http://localhost:3000/auth/callback`, separadas por vírgula. Depois recrie o serviço `auth`. Elas chegam ao GoTrue como `GOTRUE_SITE_URL` e `GOTRUE_URI_ALLOW_LIST`.
+
+O botão envia `redirectTo` exatamente igual a `<origem>/auth/callback`, sem parâmetros. Se o site passar a enviar `?next=` nessa URL, use curinga na lista (por exemplo `http://localhost:3000/**`), porque a comparação considera a URL inteira, com a query.
+
+### 14.5 Bloquear cadastros públicos no Supabase (recomendado)
+
+Por padrão, o GoTrue cria um usuário para qualquer conta Google que entre pela primeira vez. O site apaga esse usuário em seguida quando ele não tem perfil, mas o ideal é que ele nem seja criado:
+
+- **Auto-hospedado:** `DISABLE_SIGNUP=true` no `.env` do Supabase e recriar o serviço `auth`. A resposta de `/auth/v1/settings` passa a mostrar `"disable_signup": true`.
+- **Hospedado:** em **Authentication > Sign In / Providers**, desligue **Allow new users to sign up**.
+
+Pelo código do GoTrue, essa opção bloqueia apenas a criação de contas novas. Não afeta o cadastro por convite, que o site faz pela API administrativa com `SUPABASE_SECRET_KEY`, nem o login de quem já é usuário. O site não usa `signUp()` em nenhum ponto. Com a opção ligada, o GoTrue recusa o Gmail desconhecido com `error_code=signup_disabled` e o site mostra o aviso "Não encontramos um cadastro de membro para esta conta Google.". Confirme com o caso 1 do teste abaixo depois de ativar.
+
+### 14.6 Teste manual
+
+Use um navegador com um Gmail já logado e abra `/area-do-membro/login`. Para testar sem tocar no servidor real, siga o roteiro de [TESTE-LOGIN-GOOGLE.md](TESTE-LOGIN-GOOGLE.md), com um projeto Supabase de teste.
+
+| Caso | Preparação | Resultado esperado |
+|---|---|---|
+| 1. Membro aprovado | Perfil `aprovado` cujo e-mail é o da conta Google | Entra em `/membro` sem digitar senha. Em **Authentication > Users** continua o mesmo usuário (mesmo `id`), agora com as identidades `email` e `google`. |
+| 2. Membro pendente | Perfil `pendente` com o e-mail da conta Google | Volta ao login com "Seu cadastro ainda está aguardando aprovação." e sem sessão: abrir `/membro` redireciona ao login. |
+| 3. Gmail de quem não é membro | Conta Google sem perfil | Volta ao login com "Não encontramos um cadastro de membro para esta conta Google.", sem sessão, e nenhum usuário novo permanece em **Authentication > Users**. |
+
+Problemas comuns:
+
+| Sintoma | Causa provável |
+|---|---|
+| Página do Google com `redirect_uri_mismatch` | A *Authorized redirect URI* no Google não é idêntica a `<URL_DO_SUPABASE>/auth/v1/callback`. |
+| Depois do Google, volta à página inicial com `?code=` na barra | `/auth/callback` não está nas URLs permitidas, ou a Site URL está errada. |
+| Página de erro do Supabase dizendo que o provedor não está habilitado | O Google não foi ativado ou o serviço `auth` não foi recriado. |
+| Membro aprovado vê "Não encontramos um cadastro de membro..." | O e-mail da conta Google é diferente do e-mail do cadastro. |
+| Só alguns e-mails conseguem entrar com o Google | O aplicativo está em modo **Teste** no Google. Publique em **Audience**. |
+| "Não foi possível entrar com o Google" para todos | Veja os logs do site: pode faltar `SUPABASE_SECRET_KEY`, ou o link foi aberto em outro navegador (o código de login só vale no navegador que iniciou o fluxo). |
+
+### 14.7 Contas sem perfil
+
+Se a exclusão automática falhar, por exemplo com o Supabase indisponível naquele instante, a conta criada pelo Google fica em `auth.users` sem perfil. Ela não tem sessão nem acesso e pode ser apagada em **Authentication > Users**. Para listar:
+
+```sql
+select u.id, u.email, u.created_at, u.raw_app_meta_data->>'provider' as provedor
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null
+order by u.created_at desc;
+```
+
+Confira antes de apagar: o primeiro ADM, criado manualmente na seção 6, só ganha perfil na etapa seguinte.

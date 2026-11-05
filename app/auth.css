@@ -46,3 +46,6 @@
 .profile-edit:not(.is-editing)>.profile-edit-message{position:absolute;top:34px;right:0;width:max-content;max-width:min(240px,calc(100vw - 100px));margin:0;z-index:3;pointer-events:none;box-shadow:0 8px 24px #0005}
 .profile-edit-message.success{animation:profile-feedback-fade 4s ease both}
 @keyframes profile-feedback-fade{0%{opacity:0}8%,80%{opacity:1}100%{opacity:0}}
+
+/* Google login feedback and alternative sign-in separator. */
+.auth-wrap>.form-message{width:min(100%,480px);margin:0 0 18px}.login-divider{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase}.login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--line)}.login-divider+.button{margin-top:0}
