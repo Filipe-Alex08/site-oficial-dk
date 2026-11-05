@@ -92,11 +92,11 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     if (canMedia) jobs.push(supabase.from("posts").select("*").order("created_at", { ascending: false }).then(({ data }) => setPosts((data || []) as Post[])));
     if (canCalendar) jobs.push(supabase.from("activities").select("*").order("starts_at").then(({ data }) => setActivities((data || []) as Activity[])));
     if (canMembers) {
+      jobs.push(supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || "")));
       jobs.push(supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(({ data }) => setMembers((data || []) as MemberProfile[])));
       jobs.push(supabase.from("invites").select("*").order("created_at", { ascending: false }).then(({ data }) => setInvites((data || []) as Invite[])));
     }
     if (principal) {
-      jobs.push(supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || "")));
       jobs.push(supabase.from("user_admin_roles").select("user_id, role").then(({ data }) => {
         const grouped: Record<string, AdminRole[]> = {};
         data?.forEach((item) => {
@@ -237,6 +237,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
   }
 
   function editMember(member: MemberProfile) {
+    if (!canEditAccess(member)) return show("Esta conta só pode ser alterada por outro ADM Principal.");
     setMemberForm({
       id: member.id,
       full_name: member.full_name,
@@ -248,6 +249,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
   }
 
   async function reviewAccessRequest(member: MemberProfile, action: "approve" | "reject") {
+    if (member.id === currentUserId) return show("Sua própria solicitação precisa ser analisada por outro administrador.");
     const response = await fetch(`/api/admin/members/${member.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -264,12 +266,12 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     const response = await fetch(`/api/admin/members/${memberForm.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(principal ? {
         member_kind: memberForm.member_kind,
         rank: memberForm.rank,
         graduation_level: memberForm.graduation_level,
         graduation_order: memberForm.graduation_order,
-      }),
+      } : { member_kind: memberForm.member_kind }),
     });
     const result = await response.json();
     if (!response.ok) return show(result.error);
@@ -288,6 +290,26 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     await dashboardQuery.refetch();
   }
 
+  // Quem o painel pode alterar. O servidor rejeita o resto; estes auxiliares
+  // existem para não oferecer botões que terminariam em erro. A lista de papéis
+  // alheios só é visível ao ADM Principal, então para os demais o painel confia
+  // na checagem do servidor.
+  function isSelfTarget(member: MemberProfile) {
+    return member.id === currentUserId;
+  }
+
+  function isOtherPrincipal(member: MemberProfile) {
+    return !isSelfTarget(member) && (memberRoles[member.id] || []).includes("principal");
+  }
+
+  function canEditAccess(member: MemberProfile) {
+    return principal || (!isSelfTarget(member) && !isOtherPrincipal(member));
+  }
+
+  function canManageMember(member: MemberProfile) {
+    return !isSelfTarget(member) && !(memberRoles[member.id] || []).includes("principal");
+  }
+
   async function deleteMember(id: string) {
     if (!window.confirm("Excluir permanentemente este membro e seu acesso?")) return;
     const response = await fetch(`/api/admin/members/${id}`, { method: "DELETE" });
@@ -300,7 +322,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     if (!supabase || inviteBusy) return;
     setInviteBusy("create");
     try {
-      const code = `DK-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const code = `DK-${crypto.randomUUID().replace(/-/g, "").toUpperCase()}`;
       const expires = new Date();
       expires.setDate(expires.getDate() + 15);
       const { data, error } = await supabase.from("invites").insert({ code, expires_at: expires.toISOString(), max_uses: 1 }).select("*").single();
@@ -429,23 +451,31 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
             <h3>Conferência de {member.full_name} (@{member.nickname})</h3>
             <p>Atual: {rankLabels[member.rank]} · {graduationLabels[member.graduation_level]} · {member.graduation_order || "Sem ordem"}</p>
             <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {member.requested_graduation_level && graduationLabels[member.requested_graduation_level]} · {member.requested_graduation_order || "Sem ordem"}</p>
-            <div className="form-actions">
-              <button className="button button-primary" type="button" onClick={() => reviewAccessRequest(member, "approve")}>Aprovar dados</button>
-              <button className="button button-ghost" type="button" onClick={() => reviewAccessRequest(member, "reject")}>Recusar dados</button>
-            </div>
+            {member.id === currentUserId
+              ? <p className="form-help">Sua própria solicitação precisa ser analisada por outro administrador.</p>
+              : <div className="form-actions">
+                <button className="button button-primary" type="button" onClick={() => reviewAccessRequest(member, "approve")}>Aprovar dados</button>
+                <button className="button button-ghost" type="button" onClick={() => reviewAccessRequest(member, "reject")}>Recusar dados</button>
+              </div>}
           </article>)}
           {memberForm && <form className="admin-form access-form" onSubmit={saveMemberAccess}>
             <h3>Acessos de {memberForm.full_name}</h3>
             <div className="form-grid">
               <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
-              <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-              <div className="field"><label htmlFor="member-graduation">Graduação</label><Select id="member-graduation" value={memberForm.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, graduation_level: value as GraduationLevel })} /></div>
-              <div className="field"><label>Ordem de graduação</label><input value={memberForm.graduation_order} onChange={(event) => setMemberForm({ ...memberForm, graduation_order: event.target.value })} /></div>
+              {principal ? <>
+                <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
+                <div className="field"><label htmlFor="member-graduation">Graduação</label><Select id="member-graduation" value={memberForm.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, graduation_level: value as GraduationLevel })} /></div>
+                <div className="field"><label>Ordem de graduação</label><input value={memberForm.graduation_order} onChange={(event) => setMemberForm({ ...memberForm, graduation_order: event.target.value })} /></div>
+              </> : <>
+                <div className="field"><label>Patente</label><p className="form-help">{rankLabels[memberForm.rank]}</p></div>
+                <div className="field"><label>Graduação</label><p className="form-help">{graduationLabels[memberForm.graduation_level]}</p></div>
+                <div className="field"><label>Ordem de graduação</label><p className="form-help">{memberForm.graduation_order || "Sem ordem"}</p></div>
+              </>}
             </div>
             {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}</fieldset>}
             <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
           </form>}
-          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => `ADM ${role}`).join(", ") || "Sem permissão de ADM") : "ADMs gerenciados pelo Principal"}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{member.graduation_level !== "sem_graduacao" ? <GraduationInsignia level={member.graduation_level} order={member.graduation_order} /> : <small>Sem graduação</small>}</div></td><td><span className={`badge ${member.status}`}>{member.status}</span></td><td className="row-actions"><button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => `ADM ${role}`).join(", ") || "Sem permissão de ADM") : "ADMs gerenciados pelo Principal"}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{member.graduation_level !== "sem_graduacao" ? <GraduationInsignia level={member.graduation_level} order={member.graduation_order} /> : <small>Sem graduação</small>}</div></td><td><span className={`badge ${member.status}`}>{member.status}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
         </div>}
 
         {section === "convites" && canMembers && <div>

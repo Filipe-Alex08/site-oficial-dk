@@ -1,20 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-async function authorize() {
-  const client = await createClient();
-  if (!client) return false;
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return false;
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    client.from("profiles").select("status").eq("id", user.id).single(),
-    client.from("user_admin_roles").select("role").eq("user_id", user.id).in("role", ["principal", "atividades"]),
-  ]);
-  return profile?.status === "aprovado" && Boolean(roles?.length);
-}
 
 // Read every page so historical totals are not truncated by Supabase's row limit.
 async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
@@ -28,7 +16,7 @@ async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data
 }
 
 export async function GET(request: Request) {
-  if (!(await authorize())) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  if (!(await requireAdmin(["principal", "atividades"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
   const memberId = new URL(request.url).searchParams.get("memberId");
@@ -59,7 +47,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await authorize())) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  if (!(await requireAdmin(["principal", "atividades"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
   const body = await request.json().catch(() => null);

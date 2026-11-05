@@ -43,6 +43,11 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
 
     setSaving(true);
     setMessage("");
+    // Patente e graduação passam por aprovação de um administrador, inclusive
+    // quando quem edita é o próprio administrador.
+    const accessDetailsChanged = form.rank !== profile.rank
+      || form.graduation_level !== profile.graduation_level
+      || (form.graduation_order.trim() || null) !== (profile.graduation_order || null);
     const updated: EditableProfile = {
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim(),
@@ -89,7 +94,9 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     });
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
-    setMessage("Perfil atualizado.");
+    setMessage(accessDetailsChanged
+      ? "Perfil atualizado. Patente e graduação aguardam aprovação de um administrador."
+      : "Perfil atualizado.");
     setEditing(false);
     setSaving(false);
   }

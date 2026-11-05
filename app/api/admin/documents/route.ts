@@ -1,27 +1,14 @@
 import { NextResponse } from "next/server";
+import { logAdminAudit } from "@/lib/admin-audit";
+import { requireAdmin } from "@/lib/admin-auth";
 import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-async function authorizeDocumentAdmin() {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
-    .from("user_admin_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .in("role", ["principal", "membros"])
-    .limit(1);
-  return data?.length ? user : null;
-}
-
 export async function POST(request: Request) {
-  const user = await authorizeDocumentAdmin();
-  if (!user) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
+  const caller = await requireAdmin(["principal", "membros"]);
+  if (!caller) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
 
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
@@ -60,9 +47,12 @@ export async function POST(request: Request) {
       .from("dk-documents")
       .upload(filePath, fileBuffer, { contentType: "application/pdf", upsert: false });
 
-    if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 400 });
+    if (uploadError) {
+      console.error("Falha ao armazenar documento", uploadError);
+      return NextResponse.json({ error: "Não foi possível armazenar o documento." }, { status: 400 });
+    }
 
-    const { error: insertError } = await admin.from("documents").insert({
+    const { data: inserted, error: insertError } = await admin.from("documents").insert({
       title,
       description,
       file_name: file.name,
@@ -72,13 +62,21 @@ export async function POST(request: Request) {
       minimum_graduation: null,
       access_logic: accessLogic,
       access_rules: rules,
-      created_by: user.id,
-    });
+      created_by: caller.user.id,
+    }).select("id").single();
 
-    if (insertError) {
+    if (insertError || !inserted) {
       await admin.storage.from("dk-documents").remove([filePath]);
-      return NextResponse.json({ error: insertError.message }, { status: 400 });
+      console.error("Falha ao registrar documento", insertError);
+      return NextResponse.json({ error: "Não foi possível registrar o documento." }, { status: 400 });
     }
+
+    await logAdminAudit(caller.user.id, "documents", inserted.id, "insert", {
+      title,
+      file_name: file.name,
+      access_logic: accessLogic,
+      access_rules: rules,
+    });
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch {
