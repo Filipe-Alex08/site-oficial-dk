@@ -382,7 +382,7 @@ Pelo código do GoTrue, essa opção bloqueia apenas a criação de contas novas
 
 ### 14.6 Teste manual
 
-Use um navegador com um Gmail já logado e abra `/area-do-membro/login`.
+Use um navegador com um Gmail já logado e abra `/area-do-membro/login`. Para testar sem tocar no servidor real, siga o roteiro de [TESTE-LOGIN-GOOGLE.md](TESTE-LOGIN-GOOGLE.md), com um projeto Supabase de teste.
 
 | Caso | Preparação | Resultado esperado |
 |---|---|---|
