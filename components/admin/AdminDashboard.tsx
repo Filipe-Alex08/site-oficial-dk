@@ -50,7 +50,7 @@ function defaultInstagramDateRange() {
   return { start: toDateInput(start), end: toDateInput(end) };
 }
 
-export default function AdminDashboard({ roles, canManageAssessments = false }: { roles: AdminRole[]; canManageAssessments?: boolean }) {
+export default function AdminDashboard({ roles, canManageAssessments = false, currentUserId = "" }: { roles: AdminRole[]; canManageAssessments?: boolean; currentUserId?: string }) {
   const supabase = useMemo(() => createClient(), []);
   const principal = roles.includes("principal");
   const canMedia = principal || roles.includes("midias");
@@ -70,7 +70,6 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [memberRoles, setMemberRoles] = useState<Record<string, AdminRole[]>>({});
-  const [currentUserId, setCurrentUserId] = useState("");
   const [invites, setInvites] = useState<Invite[]>([]);
   const [postForm, setPostForm] = useState(emptyPost);
   const [activityForm, setActivityForm] = useState(emptyActivity);
@@ -92,7 +91,6 @@ export default function AdminDashboard({ roles, canManageAssessments = false }: 
     if (canMedia) jobs.push(supabase.from("posts").select("*").order("created_at", { ascending: false }).then(({ data }) => setPosts((data || []) as Post[])));
     if (canCalendar) jobs.push(supabase.from("activities").select("*").order("starts_at").then(({ data }) => setActivities((data || []) as Activity[])));
     if (canMembers) {
-      jobs.push(supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || "")));
       jobs.push(supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(({ data }) => setMembers((data || []) as MemberProfile[])));
       jobs.push(supabase.from("invites").select("*").order("created_at", { ascending: false }).then(({ data }) => setInvites((data || []) as Invite[])));
     }

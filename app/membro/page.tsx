@@ -53,7 +53,7 @@ export default async function MemberPage() {
       <section className="section">
         <div className="container member-grid">
           <article className="profile-card">
-            <MemberAvatar avatarUrl={profileAvatarUrl} avatarPath={profile.avatar_path ?? null} nickname={profile.nickname} />
+            <MemberAvatar avatarUrl={profileAvatarUrl} avatarPath={profile.avatar_path ?? null} nickname={profile.nickname} userId={user.id} />
             <h2>{profile.full_name}</h2>
             <BirthdayBadge birthDate={profile.birth_date} />
             <p>@{profile.nickname}</p>

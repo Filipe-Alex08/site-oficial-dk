@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, UserPlus, X } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
@@ -46,7 +47,7 @@ export default function Header() {
     if (!supabase) return;
 
     let active = true;
-    const loadAccount = async (user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
+    const loadAccount = async (user: { id: string; email?: string } | null) => {
       if (!user) {
         if (active) {
           setAccount(null);
@@ -78,20 +79,28 @@ export default function Header() {
       setLoading(false);
     };
 
-    supabase.auth.getUser().then(({ data: { user } }) => loadAccount(user));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Let the auth callback finish before querying Supabase again.
-      window.setTimeout(() => void loadAccount(session?.user ?? null), 0);
-    });
-    const refreshProfile = () => {
-      void supabase.auth.getUser().then(({ data: { user } }) => loadAccount(user));
+    // Quem está logado vem do servidor: a sessão vive num cookie que este
+    // componente não lê. Não há mais evento de login para escutar — entrar e
+    // sair agora navegam ou recarregam a página.
+    const loadCurrentAccount = async () => {
+      try {
+        const response = await apiFetch("/api/auth/me");
+        if (!response.ok) throw new Error(`/api/auth/me respondeu ${response.status}`);
+        const { user } = await response.json();
+        void loadAccount(user ?? null);
+      } catch {
+        // Sem resposta o cabeçalho fica no estado de visitante, mas para de
+        // exibir "Conta" como se ainda estivesse carregando.
+        if (active) setLoading(false);
+      }
     };
-    window.addEventListener("dk-profile-updated", refreshProfile);
+
+    void loadCurrentAccount();
+    window.addEventListener("dk-profile-updated", loadCurrentAccount);
 
     return () => {
       active = false;
-      subscription.unsubscribe();
-      window.removeEventListener("dk-profile-updated", refreshProfile);
+      window.removeEventListener("dk-profile-updated", loadCurrentAccount);
     };
   }, []);
 
@@ -117,14 +126,16 @@ export default function Header() {
   const initials = displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   async function signOut() {
-    const supabase = createClient();
-    if (!supabase) return;
     setSigningOut(true);
-    await supabase.auth.signOut();
-    setAccount(null);
-    setAccountOpen(false);
-    setSigningOut(false);
-    router.refresh();
+    try {
+      // O cookie de sessão é do servidor: só ele consegue apagá-lo.
+      await apiFetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      setAccount(null);
+      setAccountOpen(false);
+      setSigningOut(false);
+      router.refresh();
+    }
   }
 
   return (
