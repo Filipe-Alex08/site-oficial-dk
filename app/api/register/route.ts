@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
+
+// Cloudflare overwrites CF-Connecting-IP; when it is absent, the rightmost
+// X-Forwarded-For entry is the one appended by the closest trusted proxy.
+// Never trust X-Real-IP or the leftmost XFF entry: both are client-controlled.
+function getClientIp(request: Request) {
+  const cfConnectingIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (cfConnectingIp && isIP(cfConnectingIp)) return cfConnectingIp;
+
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const lastHop = forwardedFor?.split(",").map((part) => part.trim()).filter(Boolean).pop();
+  if (lastHop && isIP(lastHop)) return lastHop;
+
+  return "unknown";
+}
 
 async function readRegistrationBody(request: Request) {
   const maxBytes = 16 * 1024;
@@ -40,8 +55,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const forwardedFor = request.headers.get("x-forwarded-for");
-    const clientIp = request.headers.get("x-real-ip") || forwardedFor?.split(",")[0]?.trim() || "unknown";
+    const clientIp = getClientIp(request);
     const rateLimitSalt = process.env.SUPABASE_SECRET_KEY || process.env.CRON_SECRET;
     if (!rateLimitSalt) {
       return NextResponse.json({ error: "Cadastro temporariamente indisponível." }, { status: 503 });
