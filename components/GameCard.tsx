@@ -82,13 +82,15 @@ export default function GameCard({ game }: { game: Game }) {
               <section className="game-objective"><span className="game-section-icon"><Target /></span><div><h3>Objetivo do jogo</h3><p>{game.objective}</p></div></section>
               {game.fieldMap && <section className="game-field-map" aria-labelledby={`game-map-title-${game.id}`}>
                 <div className="game-section-heading"><MapIcon /><h3 id={`game-map-title-${game.id}`}>Mapa do campo</h3></div>
-                <Image
-                  src={game.fieldMap.src}
-                  alt={game.fieldMap.alt}
-                  width={game.fieldMap.width}
-                  height={game.fieldMap.height}
-                  sizes="(max-width: 420px) calc(100vw - 52px), (max-width: 760px) calc(100vw - 72px), 956px"
-                />
+                <div className="game-field-map-frame">
+                  <Image
+                    src={game.fieldMap.src}
+                    alt={game.fieldMap.alt}
+                    width={game.fieldMap.width}
+                    height={game.fieldMap.height}
+                    sizes="(max-width: 420px) calc(100vw - 52px), (max-width: 760px) calc(100vw - 72px), 956px"
+                  />
+                </div>
               </section>}
               <div className="game-modal-columns">
                 <div className="game-modal-main">

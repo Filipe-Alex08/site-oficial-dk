@@ -354,7 +354,9 @@
 .game-objective p { margin-top: 6px; color: #d0d0d0; font-size: .95rem; line-height: 1.7; }
 .game-field-map { margin-bottom: 28px; }
 .game-field-map .game-section-heading { margin-bottom: 12px; }
-.game-field-map img { display: block; width: 100%; height: auto; max-height: 640px; object-fit: contain; background: #080808; border: 1px solid #333; border-radius: 5px; }
+.game-field-map-frame { overflow: hidden; background: #080808; border: 1px solid #333; border-radius: 5px; }
+/* Maps are bright, saturated drawings: tone them down to sit in the dark theme without changing their colors. */
+.game-field-map img { display: block; width: 100%; height: auto; max-height: 640px; object-fit: contain; filter: grayscale(.3) brightness(.78) contrast(1.05); }
 .game-modal-columns { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; gap: 28px; }
 .game-modal-main, .game-modal-sidebar { min-width: 0; display: grid; align-content: start; gap: 24px; }
 .game-section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
