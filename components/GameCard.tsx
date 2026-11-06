@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRight, Camera, Film, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
+import Image from "next/image";
+import { ArrowUpRight, Camera, Film, Map as MapIcon, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Game } from "@/lib/types";
@@ -27,6 +28,7 @@ export default function GameCard({ game }: { game: Game }) {
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
     };
+    const trigger = triggerRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
@@ -34,7 +36,7 @@ export default function GameCard({ game }: { game: Game }) {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
-      triggerRef.current?.focus({ preventScroll: true });
+      trigger?.focus({ preventScroll: true });
     };
   }, [open]);
 
@@ -78,6 +80,18 @@ export default function GameCard({ game }: { game: Game }) {
             </header>
             <div className="game-modal-content">
               <section className="game-objective"><span className="game-section-icon"><Target /></span><div><h3>Objetivo do jogo</h3><p>{game.objective}</p></div></section>
+              {game.fieldMap && <section className="game-field-map" aria-labelledby={`game-map-title-${game.id}`}>
+                <div className="game-section-heading"><MapIcon /><h3 id={`game-map-title-${game.id}`}>Mapa do campo</h3></div>
+                <div className="game-field-map-frame">
+                  <Image
+                    src={game.fieldMap.src}
+                    alt={game.fieldMap.alt}
+                    width={game.fieldMap.width}
+                    height={game.fieldMap.height}
+                    sizes="(max-width: 420px) calc(100vw - 52px), (max-width: 760px) calc(100vw - 72px), 956px"
+                  />
+                </div>
+              </section>}
               <div className="game-modal-columns">
                 <div className="game-modal-main">
                   <section className="game-rules">
