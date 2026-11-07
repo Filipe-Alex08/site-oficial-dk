@@ -84,6 +84,12 @@ export type Game = {
   name: string;
   summary: string;
   objective: string;
+  fieldMap?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
   teamFormation: string;
   rules: string[];
   victory: string;
