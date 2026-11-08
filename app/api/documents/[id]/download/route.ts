@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   if (!supabase) return NextResponse.json({ error: "Banco não configurado." }, { status: 503 });
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/area-do-membro/login", request.url));
+  // Redirecionamento relativo: um Location absoluto derivado de request.url
+  // vaza o host interno quando a aplicação roda atrás de proxy reverso.
+  if (!user) return new Response(null, { status: 307, headers: { Location: "/area-do-membro/login" } });
 
   const { id } = await params;
   const { data: document } = await supabase

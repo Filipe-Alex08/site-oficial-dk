@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import AssessmentRunner from "@/components/member/AssessmentRunner";
 import { createClient } from "@/lib/supabase/server";
+import type { MemberProfile } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Realizar avaliação" };
 
@@ -12,6 +13,9 @@ export default async function AssessmentAttemptPage({ params }: { params: Promis
   if (!supabase) return <section className="section"><div className="container info-band"><strong>Banco ainda não conectado</strong><p>Configure o Supabase para ativar as avaliações.</p></div></section>;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
+  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const profile = profileData as MemberProfile | null;
+  if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
   const { token } = await params;
 
   return (

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { jsonApiFetch } from "@/lib/api-client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 function GoogleIcon() {
   return (
@@ -35,20 +36,25 @@ export default function LoginForm() {
   async function handleGoogle() {
     setGoogleLoading(true);
     setMessage(null);
-    const supabase = createClient();
 
-    if (!supabase) {
+    if (!isSupabaseConfigured()) {
       setMessage({ type: "error", text: "Configure o Supabase para habilitar o login." });
       setGoogleLoading(false);
       return;
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-
-    if (error) {
+    try {
+      // A URL de autorização vem pronta do servidor, que também guarda o
+      // comprovante PKCE num cookie. Esta página nunca toca no token.
+      const response = await jsonApiFetch("/api/auth/google", {});
+      const data = await response.json().catch(() => null);
+      // Só http(s): a URL vem do Supabase, mas o navegador obedece qualquer
+      // esquema, e um "javascript:" aqui seria execução de script.
+      if (!response.ok || typeof data?.url !== "string" || !/^https?:\/\//.test(data.url)) {
+        throw new Error(data?.error ?? "resposta inesperada");
+      }
+      window.location.assign(data.url);
+    } catch {
       setMessage({ type: "error", text: "Não foi possível iniciar o login com o Google." });
       setGoogleLoading(false);
     }
@@ -59,37 +65,27 @@ export default function LoginForm() {
     setLoading(true);
     setMessage(null);
     const form = new FormData(event.currentTarget);
-    const supabase = createClient();
 
-    if (!supabase) {
+    if (!isSupabaseConfigured()) {
       setMessage({ type: "error", text: "Configure o Supabase para habilitar o login." });
       setLoading(false);
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    });
+    try {
+      const response = await jsonApiFetch("/api/auth/login", {
+        email: String(form.get("email")),
+        password: String(form.get("password")),
+      });
+      const data = await response.json().catch(() => null);
 
-    if (error || !data.user) {
-      setMessage({ type: "error", text: "E-mail ou senha inválidos." });
-      setLoading(false);
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("status")
-      .eq("id", data.user.id)
-      .single();
-
-    if (!profile || profile.status !== "aprovado") {
-      await supabase.auth.signOut();
-      const text = profile?.status === "pendente"
-        ? "Seu cadastro ainda está aguardando aprovação."
-        : "Seu acesso ainda não está liberado.";
-      setMessage({ type: "error", text });
+      if (!response.ok) {
+        setMessage({ type: "error", text: data?.error ?? "E-mail ou senha inválidos." });
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setMessage({ type: "error", text: "Não foi possível entrar agora. Tente novamente." });
       setLoading(false);
       return;
     }

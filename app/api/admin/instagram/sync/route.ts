@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { syncInstagram } from "@/lib/instagram-sync";
-import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 800;
@@ -15,22 +15,14 @@ async function runSync(start?: string, end?: string) {
   try {
     return NextResponse.json(await syncInstagram(start, end));
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Falha ao sincronizar mídias." }, { status: 502 });
+    console.error("Falha ao sincronizar Instagram", error);
+    return NextResponse.json({ error: "Falha ao sincronizar mídias." }, { status: 502 });
   }
 }
 
-async function isMediaAdmin() {
-  const supabase = await createClient();
-  if (!supabase) return false;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data } = await supabase.from("user_admin_roles").select("role")
-    .eq("user_id", user.id).in("role", ["principal", "midias"]);
-  return Boolean(data?.length);
-}
-
 export async function POST(request: Request) {
-  if (!await isMediaAdmin()) return NextResponse.json({ error: "Acesso permitido somente ao ADM Principal ou ADM de Mídias." }, { status: 403 });
+  const caller = await requireAdmin(["principal", "midias"]);
+  if (!caller) return NextResponse.json({ error: "Acesso permitido somente ao ADM Principal ou ADM de Mídias." }, { status: 403 });
   let body: unknown;
   try {
     body = await request.json();

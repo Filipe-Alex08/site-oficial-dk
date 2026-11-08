@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Trash2, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function MemberAvatar({ avatarUrl, avatarPath, nickname }: { avatarUrl: string | null; avatarPath: string | null; nickname: string }) {
+export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }: { avatarUrl: string | null; avatarPath: string | null; nickname: string; userId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const controlRef = useRef<HTMLDivElement>(null);
@@ -48,18 +48,17 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname }: { avat
       return;
     }
 
-    setUploading(true);
-    setMenuOpen(false);
-    setMessage("");
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!userId) {
       setMessage("Entre novamente para alterar sua foto.");
-      setUploading(false);
       return;
     }
 
+    setUploading(true);
+    setMenuOpen(false);
+    setMessage("");
+
     const extension = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
-    const nextPath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+    const nextPath = `${userId}/${crypto.randomUUID()}.${extension}`;
     const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(nextPath, file, {
       cacheControl: "3600",
       contentType: file.type,
