@@ -513,7 +513,7 @@ a.card:hover { border-color: var(--border-strong); background: var(--surface-2);
 .prose p + p { margin-top: 16px; }
 .prose ul { color: var(--text-muted); padding-left: 20px; }
 .prose .card-grid { margin-top: 24px; }
-.info-band { max-width: 860px; padding: 22px 24px; margin: 28px auto; text-align: left; background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--accent-bright); border-radius: var(--r-md); }
+.info-band { padding: 22px 24px; margin: 20px 0 0; text-align: left; background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--accent-bright); border-radius: var(--r-md); }
 .info-band strong { display: block; margin-bottom: 6px; }
 .detail-list { display: grid; gap: 12px; margin-top: 22px; }
 .detail-item { padding: 18px 20px; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--r-md); }

@@ -367,29 +367,16 @@
   .game-section-icon { display: none; }
 }
 .graduation {
+  --tier: #b87a4b;
   position: relative;
   overflow: hidden;
+  border-top: 2px solid var(--tier);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tier) 9%, var(--surface-1)) 0%, var(--surface-1) 140px);
 }
-.graduation::after {
-  content: "";
-  position: absolute;
-  right: -20px;
-  bottom: -25px;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  filter: blur(28px);
-  opacity: 0.35;
-}
-.graduation.bronze::after {
-  background: #aaaaaa;
-}
-.graduation.silver::after {
-  background: #c3c3c3;
-}
-.graduation.gold::after {
-  background: #adadad;
-}
+.graduation.bronze { --tier: #b87a4b; }
+.graduation.silver { --tier: #b8bcc4; }
+.graduation.gold { --tier: #d4a73c; }
+.graduation h3 { color: var(--tier); }
 .media-feed {
   max-width: 1120px;
   display: grid;
