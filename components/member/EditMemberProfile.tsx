@@ -153,10 +153,12 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
           <div className="profile-edit-pane">{children}</div>
         </>
       ) : (
+        <>
+        {/* Mesmo canto e mesmo estilo do lápis: o botão só troca de ícone. */}
+        <button className="profile-edit-trigger" type="button" aria-label="Sair do modo de edição" title="Sair do modo de edição" onClick={cancel} disabled={saving}><X size={14} /></button>
         <form className="profile-edit-pane" onSubmit={submit}>
           <div className="profile-edit-header">
             <h3 className="profile-edit-title">Editar perfil</h3>
-            <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving} aria-label="Sair do modo de edição" title="Sair do modo de edição"><X size={16} /> Sair</button>
           </div>
           <div className="profile-edit-fields">
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
@@ -183,6 +185,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving}><X size={16} /> Cancelar</button>
           </div>
         </form>
+        </>
       )}
       {message && <p className={`profile-edit-message ${message === "Perfil atualizado." ? "success" : "error"}`} role="status">{message}</p>}
     </div>

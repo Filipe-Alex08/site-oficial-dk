@@ -676,6 +676,11 @@
   transition: color .16s ease,opacity .16s ease
 }
 
+.profile-edit-trigger:disabled {
+  opacity: .3;
+  cursor: not-allowed
+}
+
 .profile-edit-trigger:hover {
   color: var(--text-muted);
   opacity: 1
