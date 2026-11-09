@@ -900,28 +900,36 @@
   margin-top: 0
 }
 
-/* Blocos por trilha (Cavalaria e Arquearia) no perfil do membro */
+/* Blocos por trilha (Cavalaria e Arquearia) no perfil do membro.
+   Cada bloco usa a cor da PRÓPRIA graduação: --border e --line são redefinidos
+   aqui para não herdar o tema da graduação dominante do membro. */
 .track-group {
-  --tier: var(--border-strong);
+  --tier: rgba(255, 255, 255, 0.2);
+  --tier-line: rgba(255, 255, 255, 0.1);
+  --border: var(--tier-line);
+  --line: var(--tier-line);
   margin-top: 14px;
   padding: 14px 16px 6px;
   text-align: left;
   background: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--tier-line);
   border-top: 2px solid var(--tier);
   border-radius: var(--r-md)
 }
 
 .track-group[data-tier="bronze"] {
-  --tier: #b87a4b
+  --tier: #b87a4b;
+  --tier-line: rgba(184, 122, 75, 0.3)
 }
 
 .track-group[data-tier="prata"] {
-  --tier: #b8bcc4
+  --tier: #b8bcc4;
+  --tier-line: rgba(184, 188, 196, 0.3)
 }
 
 .track-group[data-tier="ouro"] {
-  --tier: #d4a73c
+  --tier: #d4a73c;
+  --tier-line: rgba(212, 167, 60, 0.3)
 }
 
 .track-group-title {
