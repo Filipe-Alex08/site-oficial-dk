@@ -28,8 +28,11 @@ test("robots allows production but keeps development and preview out", () => {
  }
 });
 test("sitemap excludes private pages, redirects and demo publications", async () => {
- const entries = await load("app/sitemap.ts", {}, { "@/lib/seo": seo, "@supabase/supabase-js": {} }).default();
- assert.equal(entries.length, 8);
- assert.equal(new Set(entries.map(entry => entry.url)).size, 8);
+ const content = load("lib/content.ts");
+ const entries = await load("app/sitemap.ts", {}, { "@/lib/seo": seo, "@/lib/content": content, "@supabase/supabase-js": {} }).default();
+ const expected = 8 + content.games.length;
+ assert.equal(entries.length, expected);
+ assert.equal(new Set(entries.map(entry => entry.url)).size, expected);
+ assert.ok(entries.some(entry => entry.url === seo.siteUrl + "/atividades/jogos/trollball"));
  assert.ok(entries.every(entry => entry.url.startsWith(seo.siteUrl) && !/membro|admin|login/.test(entry.url)));
 });

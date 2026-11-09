@@ -1,24 +1,46 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { ArrowUpRight, Camera, Map as MapIcon, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { Game } from "@/lib/types";
 
+const gamesPath = "/atividades/jogos";
+const noopSubscribe = () => () => {};
+
+/**
+ * O modal é controlado pela URL: /atividades/jogos/<slug> abre o jogo.
+ * Clicar no cartão troca a URL sem navegar; voltar/avançar do navegador
+ * abre e fecha o modal sozinho.
+ */
 export default function GameCard({ game }: { game: Game }) {
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const gamePath = `${gamesPath}/${game.slug}`;
+  const open = pathname === gamePath;
+  // O modal vai para o <body>, que não existe no servidor.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [closing, setClosing] = useState(false);
+  const pushedRef = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  // A URL já voltou para a lista: encerra o estado de animação.
+  if (!open && closing) setClosing(false);
+
+  const openModal = () => {
+    setClosing(false);
+    window.history.pushState(null, "", gamePath);
+    pushedRef.current = true;
+  };
   const closeModal = () => setClosing(true);
 
   useEffect(() => {
     if (!open) return;
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeModal();
+      if (event.key === "Escape") setClosing(true);
       if (event.key === "Tab") {
         const controls = dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], video[controls], [tabindex="0"]');
         if (!controls?.length) return;
@@ -43,15 +65,21 @@ export default function GameCard({ game }: { game: Game }) {
   useEffect(() => {
     if (!closing) return;
     const timeout = window.setTimeout(() => {
-      setOpen(false);
-      setClosing(false);
+      // Se abrimos pelo clique, desfaz a entrada no histórico; se o visitante
+      // chegou direto pelo link do jogo, só troca para a lista.
+      if (pushedRef.current) {
+        pushedRef.current = false;
+        window.history.back();
+      } else {
+        window.history.replaceState(null, "", gamesPath);
+      }
     }, 200);
     return () => window.clearTimeout(timeout);
   }, [closing]);
 
   return (
     <article className="game-card">
-      <button ref={triggerRef} className="game-summary" type="button" onClick={() => { setClosing(false); setOpen(true); }} aria-haspopup="dialog">
+      <button ref={triggerRef} className="game-summary" type="button" onClick={openModal} aria-haspopup="dialog">
         <span className="game-number">{game.name.slice(0, 2).toUpperCase()}</span>
         <span className="game-title">
           <strong>{game.name}</strong>
@@ -60,7 +88,7 @@ export default function GameCard({ game }: { game: Game }) {
         <span className="game-link">Ver detalhes <ArrowUpRight size={16} /></span>
       </button>
 
-      {open && (
+      {mounted && open && (
         createPortal(<div
           className={`game-modal-backdrop${closing ? " is-closing" : ""}`}
           onMouseDown={(event) => {

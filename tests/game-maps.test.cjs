@@ -43,3 +43,9 @@ test("every Swordplay game has the correct permanent field map", () => {
 
   assert.equal(new Set(Object.values(gameFieldMaps).map((fieldMap) => fieldMap.src)).size, games.length);
 });
+
+test("every game has a unique, URL-safe slug", () => {
+  const slugs = games.map((game) => game.slug);
+  assert.equal(new Set(slugs).size, games.length);
+  for (const slug of slugs) assert.match(slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+});

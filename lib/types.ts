@@ -81,6 +81,8 @@ export type MediaItem = {
 
 export type Game = {
   id: string;
+  /** Usado na URL: /atividades/jogos/<slug> */
+  slug: string;
   name: string;
   summary: string;
   objective: string;

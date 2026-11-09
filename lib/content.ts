@@ -9,6 +9,7 @@ export const socialLinks = {
 export const games: Game[] = [
   {
     id: "captura-bandeira",
+    slug: "captura-da-bandeira",
     name: "Captura da Bandeira",
     summary: "Duas equipes tentam capturar a bandeira adversária enquanto defendem a própria base.",
     objective: "Capturar a bandeira adversária e levá-la até a própria base, protegendo ao mesmo tempo a bandeira da sua equipe.",
@@ -25,6 +26,7 @@ export const games: Game[] = [
   },
   {
     id: "Trollball",
+    slug: "trollball",
     name: "Trollball",
     summary: "Jogo de avanço territorial em que as equipes disputam a posse do Troll e tentam levá-lo até o poço adversário.",
     objective: "Conduzir a Cabeça de Troll até o poço adversário e marcar a maior quantidade possível de pontos.",
@@ -44,6 +46,7 @@ export const games: Game[] = [
   },
   {
     id: "batalha-campal",
+    slug: "batalha-campal",
     name: "Batalha Campal",
     summary: "Combate coletivo que trabalha formação, posicionamento e comunicação.",
     objective: "Eliminar a equipe adversária ou cumprir o objetivo especial da rodada.",
@@ -59,6 +62,7 @@ export const games: Game[] = [
   },
     {
     id: "Archery-Tag",
+    slug: "archery-tag",
     name: "Archery Tag",
     summary: "Duas equipes se enfrentam com arco e flecha, buscando eliminar adversários e acertar os alvos da equipe rival.",
     objective: "Eliminar adversários e acertar os alvos da equipe adversária dentro do tempo da partida.",
@@ -76,6 +80,7 @@ export const games: Game[] = [
   },
     {
     id: "Guerra-pelas-Fitas",
+    slug: "guerra-pelas-fitas",
     name: "Guerra-pelas-Fitas",
     summary: "Equipes disputam fitas espalhadas pelo campo e podem conquistar novas fitas ao derrotar adversários.",
     objective: "Coletar e conquistar a maior quantidade possível de fitas espalhadas pelo campo.",
@@ -93,6 +98,7 @@ export const games: Game[] = [
   },
     {
     id: "Batalha-de-Campo-com-Conquista",
+    slug: "batalha-de-campo-com-conquista",
     name: "Batalha de Campo com Conquista",
     summary: "Combate estratégico em larga escala no qual as equipes precisam proteger sua liderança e eliminar os comandantes adversários.",
     objective: "Derrotar a estrutura de comando das equipes adversárias, eliminando líderes e capitães.",
@@ -109,6 +115,7 @@ export const games: Game[] = [
   },
     {
     id: "Mate-o-Rei",
+    slug: "mate-o-rei",
     name: "Mate o Rei",
     summary: "Cada equipe deve proteger seu Rei enquanto organiza ataques para eliminar os Reis adversários.",
     objective: "Proteger o próprio Rei enquanto a equipe tenta eliminar o Rei adversário.",
@@ -125,6 +132,7 @@ export const games: Game[] = [
   },
     {
     id: "Rapto-da-Princesa",
+    slug: "rapto-da-princesa",
     name: "Rapto da Princesa",
     summary: "Uma equipe protege a Princesa enquanto a outra tenta capturá-la e mantê-la sob seu domínio.",
     objective: "Proteger a Princesa ou conquistá-la e mantê-la sob controle até o encerramento da partida.",
@@ -141,6 +149,7 @@ export const games: Game[] = [
   },
     {
     id: "Defesa-da-Vila",
+    slug: "defesa-da-vila",
     name: "Defesa da Vila",
     summary: "Desafio individual de arquearia em que o participante deve acertar diferentes alvos no menor tempo possível.",
     objective: "Atingir todos os alvos utilizando o menor número possível de tentativas e no menor tempo.",
@@ -158,6 +167,7 @@ export const games: Game[] = [
   },
     {
     id: "Duelo-de-Arqueiros",
+    slug: "duelo-de-arqueiros",
     name: "Duelo de Arqueiros",
     summary: "Dois arqueiros se enfrentam em uma disputa de precisão, esquiva e controle de disparos.",
     objective: "Acertar o adversário mais vezes durante as séries de disparos.",
@@ -176,6 +186,7 @@ export const games: Game[] = [
   },
     {
     id: "Batalha-de-Cerco",
+    slug: "batalha-de-cerco",
     name: "Batalha de Cerco",
     summary: "Uma equipe fortificada tenta resistir enquanto uma força numericamente superior busca romper suas defesas.",
     objective: "Os defensores devem proteger sua posição pelo tempo determinado, enquanto os atacantes tentam romper a defesa.",
@@ -192,6 +203,7 @@ export const games: Game[] = [
   },
     {
     id: "Rei-da-Mesa",
+    slug: "rei-da-mesa",
     name: "Rei da Mesa",
     summary: "Combates individuais e consecutivos em que o vencedor permanece na arena enfrentando novos adversários.",
     objective: "Permanecer na arena pelo maior tempo possível, derrotando sucessivamente outros combatentes.",
