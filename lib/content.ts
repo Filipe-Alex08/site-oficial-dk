@@ -1,31 +1,10 @@
-import type { Activity, Game, Post } from "@/lib/types";
+import type { Game } from "@/lib/types";
 
 export const socialLinks = {
   instagram: "https://www.instagram.com/dkbhmg/",
   whatsapp: "https://chat.whatsapp.com/FEH19lTq3LIJDWBzBDkE7J",
   youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "",
 };
-
-export const demoActivities: Activity[] = [
-  {
-    id: "demo-1",
-    title: "Treino aberto do DK",
-    starts_at: "2026-09-20T09:00:00-03:00",
-    location: "Parque Ecológico da Pampulha — Belo Horizonte",
-    type: "Treino",
-    status: "confirmado",
-    description: "Treino técnico, jogos e integração com novos participantes.",
-  },
-  {
-    id: "demo-2",
-    title: "Atividade especial",
-    starts_at: "2026-09-27T09:00:00-03:00",
-    location: "A definir",
-    type: "Atividade interna",
-    status: "a_definir",
-    description: "Detalhes serão publicados no cronograma.",
-  },
-];
 
 export const games: Game[] = [
   {
@@ -35,7 +14,7 @@ export const games: Game[] = [
     objective: "Capturar a bandeira adversária e levá-la até a própria base, protegendo ao mesmo tempo a bandeira da sua equipe.",
     teamFormation: "Duas equipes com quantidade de participantes definida pela organização.",
     rules: [
-      "Cada participante possui 1 pontos de vida.",
+      "Cada participante possui 1 ponto de vida.",
       "Para conquistar a vitória por captura, as duas bandeiras devem estar juntas dentro da base da equipe.",
       "Também é possível vencer eliminando completamente a equipe adversária.",
       "Os participantes devem respeitar os limites e as áreas determinadas para cada base.",
@@ -51,8 +30,8 @@ export const games: Game[] = [
     objective: "Conduzir a Cabeça de Troll até o poço adversário e marcar a maior quantidade possível de pontos.",
     teamFormation: "Cada equipe pode possuir até 5 combatentes e 2 curandeiros em campo.",
     rules: [
-      "A Cabeça de Troll começa no centro do campo.",
       "Cada participante possui 1 ponto de vida.",
+      "A Cabeça de Troll começa no centro do campo.",
       "Ela deve ser transportada e passada entre os jogadores, nunca arremessada.",
       "Combatentes atingidos devem se ajoelhar e aguardar a atuação de um curandeiro.",
       "Curandeiros não utilizam equipamentos de combate e podem recuperar jogadores eliminados.",
@@ -102,14 +81,14 @@ export const games: Game[] = [
     objective: "Coletar e conquistar a maior quantidade possível de fitas espalhadas pelo campo.",
     teamFormation: "Equipes formadas normalmente por 4 ou 5 participantes.",
     rules: [
-      "Cada participante possui 1 ponto de vida..",
+      "Cada participante possui 1 ponto de vida.",
       "As fitas podem ser encontradas pelo campo ou conquistadas ao derrotar adversários.",
-      "As fitas de um jogador eliminado ficam com quem aplicou o golpe final..",
-      "Não é permitido trocar, doar ou abandonar fitas..",
+      "As fitas de um jogador eliminado ficam com quem aplicou o golpe final.",
+      "Não é permitido trocar, doar ou abandonar fitas.",
       "As fitas não podem ser utilizadas como equipamento de ataque ou defesa.",
     ],
     victory: "Vence a equipe que possuir a maior quantidade de fitas ao final do tempo e ainda tiver pelo menos um jogador em condições de combate.",
-    equipment: "Equipamentos autorizados pela organização e dentro dos padrões de segurança",
+    equipment: "Equipamentos autorizados pela organização e dentro dos padrões de segurança.",
     safety: "As fitas devem ficar em locais visíveis e acessíveis. Não é permitido utilizar obstáculos perigosos ou esconder fitas em locais que ofereçam risco aos participantes.",
   },
     {
@@ -121,8 +100,8 @@ export const games: Game[] = [
     rules: [
       "Cada equipe possui 1 líder com 5 pontos de vida.",
       "Cada equipe possui 2 capitães com 3 pontos de vida cada.",
-      "Os demais combatentes possuem 1 pontos de vida.",
-      "A estratégia deve considerar a proteção da liderança e o avanço contra os comandantes adversários..",
+      "Os demais combatentes possuem 1 ponto de vida.",
+      "A estratégia deve considerar a proteção da liderança e o avanço contra os comandantes adversários.",
     ],
     victory: "Vence a equipe que eliminar as forças adversárias e sua estrutura de liderança.",
     equipment: "Equipamentos previamente autorizados e distribuídos conforme o equilíbrio definido pela organização.",
@@ -141,7 +120,7 @@ export const games: Game[] = [
       "A eliminação do Rei representa a derrota da equipe naquela rodada.",
     ],
     victory: "Vence a última equipe que mantiver seu Rei em condições de combate ou que eliminar todos os Reis adversários.",
-    equipment: "Equipamentos autorizados pela organização e adequados aos padrões",
+    equipment: "Equipamentos autorizados pela organização e adequados aos padrões de segurança.",
     safety: "A função de Rei não altera as regras gerais de combate. Todos os participantes continuam sujeitos aos mesmos critérios de segurança.",
   },
     {
@@ -189,10 +168,10 @@ export const games: Game[] = [
       "Os arqueiros permanecem dentro das posições previamente demarcadas.",
       "É permitido esquivar o corpo, mas não abandonar a posição definida.",
       "O arco não pode ser utilizado como escudo.",
-      "Após o término das flechas, uma nova série pode ser iniciada",
+      "Após o término das flechas, uma nova série pode ser iniciada.",
     ],
     victory: "Vence o participante que acumular a maior quantidade de acertos ao término do tempo.",
-    equipment: "Arcos e flechas adaptados aos padrões de segurança",
+    equipment: "Arcos e flechas adaptados aos padrões de segurança.",
     safety: "A distância mínima entre os participantes deve ser definida pela organização e somente flechas aprovadas podem ser utilizadas.",
   },
     {
@@ -223,37 +202,8 @@ export const games: Game[] = [
       "Ao ser eliminado, o jogador deixa a arena e retorna ao final da fila.",
       "O próximo participante assume imediatamente o combate.",
     ],
-    victory: "Vence ou se destaca o combatente que conseguir derrotar a maior quantidade de adversários antes de ser eliminado.",
+    victory: "Vence o combatente que conseguir derrotar a maior quantidade de adversários antes de ser eliminado.",
     equipment: "Equipamentos individuais previamente definidos pela organização para manter equilíbrio entre os duelos.",
     safety: "A arena deve possuir espaço suficiente para o duelo, mantendo os demais participantes fora da área ativa até sua vez de entrar.",
-  },
-];
-
-export const demoPosts: Post[] = [
-  {
-    id: "post-1",
-    title: "Treino do DK — 13/09/2026",
-    slug: "treino-dk-13-09-2026",
-    excerpt: "Registros, destaques e momentos do retorno às atividades do DK.",
-    content:
-      "Depois de um breve intervalo, o DK voltou ao campo para mais uma manhã de treino, integração e evolução técnica. A atividade reuniu membros e novos participantes em exercícios, duelos e jogos coletivos.",
-    category: "Treinos",
-    cover_url: null,
-    published: true,
-    published_at: "2026-09-13T14:00:00-03:00",
-    media_items: [],
-  },
-  {
-    id: "post-2",
-    title: "Participação em evento geek",
-    slug: "participacao-evento-geek",
-    excerpt: "O DK levou demonstrações e experiências de Swordplay para o público.",
-    content:
-      "A equipe apresentou equipamentos, regras básicas e atividades adaptadas para quem conheceu o Swordplay pela primeira vez.",
-    category: "Eventos",
-    cover_url: null,
-    published: true,
-    published_at: "2026-08-30T18:00:00-03:00",
-    media_items: [],
   },
 ];

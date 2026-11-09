@@ -42,9 +42,8 @@ export default function ActivityTypesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Atividades"
-        title="Tipos de Atividades"
-        description="No DK, as atividades são organizadas em diferentes formatos para desenvolver técnica, estratégia, comunicação, adaptação e trabalho em equipe, sempre respeitando as regras e os critérios de segurança do grupo."
+        title="Tipos de atividades"
+        description="Do treino técnico à batalha campal: formatos para todos os níveis."
         variant="training"
       />
       <section className="section">

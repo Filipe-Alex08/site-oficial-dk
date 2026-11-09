@@ -66,7 +66,7 @@ export default function CalendarYearView({ activities, initialYear, isApprovedMe
   return (
     <div className="year-calendar">
       <div className="year-calendar-heading">
-        <div><p className="eyebrow">Agenda anual</p><h3>Calendário do DK</h3><p>Os dias marcados têm atividades. Selecione uma data para ver os detalhes.</p></div>
+        <h3>Calendário de {year}</h3>
         <div className="year-calendar-controls" aria-label="Navegar entre anos">
           <button type="button" aria-label="Ano anterior" onClick={() => { setYear(year - 1); setSelectedDate(null); }}><ChevronLeft /></button>
           <strong>{year}</strong>

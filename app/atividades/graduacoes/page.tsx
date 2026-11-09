@@ -9,9 +9,8 @@ export default function GraduationPage() {
   return (
     <>
       <PageHero
-        eyebrow="Atividades"
         title="Graduações"
-        description="Um caminho de evolução que reconhece conhecimento, participação, desenvolvimento e responsabilidade dentro do DK."
+        description="O caminho de evolução dentro do DK: Bronze, Prata e Ouro."
         variant="training"
       />
       <section className="section">
@@ -65,12 +64,8 @@ export default function GraduationPage() {
             </p>
           </div>
           <div className="info-band">
-            <strong>Informações internas</strong>
-            <p>
-              Os critérios completos de progressão, requisitos de exame,
-              avaliações e registros individuais são de acesso restrito e ficam
-              disponíveis apenas para membros autorizados do DK.
-            </p>
+            <strong>Critérios completos</strong>
+            <p>Requisitos de exame e progressão são exclusivos para membros.</p>
           </div>
         </div>
       </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowUpRight, Camera, Film, Map as MapIcon, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
+import { ArrowUpRight, Camera, Map as MapIcon, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Game } from "@/lib/types";
@@ -70,7 +70,6 @@ export default function GameCard({ game }: { game: Game }) {
           <section ref={dialogRef} className="game-modal" role="dialog" aria-modal="true" aria-labelledby={`game-title-${game.id}`} aria-describedby={`game-summary-${game.id}`}>
             <header className="game-modal-header">
               <div>
-                <span className="eyebrow">Jogo de Swordplay</span>
                 <h2 id={`game-title-${game.id}`}>{game.name}</h2>
                 <p id={`game-summary-${game.id}`}>{game.summary}</p>
               </div>
@@ -95,7 +94,7 @@ export default function GameCard({ game }: { game: Game }) {
               <div className="game-modal-columns">
                 <div className="game-modal-main">
                   <section className="game-rules">
-                    <div className="game-section-heading"><Swords /><h3>Como jogar</h3><span>{game.rules.length} regras</span></div>
+                    <div className="game-section-heading"><Swords /><h3>Como jogar</h3></div>
                     <ol>{game.rules.map((rule, index) => <li key={`${index}-${rule}`}><span className="game-rule-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><p>{rule}</p></li>)}</ol>
                   </section>
                   <section className="game-safety"><ShieldCheck /><div><h3>Segurança em primeiro lugar</h3><p>{game.safety}</p></div></section>
@@ -106,16 +105,16 @@ export default function GameCard({ game }: { game: Game }) {
                     <section className="game-detail"><Trophy /><div><h3>Condição de vitória</h3><p>{game.victory}</p></div></section>
                     <section className="game-detail"><Swords /><div><h3>Equipamentos permitidos</h3><p>{game.equipment}</p></div></section>
                   </div>
-                  <section className="game-media" aria-label="Fotos e vídeos do jogo">
+                  {game.media?.length ? <section className="game-media" aria-label="Fotos e vídeos do jogo">
                     <div className="game-section-heading"><Camera /><h3>Fotos e vídeos</h3></div>
-                    {game.media?.length ? <div className="game-media-gallery">{game.media.map((media, index) => <figure key={`${media.url}-${index}`}>
+                    <div className="game-media-gallery">{game.media.map((media, index) => <figure key={`${media.url}-${index}`}>
                       {media.type === "image"
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img src={media.url} alt={media.caption || `Registro de ${game.name}`} loading="lazy" />
                         : <video src={media.url} poster={media.poster} controls playsInline preload="metadata" aria-label={media.caption || `Vídeo de ${game.name}`} />}
                       {media.caption && <figcaption>{media.caption}</figcaption>}
-                    </figure>)}</div> : <div className="game-media-empty"><span aria-hidden="true"><Camera /><Film /></span><p>O jogo em ação</p><small>Fotos e vídeos aparecerão aqui assim que forem adicionados.</small></div>}
-                  </section>
+                    </figure>)}</div>
+                  </section> : null}
                 </aside>
               </div>
             </div>

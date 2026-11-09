@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, UserPlus, X } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, X } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
@@ -12,8 +12,8 @@ import type { AdminRole, MemberProfile } from "@/lib/types";
 import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 
 const activityLinks = [
-  ["Swordplay/Boffering", "/atividades/swordplay"],
-  ["Tipos de Atividades", "/atividades/tipos"],
+  ["Swordplay e Boffering", "/atividades/swordplay"],
+  ["Tipos de atividades", "/atividades/tipos"],
   ["Jogos", "/atividades/jogos"],
   ["Graduações", "/atividades/graduacoes"],
 ];
@@ -30,11 +30,13 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [account, setAccount] = useState<HeaderAccount | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [signingOut, setSigningOut] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+  const activitiesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const isMemberArea = pathname === "/membro" || pathname.startsWith("/membro/");
@@ -105,6 +107,33 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    setOpen(false);
+    setActivitiesOpen(false);
+    setAccountOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  useEffect(() => {
+    if (!activitiesOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !activitiesRef.current?.contains(event.target)) setActivitiesOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActivitiesOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activitiesOpen]);
+
+  useEffect(() => {
     if (!accountOpen) return;
     const closeOnOutsideClick = (event: PointerEvent) => {
       if (event.target instanceof Node && !accountRef.current?.contains(event.target)) setAccountOpen(false);
@@ -142,8 +171,8 @@ export default function Header() {
     <header className="site-header">
       <div className="header-inner">
         <Link className="brand" href="/" aria-label="Death Knights, página inicial" onClick={() => setOpen(false)}>
-          <Image className="brand-mark" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={64} height={64} />
-          <span className="brand-copy"><strong>Death Knights</strong><small>Swordplay • Belo Horizonte</small></span>
+          <Image className="brand-mark" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={48} height={48} />
+          <span className="brand-copy"><strong>Death Knights</strong><small>Swordplay em Belo Horizonte</small></span>
         </Link>
 
         <button className="menu-toggle" type="button" aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -151,12 +180,12 @@ export default function Header() {
         </button>
 
         <nav className={"main-nav " + (open ? "is-open" : "")} aria-label="Menu principal">
-          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Home</Link>
+          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Início</Link>
           <Link className={active("/sobre") ? "active" : ""} href="/sobre" onClick={() => setOpen(false)}>Sobre</Link>
-          <div className="nav-dropdown">
-            <button className={active("/atividades") ? "active" : ""} type="button">Atividades <ChevronDown size={15} /></button>
+          <div className={"nav-dropdown " + (activitiesOpen ? "is-open" : "")} ref={activitiesRef}>
+            <button className={active("/atividades") ? "active" : ""} type="button" aria-expanded={activitiesOpen} aria-haspopup="true" onClick={() => setActivitiesOpen((value) => !value)}>Atividades <ChevronDown size={15} /></button>
             <div className="dropdown-panel">
-              {activityLinks.map(([label, href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}
+              {activityLinks.map(([label, href]) => <Link key={href} className={pathname.startsWith(href) ? "active" : ""} href={href} onClick={() => { setOpen(false); setActivitiesOpen(false); }}>{label}</Link>)}
             </div>
           </div>
           <Link className={active("/midias") ? "active" : ""} href="/midias" onClick={() => setOpen(false)}>Mídias</Link>
@@ -164,49 +193,50 @@ export default function Header() {
         </nav>
 
         <div className="header-account" ref={accountRef}>
-          <button
-            className="header-account-trigger"
-            type="button"
-            aria-label={loading ? "Carregando conta" : account ? `Conta de ${displayName}` : "Acessar conta"}
-            aria-expanded={accountOpen}
-            aria-haspopup="true"
-            onClick={() => setAccountOpen((value) => !value)}
-          >
-            <span className="header-avatar">
-              {account?.avatarUrl ? <Image src={account.avatarUrl} alt="" width={35} height={35} unoptimized /> : account ? initials : <UserRound size={19} />}
-            </span>
-            <span className="header-account-label">{loading ? "Conta" : account ? displayName : "Acessar"}</span>
-            <ChevronDown className="header-account-chevron" size={15} />
-          </button>
+          {!account && !loading ? (
+            <Link className="button button-ghost header-login" href="/area-do-membro/login"><LogIn size={16} /> Entrar</Link>
+          ) : (
+            <>
+              <button
+                className="header-account-trigger"
+                type="button"
+                aria-label={loading ? "Carregando conta" : `Conta de ${displayName}`}
+                aria-expanded={accountOpen}
+                aria-haspopup="true"
+                disabled={loading}
+                onClick={() => setAccountOpen((value) => !value)}
+              >
+                <span className="header-avatar">
+                  {account?.avatarUrl ? <Image src={account.avatarUrl} alt="" width={36} height={36} unoptimized /> : account ? initials : <UserRound size={19} />}
+                </span>
+                <span className="header-account-label">{loading ? "Conta" : displayName}</span>
+                <ChevronDown className="header-account-chevron" size={15} />
+              </button>
 
-          <div className={`account-dropdown ${accountOpen ? "is-open" : ""}`} aria-hidden={!accountOpen} inert={!accountOpen}>
-            {account ? <>
-              <div className="account-summary">
-                <strong>{displayName}</strong>
-                <span>{account.email}</span>
-                {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} />{account.profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={account.profile.graduation_level} order={account.profile.graduation_order} />}</div>}
-                {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
-                {!account.profile && <small className="account-status">Perfil não localizado</small>}
-              </div>
-              {approved ? <div className="account-links">
-                <Link href="/membro" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Área do membro</Link>
-                <Link href="/membro/atividades" onClick={() => setAccountOpen(false)}>Atividades e presenças</Link>
-                <Link href="/membro/documentos" onClick={() => setAccountOpen(false)}>Documentos internos</Link>
-                <Link href="/membro/simulados" onClick={() => setAccountOpen(false)}>Avaliações e simulados</Link>
-                {(account.roles.length > 0 || account.canManageAssessments) && <>
-                  <span className="account-links-heading"><Shield size={14} /> Administração</span>
-                  <Link href="/admin" onClick={() => setAccountOpen(false)}>Painel administrativo</Link>
+              <div className={`account-dropdown ${accountOpen ? "is-open" : ""}`} aria-hidden={!accountOpen} inert={!accountOpen}>
+                {account && <>
+                  <div className="account-summary">
+                    <strong>{displayName}</strong>
+                    <span>{account.email}</span>
+                    {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} />{account.profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={account.profile.graduation_level} order={account.profile.graduation_order} />}</div>}
+                    {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
+                    {!account.profile && <small className="account-status">Cadastro incompleto</small>}
+                  </div>
+                  {approved ? <div className="account-links">
+                    <Link href="/membro" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Área do membro</Link>
+                    <Link href="/membro/atividades" onClick={() => setAccountOpen(false)}>Atividades e presenças</Link>
+                    <Link href="/membro/documentos" onClick={() => setAccountOpen(false)}>Documentos</Link>
+                    <Link href="/membro/simulados" onClick={() => setAccountOpen(false)}>Avaliações</Link>
+                    {(account.roles.length > 0 || account.canManageAssessments) && <>
+                      <span className="account-links-heading"><Shield size={14} /> Administração</span>
+                      <Link href="/admin" onClick={() => setAccountOpen(false)}>Painel administrativo</Link>
+                    </>}
+                  </div> : <div className="account-links"><Link href="/area-do-membro/login" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Status do cadastro</Link></div>}
+                  <button className="account-signout" type="button" onClick={signOut} disabled={signingOut}><LogOut size={16} /> {signingOut ? "Saindo…" : "Sair da conta"}</button>
                 </>}
-              </div> : <div className="account-links"><Link href="/area-do-membro/login" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Ver acesso do membro</Link></div>}
-              <button className="account-signout" type="button" onClick={signOut} disabled={signingOut}><LogOut size={16} /> {signingOut ? "Saindo…" : "Sair da conta"}</button>
-            </> : <>
-              <div className="account-summary"><strong>Bem-vindo ao DK</strong><span>Entre para acessar sua área ou crie uma conta por convite.</span></div>
-              <div className="account-links">
-                <Link href="/area-do-membro/login" onClick={() => setAccountOpen(false)}><LogIn size={16} /> Entrar</Link>
-                <Link href="/area-do-membro/cadastro" onClick={() => setAccountOpen(false)}><UserPlus size={16} /> Registrar-se</Link>
               </div>
-            </>}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </header>

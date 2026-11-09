@@ -39,10 +39,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="pt-BR">
       <body className={cinzel.variable + " " + inter.variable}>
         <InsigniaColorFilters />
+        <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
         <QueryProvider>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+          <Header />
+          <main id="conteudo" tabIndex={-1}>{children}</main>
+          <Footer />
         </QueryProvider>
       </body>
     </html>

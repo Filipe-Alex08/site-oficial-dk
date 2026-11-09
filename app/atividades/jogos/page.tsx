@@ -11,9 +11,8 @@ export default function GamesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Atividades"
         title="Jogos de Swordplay"
-        description="Conheça os objetivos, as regras, as dinâmicas e os equipamentos de cada jogo."
+        description="Objetivos, regras e equipamentos de cada jogo."
         variant="training"
       />
       <section className="section">

@@ -51,9 +51,8 @@ export default function EventsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Encontros e experiências"
         title="Eventos do DK"
-        description="Conheça os eventos organizados pelo grupo, nossa participação em encontros de Swordplay e as experiências que levamos a eventos e aniversários."
+        description="O que o grupo organiza, onde participamos e como levar o DK ao seu evento."
         variant="events"
       >
         <nav
@@ -73,10 +72,6 @@ export default function EventsPage() {
               <p className="eyebrow">Comunidade do DK</p>
               <h2>Eventos internos</h2>
             </div>
-            <p>
-              Atividades organizadas pelo DK para integrar, desenvolver e reunir
-              seus membros.
-            </p>
           </header>
 
           <div className="event-card-grid event-card-grid-internal">
@@ -103,10 +98,6 @@ export default function EventsPage() {
               <p className="eyebrow">Integração entre grupos</p>
               <h2>Eventos externos</h2>
             </div>
-            <p>
-              O DK também participa de encontros organizados por outros grupos e
-              comunidades.
-            </p>
           </header>
 
           <div className="event-card-grid event-card-grid-external">
@@ -163,26 +154,13 @@ export default function EventsPage() {
               <p className="eyebrow">Leve o DK para o seu evento</p>
               <h2>Eventos geek e aniversários</h2>
             </div>
-            <p>
-              Stands, apresentações e experiências adaptadas ao público, à
-              proposta e ao espaço disponível.
-            </p>
           </header>
 
           <div className="event-introduction">
             <p className="lead">
-              O DK possui diferentes formatos de stands e atividades voltadas à
-              divulgação e à prática do Swordplay.
-            </p>
-            <p>
-              Nossa equipe pode levar uma ou mais experiências para eventos de
-              cultura alternativa, RPG, temática medieval, cultura geek ou
-              esportiva.
-            </p>
-            <p>
-              As atividades podem ser adaptadas conforme o espaço, o público e a
-              proposta do evento, incluindo apresentações, demonstrações,
-              oficinas, duelos e experiências acompanhadas pela equipe do DK.
+              Levamos stands, demonstrações e oficinas de Swordplay para eventos
+              de RPG, cultura geek, temática medieval e aniversários, adaptados
+              ao espaço e ao público.
             </p>
           </div>
 
@@ -217,10 +195,7 @@ export default function EventsPage() {
             <Sparkles />
             <div>
               <h2>Quer levar o DK?</h2>
-              <p>
-                Informe pelo Instagram o tipo de evento, a data, o local e a
-                atividade desejada.
-              </p>
+              <p>Chame no Instagram com o tipo de evento, data e local.</p>
             </div>
             <a
               className="button button-primary"

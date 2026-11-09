@@ -6,12 +6,9 @@ import {
   CalendarDays,
   Camera,
   Castle,
-  Instagram,
-  MessageCircle,
   ShieldCheck,
   Swords,
   Users,
-  Youtube,
 } from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
 import { socialLinks } from "@/lib/content";
@@ -27,29 +24,25 @@ export default function HomePage() {
       ] }) }} />
       <section className="home-hero">
         <div className="container home-hero-layout">
-          <div className="home-hero-content">  
+          <div className="home-hero-content">
             <h1>
               Swordplay
               <span>com propósito</span>
             </h1>
-            <p>
-              Bem-vindo ao DK. Death Knights Swordplay. Aqui, técnica,
-              estratégia e comunidade se encontram em uma experiência esportiva
-              e recreativa.
-            </p>
+            <p>Técnica, estratégia e comunidade em uma experiência esportiva e recreativa, em Belo Horizonte.</p>
             <div className="hero-actions">
-              <Link
-                className="button button-primary"
-                href="/sobre#como-participar"
-              >
-                Saiba como participar <ArrowRight size={18} />
+              <Link className="button button-primary" href="/sobre#como-participar">
+                Como participar <ArrowRight size={18} />
+              </Link>
+              <Link className="button button-ghost" href="#calendario">
+                <CalendarDays size={18} /> Ver calendário
               </Link>
             </div>
           </div>
-        </div>       
+        </div>
       </section>
 
-      <section className="home-portals" aria-label="Principais áreas do site">
+      <section className="home-portals" aria-label="Áreas do site">
         <div className="container home-portal-grid">
           <Link
             className="home-portal home-portal-activities"
@@ -61,12 +54,9 @@ export default function HomePage() {
               </span>
               <h2>Atividades</h2>
             </div>
-            <p>
-              Treinos, práticas e jogos para desenvolver técnica, estratégia e
-              espírito de equipe.
-            </p>
+            <p>Treinos, práticas e jogos para evoluir em equipe.</p>
             <span className="home-portal-link">
-              Saiba mais <ArrowRight size={16} />
+              Ver mais <ArrowRight size={16} />
             </span>
           </Link>
 
@@ -77,12 +67,9 @@ export default function HomePage() {
               </span>
               <h2>Mídias</h2>
             </div>
-            <p>
-              Fotos, vídeos e publicações que registram a jornada do DK dentro e
-              fora dos treinos.
-            </p>
+            <p>Fotos, vídeos e publicações do DK.</p>
             <span className="home-portal-link">
-              Saiba mais <ArrowRight size={16} />
+              Ver mais <ArrowRight size={16} />
             </span>
           </Link>
 
@@ -93,12 +80,9 @@ export default function HomePage() {
               </span>
               <h2>Eventos</h2>
             </div>
-            <p>
-              Encontros internos, grandes batalhas, eventos geek e experiências
-              para aniversários.
-            </p>
+            <p>Encontros, batalhas, eventos geek e aniversários.</p>
             <span className="home-portal-link">
-              Saiba mais <ArrowRight size={16} />
+              Ver mais <ArrowRight size={16} />
             </span>
           </Link>
         </div>
@@ -108,52 +92,24 @@ export default function HomePage() {
         <div className="newcomer-photo" aria-hidden="true" />
         <div className="newcomer-content">
           <div className="newcomer-copy">
-            <p className="eyebrow">Para todos os níveis</p>
-            <h2>Iniciantes também são bem-vindos</h2>
+            <h2>Iniciantes são bem-vindos</h2>
             <p>
-              Não é preciso ter experiência prévia. Nossa equipe acompanha os
-              primeiros passos e disponibiliza equipamentos para uma
-              participação segura e divertida.
+              Não é preciso experiência. Nossa equipe acompanha seus primeiros passos e
+              empresta os equipamentos para você participar com segurança.
             </p>
             <small>
-              Atividades normalmente aos domingos • Parque Ecológico da Pampulha
+              <CalendarDays size={16} aria-hidden="true" /> Domingos • Parque Ecológico da Pampulha
             </small>
           </div>
 
-          <div className="newcomer-values" aria-label="Diferenciais do DK">
-            <div>
-              <Users />
-              <span>
-                Comunidade<strong>acolhedora</strong>
-              </span>
-            </div>
-            <div>
-              <BarChart3 />
-              <span>
-                Evolução<strong>constante</strong>
-              </span>
-            </div>
-            <div>
-              <ShieldCheck />
-              <span>
-                Ambiente<strong>seguro</strong>
-              </span>
-            </div>
-            <div>
-              <Castle />
-              <span>
-                Tradição<strong>viva</strong>
-              </span>
-            </div>
+          <div className="newcomer-values">
+            <div><Users /><span><strong>Comunidade</strong>acolhedora</span></div>
+            <div><BarChart3 /><span><strong>Evolução</strong>constante</span></div>
+            <div><ShieldCheck /><span><strong>Ambiente</strong>seguro</span></div>
+            <div><Castle /><span><strong>Tradição</strong>viva</span></div>
           </div>
         </div>
       </section>
-
-      <div className="home-edition-bar">
-        <div className="container home-edition-inner">
-          <p className="home-edition-brand">DK — Death Knights Swordplay</p>
-        </div>
-      </div>
 
       <CalendarSection />
     </>
