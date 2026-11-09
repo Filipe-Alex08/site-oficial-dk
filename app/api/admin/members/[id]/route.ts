@@ -8,12 +8,7 @@ import type { AdminRole } from "@/lib/types";
 const ALLOWED_STATUSES = ["pendente", "aprovado", "recusado", "suspenso", "desativado"] as const;
 type MemberStatus = (typeof ALLOWED_STATUSES)[number];
 
-function cleanGraduationOrder(value: unknown) {
-  if (typeof value !== "string") return null;
-  const cleaned = value.trim();
-  if (cleaned.length > 120 || /[\u0000-\u001f\u007f]/.test(cleaned)) return null;
-  return cleaned;
-}
+const GRADUATION_TRACK_FIELDS = ["graduation_cavalaria", "graduation_arquearia"] as const;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const caller = await requireAdmin(["principal", "membros"]);
@@ -36,7 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const [{ data: target }, { data: roleRows }] = await Promise.all([
     admin
       .from("profiles")
-      .select("id, full_name, nickname, status, rank, graduation_level, graduation_order, access_request_id, requested_rank, requested_graduation_level, requested_graduation_order")
+      .select("id, full_name, nickname, status, rank, graduation_cavalaria, graduation_arquearia, access_request_id, requested_rank, requested_graduation_cavalaria, requested_graduation_arquearia")
       .eq("id", id)
       .maybeSingle(),
     admin.from("user_admin_roles").select("role").eq("user_id", id),
@@ -75,14 +70,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(requestAction === "approve"
         ? {
             rank: target.requested_rank,
-            graduation_level: target.requested_graduation_level,
-            graduation_order: target.requested_graduation_order,
+            // Trilha sem valor pedido continua como está.
+            graduation_cavalaria: target.requested_graduation_cavalaria ?? target.graduation_cavalaria,
+            graduation_arquearia: target.requested_graduation_arquearia ?? target.graduation_arquearia,
           }
         : {}),
       access_request_id: null,
       requested_rank: null,
-      requested_graduation_level: null,
-      requested_graduation_order: null,
+      requested_graduation_cavalaria: null,
+      requested_graduation_arquearia: null,
     };
 
     const { data, error } = await admin
@@ -141,26 +137,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     update.rank = rank as string;
   }
 
-  const graduation = body.graduation_level;
-  if (graduation !== undefined) {
+  for (const field of GRADUATION_TRACK_FIELDS) {
+    const level = body[field];
+    if (level === undefined) continue;
     if (!caller.isPrincipal) {
       return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
     }
-    if (!graduationOptions.some((item) => item.value === graduation)) {
+    if (!graduationOptions.some((item) => item.value === level)) {
       return NextResponse.json({ error: "Graduação inválida." }, { status: 400 });
     }
-    update.graduation_level = graduation as string;
-  }
-
-  if (body.graduation_order !== undefined) {
-    if (!caller.isPrincipal) {
-      return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
-    }
-    const order = cleanGraduationOrder(body.graduation_order);
-    if (order === null) {
-      return NextResponse.json({ error: "Ordem de graduação inválida." }, { status: 400 });
-    }
-    update.graduation_order = order;
+    update[field] = level as string;
   }
 
   if (!Object.keys(update).length) {

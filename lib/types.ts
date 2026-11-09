@@ -40,9 +40,9 @@ export type AttendanceEntry = {
   user_id: string;
   nickname: string;
   rank: DkRank;
-  /** Só vem depois da migração 014; antes dela fica ausente. */
-  graduation_level?: GraduationLevel | null;
-  graduation_order?: string | null;
+  /** Só vêm depois da migração 015; antes dela ficam ausentes. */
+  graduation_cavalaria?: GraduationLevel | null;
+  graduation_arquearia?: GraduationLevel | null;
   response: AttendanceResponse;
   guest_count: number;
   note?: string | null;
@@ -224,8 +224,16 @@ export type MemberProfile = {
   avatar_path?: string | null;
   member_kind: MemberKind;
   rank: DkRank;
+  /** Derivada: maior nível entre as trilhas (mantida pelo banco). */
   graduation_level: GraduationLevel;
+  /** Derivada das trilhas (mantida pelo banco). */
   graduation_order?: string | null;
+  graduation_cavalaria?: GraduationLevel;
+  graduation_arquearia?: GraduationLevel;
+  requested_graduation_cavalaria?: GraduationLevel | null;
+  requested_graduation_arquearia?: GraduationLevel | null;
+  /** Tinha graduação, mas a ordem não dizia a trilha: o ADM Principal define. */
+  graduation_review_needed?: boolean;
   access_request_id?: string | null;
   requested_rank?: DkRank | null;
   requested_graduation_level?: GraduationLevel | null;

@@ -46,6 +46,26 @@ export function GraduationInsignia({ level, order, track, variant }: {
   return <Insignia src={getGraduationIcon(level, resolvedTrack)} label={label} variant={variant} kind="graduation" artClass={resolvedTrack === "arquearia" ? `archery-${level}` : ""} />;
 }
 
+/**
+ * Uma insígnia por trilha com graduação (Cavalaria e/ou Arquearia). Sem as
+ * colunas de trilha (banco sem a migração 015), cai na graduação única antiga.
+ */
+export function GraduationInsignias({ profile, variant }: {
+  profile: { graduation_level?: GraduationLevel | null; graduation_order?: string | null; graduation_cavalaria?: GraduationLevel | null; graduation_arquearia?: GraduationLevel | null };
+  variant?: Variant;
+}) {
+  const hasTracks = profile.graduation_cavalaria != null || profile.graduation_arquearia != null;
+  if (!hasTracks) {
+    const level = profile.graduation_level;
+    return level && level !== "sem_graduacao" ? <GraduationInsignia level={level} order={profile.graduation_order} variant={variant} /> : null;
+  }
+  const { graduation_cavalaria: cavalaria, graduation_arquearia: arquearia } = profile;
+  return <>
+    {cavalaria && cavalaria !== "sem_graduacao" && <GraduationInsignia level={cavalaria} track="cavalaria" variant={variant} />}
+    {arquearia && arquearia !== "sem_graduacao" && <GraduationInsignia level={arquearia} track="arquearia" variant={variant} />}
+  </>;
+}
+
 export function BuildInsignia({ build, variant, caption }: { build?: string | null; variant?: Variant; caption?: string }) {
   if (!build) return <>Não informada</>;
   const src = getBuildIcon(build);

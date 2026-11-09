@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
-import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
+import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -31,11 +31,10 @@ function responseLine(entry: AttendanceEntry, index: number) {
 }
 
 function AttendanceInsignias({ entry }: { entry: AttendanceEntry }) {
-  const hasGraduation = entry.graduation_level && entry.graduation_level !== "sem_graduacao";
   return (
     <span className="attendance-insignias">
       <RankInsignia rank={entry.rank} variant="icon" />
-      {hasGraduation && <GraduationInsignia level={entry.graduation_level!} order={entry.graduation_order} variant="icon" />}
+      <GraduationInsignias profile={entry} variant="icon" />
     </span>
   );
 }

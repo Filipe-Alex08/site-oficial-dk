@@ -25,3 +25,28 @@ test("keeps the default theme without an eligible approved graduation", () => {
     ...["pendente", "suspenso", "recusado", "desativado"].map(status => ({ ...profile, status })),
   ]) assert.equal(getMemberTheme(candidate), "padrao");
 });
+
+test("follows the highest graduation across Cavalaria and Arquearia", () => {
+  const base = { status: "aprovado", graduation_level: "sem_graduacao" };
+  const cases = [
+    [{ graduation_cavalaria: "bronze", graduation_arquearia: "prata" }, "prata"],
+    [{ graduation_cavalaria: "ouro", graduation_arquearia: "bronze" }, "ouro"],
+    [{ graduation_cavalaria: "prata", graduation_arquearia: "prata" }, "prata"],
+    [{ graduation_cavalaria: "sem_graduacao", graduation_arquearia: "bronze" }, "bronze"],
+    [{ graduation_cavalaria: "ouro", graduation_arquearia: "sem_graduacao" }, "ouro"],
+    [{ graduation_cavalaria: "sem_graduacao", graduation_arquearia: "sem_graduacao" }, "padrao"],
+  ];
+  for (const [tracks, expected] of cases) assert.equal(getMemberTheme({ ...base, ...tracks }), expected, JSON.stringify(tracks));
+});
+
+test("tracks win over the legacy level, which only applies when tracks are missing", () => {
+  // Quem estava "a revisar" tem o nível antigo preenchido e as trilhas zeradas.
+  assert.equal(getMemberTheme({ status: "aprovado", graduation_level: "ouro", graduation_cavalaria: "sem_graduacao", graduation_arquearia: "sem_graduacao" }), "padrao");
+  assert.equal(getMemberTheme({ status: "aprovado", graduation_level: "ouro" }), "ouro");
+});
+
+test("never themes a member who is not approved, whatever the tracks say", () => {
+  for (const status of ["pendente", "suspenso", "recusado", "desativado"]) {
+    assert.equal(getMemberTheme({ status, graduation_cavalaria: "ouro", graduation_arquearia: "ouro" }), "padrao");
+  }
+});

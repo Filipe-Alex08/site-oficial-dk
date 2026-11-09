@@ -1,10 +1,30 @@
 import type { AdminRole, DkRank, DocumentAudience, GraduationLevel, MemberKind, MemberProfile } from "@/lib/types";
 
-export function getMemberTheme(profile: Pick<MemberProfile, "status" | "graduation_level" | "graduation_order"> | null | undefined): "padrao" | "bronze" | "prata" | "ouro" {
+type GraduationFields = Partial<Pick<MemberProfile, "graduation_level" | "graduation_cavalaria" | "graduation_arquearia">>;
+
+/**
+ * Maior graduação entre Cavalaria e Arquearia. Se o perfil ainda não traz as
+ * trilhas (banco sem a migração 015), usa a graduação única antiga.
+ */
+export function highestGraduation(profile: GraduationFields | null | undefined): GraduationLevel {
+  if (!profile) return "sem_graduacao";
+  const hasTracks = profile.graduation_cavalaria != null || profile.graduation_arquearia != null;
+  const levels = hasTracks ? [profile.graduation_cavalaria, profile.graduation_arquearia] : [profile.graduation_level];
+  const order: GraduationLevel[] = ["sem_graduacao", "bronze", "prata", "ouro"];
+  return levels.reduce<GraduationLevel>((best, level) => (level && order.indexOf(level) > order.indexOf(best) ? level : best), "sem_graduacao");
+}
+
+/** O tema da área de membro segue a graduação de maior nível. */
+export function getMemberTheme(profile: (GraduationFields & Pick<MemberProfile, "status">) | null | undefined): "padrao" | "bronze" | "prata" | "ouro" {
   if (profile?.status !== "aprovado") return "padrao";
-  const level = profile.graduation_level;
+  const level = highestGraduation(profile);
   return level === "bronze" || level === "prata" || level === "ouro" ? level : "padrao";
 }
+
+export const graduationTracks: Array<{ value: "cavalaria" | "arquearia"; label: string; field: "graduation_cavalaria" | "graduation_arquearia" }> = [
+  { value: "cavalaria", label: "Cavalaria", field: "graduation_cavalaria" },
+  { value: "arquearia", label: "Arquearia", field: "graduation_arquearia" },
+];
 
 export const memberKindOptions: Array<{ value: MemberKind; label: string }> = [
   { value: "membro", label: "Membro" },
