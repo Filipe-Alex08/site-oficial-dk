@@ -127,23 +127,21 @@
 }
 .join-steps p { font-size: 0.95rem; }
 .games-list {
-  max-width: 1180px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-  align-items: start;
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  align-items: stretch;
+  gap: 16px;
 }
-.game-card { border: 1px solid var(--border); background: var(--surface-1); border-radius: var(--r-lg); overflow: hidden; transition: border-color .2s; }
+.game-card { display: flex; border: 1px solid var(--border); background: var(--surface-1); border-radius: var(--r-lg); overflow: hidden; transition: border-color .2s; }
 .game-card:hover { border-color: var(--border-strong); }
 .game-summary {
   width: 100%;
-  min-height: 164px;
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 14px;
-  align-items: center;
   text-align: left;
-  padding: 20px;
+  padding: 22px;
   background: none;
   border: 0;
   cursor: pointer;
@@ -179,7 +177,7 @@
   margin-top: 4px;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   overflow: hidden;
 }
 .game-link {
@@ -190,9 +188,10 @@
   font-size: 0.88rem;
   font-weight: 650;
   white-space: nowrap;
+  margin-top: auto;
 }
 .game-summary:hover .game-link {
-  color: #aaaaaa;
+  color: var(--text);
 }
 .game-modal-backdrop {
   position: fixed;
@@ -703,13 +702,8 @@
     padding: 28px 20px;
   }
   .game-summary {
-    grid-template-columns: 46px minmax(0, 1fr);
-    min-height: 150px;
-    padding: 17px;
+    padding: 18px;
     gap: 12px;
-  }
-  .game-link {
-    grid-column: 2;
   }
   .game-number {
     width: 46px;

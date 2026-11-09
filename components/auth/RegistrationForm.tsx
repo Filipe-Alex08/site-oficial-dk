@@ -44,7 +44,7 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
       <div className="form-card registration-success">
         <CheckCircle2 size={46} />
         <h2>Cadastro enviado</h2>
-        <p>As informações foram registradas. Agora é necessário aguardar a aprovação do ADM de Gerenciamento de Membros.</p>
+        <p>Assim que um administrador aprovar, você poderá entrar e completar seu perfil.</p>
       </div>
     );
   }
@@ -72,10 +72,9 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
           <label htmlFor="nickname">Apelido</label>
           <input id="nickname" value={form.nickname} onChange={(e) => update("nickname", e.target.value)} required />
         </div>
-        <p className="form-help field-full">Após a aprovação e o login, complete seu perfil na área do membro.</p>
       </div>
       <button className="button button-primary" type="submit" disabled={loading}>
-        <UserPlus size={18} /> {loading ? "Enviando..." : "Enviar cadastro"}
+        <UserPlus size={18} /> {loading ? "Enviando…" : "Enviar cadastro"}
       </button>
       {error && <p className="form-message error">{error}</p>}
     </form>

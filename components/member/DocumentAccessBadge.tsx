@@ -23,7 +23,6 @@ export default function DocumentAccessBadge({ rules, logic }: { rules: DocumentA
     {open && <div className="document-access-popover" role="status">
       <strong>{items.length ? "Quem pode acessar" : "Acesso liberado"}</strong>
       {items.length ? <>
-        <p>Os conectores mostram como os requisitos se combinam. E é avaliado antes de OU.</p>
         <ul>{items.map((rule, index) => {
           const join = rule.join ?? logic;
           return <Fragment key={`${rule.kind}-${index}`}>

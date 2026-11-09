@@ -41,7 +41,7 @@ export default function AttendanceManager() {
     onMutate: () => setNotice(""),
     onSuccess: async (_, correction) => {
       setEditing(null);
-      setNotice(correction.response === null ? "Resposta removida. O membro ficou sem resposta nesta atividade." : "Presença corrigida.");
+      setNotice(correction.response === null ? "Resposta removida." : "Presença corrigida.");
       await Promise.all([
         client.invalidateQueries({ queryKey: ["admin-attendance", correction.memberId] }),
         client.invalidateQueries({ queryKey: ["admin-attendance-members"] }),
@@ -62,16 +62,15 @@ export default function AttendanceManager() {
   const negative = activities.filter((activity) => entries.get(activity.id)?.response === "nao_vai").length;
 
   return <section>
-    <div className="admin-title"><div><h2>Presenças</h2><p>Consulte o histórico de um membro e corrija suas respostas, inclusive em listas encerradas.</p></div></div>
+    <div className="admin-title"><div><h2>Presenças</h2></div></div>
     {!memberId ? <div className="admin-form">
       <div className="field"><label htmlFor="attendance-search">Buscar membro</label><input id="attendance-search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome ou apelido" /></div>
       {membersQuery.isPending && <p role="status">Carregando membros…</p>}
       {membersQuery.isError && <p role="alert">{membersQuery.error.message} <button className="text-button" onClick={() => void membersQuery.refetch()}>Tentar novamente</button></p>}
       {!membersQuery.isPending && !membersQuery.isError && !members.length && <p>Nenhum membro encontrado.</p>}
       {members.length > 0 && <>
-        <p className="attendance-admin-help">Presenças e ausências correspondem às respostas “Vou” e “Não vou” em todas as atividades, inclusive futuras e canceladas. Convidados não entram nos totais.</p>
-        <div className="table-wrap attendance-member-list"><table><thead><tr><th>Membro</th><th>Situação</th><th>Presenças</th><th>Ausências</th><th>Ação</th></tr></thead><tbody>
-          {pageMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><small>{member.full_name}</small></td><td><span className={`badge ${member.status}`}>{member.status}</span></td><td>{member.presences}</td><td>{member.absences}</td><td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença de ${member.nickname}`} onClick={() => { setMemberId(member.id); setEditing(null); setNotice(""); }}><Edit3 size={16} aria-hidden="true" /></button></td></tr>)}
+                <div className="table-wrap attendance-member-list"><table><thead><tr><th>Membro</th><th>Situação</th><th>Presenças</th><th>Ausências</th><th>Ação</th></tr></thead><tbody>
+          {pageMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><small>{member.full_name}</small></td><td><span className={`badge ${member.status}`}>{member.status === "aprovado" ? "Aprovado" : member.status === "pendente" ? "Pendente" : member.status === "suspenso" ? "Suspenso" : member.status}</span></td><td>{member.presences}</td><td>{member.absences}</td><td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença de ${member.nickname}`} onClick={() => { setMemberId(member.id); setEditing(null); setNotice(""); }}><Edit3 size={16} aria-hidden="true" /></button></td></tr>)}
         </tbody></table></div>
         <nav className="attendance-pagination" aria-label="Páginas de membros">
           <span role="status">{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, members.length)} de {members.length} membros · Página {currentPage} de {pageCount}</span>
@@ -84,17 +83,17 @@ export default function AttendanceManager() {
     {memberId && history.isError && <p role="alert">{history.error.message} <button className="text-button" onClick={() => void history.refetch()}>Tentar novamente</button></p>}
     {memberId && history.data && <>
       <div className="metric-grid attendance-metrics">
-        <article className="metric-card"><strong>{positive}</strong><span>Presenças confirmadas · Vou</span></article>
-        <article className="metric-card"><strong>{negative}</strong><span>Ausências informadas · Não vou</span></article>
+        <article className="metric-card"><strong>{positive}</strong><span>Vou</span></article>
+        <article className="metric-card"><strong>{negative}</strong><span>Não vou</span></article>
         <article className="metric-card"><strong>{activities.length - positive - negative}</strong><span>Atividades sem resposta</span></article>
       </div>
-      <p className="attendance-admin-help">Totais de todas as atividades cadastradas, passadas e futuras, incluindo canceladas. As respostas indicam intenção de participar, não comprovam comparecimento. Convidados não entram nos totais.</p>
+      <p className="attendance-admin-help">As respostas indicam intenção de participar e não comprovam comparecimento. Convidados não entram nos totais.</p>
       <button className="button button-ghost" disabled={history.isFetching || mutation.isPending} onClick={() => void history.refetch()}><RefreshCw size={17} /> {history.isFetching ? "Atualizando…" : "Atualizar histórico"}</button>
       {editing && <form ref={editorRef} className="admin-form attendance-correction" onSubmit={(event) => { event.preventDefault(); if (!mutation.isPending) mutation.mutate(editing); }}>
         <h3>Corrigir: {activities.find((activity) => activity.id === editing.activityId)?.title}</h3>
         <fieldset disabled={mutation.isPending}>
           <div className="form-grid">
-            <div className="field"><label htmlFor="attendance-response">Resposta</label><Select id="attendance-response" value={editing.response ?? "none"} options={[{ value: "vai", label: "Vou" }, { value: "nao_vai", label: "Não vou" }, { value: "none", label: "Sem resposta (remover registro)" }]} onChange={(value) => setEditing({ ...editing, response: value === "none" ? null : value as AttendanceResponse })} /></div>
+            <div className="field"><label htmlFor="attendance-response">Resposta</label><Select id="attendance-response" value={editing.response ?? "none"} options={[{ value: "vai", label: "Vou" }, { value: "nao_vai", label: "Não vou" }, { value: "none", label: "Sem resposta" }]} onChange={(value) => setEditing({ ...editing, response: value === "none" ? null : value as AttendanceResponse })} /></div>
             <div className="field"><label htmlFor="attendance-guests">Convidados</label><input id="attendance-guests" type="number" min={0} max={30} required disabled={editing.response !== "vai"} value={editing.guest_count} onChange={(event) => setEditing({ ...editing, guest_count: Number(event.target.value) })} /></div>
             <div className="field field-full"><label htmlFor="attendance-note">Observação pública</label><input id="attendance-note" maxLength={180} disabled={editing.response === null} value={editing.note} onChange={(event) => setEditing({ ...editing, note: event.target.value })} /></div>
           </div>
@@ -105,7 +104,7 @@ export default function AttendanceManager() {
         {activities.map((activity) => { const entry = entries.get(activity.id); return <tr key={activity.id}>
           <td><strong>{activity.title}</strong>{entry?.note && <small>{entry.note}</small>}</td>
           <td>{new Date(activity.starts_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
-          <td>{activity.status.replace("_", " ")}<small>Lista {activity.attendance_open ? "aberta" : "fechada"}</small></td>
+          <td>{activity.status === "a_definir" ? "A definir" : activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}<small>Lista {activity.attendance_open ? "aberta" : "fechada"}</small></td>
           <td>{entry?.response === "vai" ? "Vou" : entry?.response === "nao_vai" ? "Não vou" : "Sem resposta"}</td><td>{entry?.guest_count ?? 0}</td>
           <td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença em ${activity.title}`} disabled={mutation.isPending} onClick={() => { setNotice(""); setEditing({ memberId, activityId: activity.id, response: entry?.response ?? "vai", guest_count: entry?.guest_count ?? 0, note: entry?.note ?? "" }); }}><Edit3 size={16} aria-hidden="true" /></button></td>
         </tr>; })}

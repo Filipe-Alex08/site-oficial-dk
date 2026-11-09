@@ -214,7 +214,7 @@ export default function AssessmentAdmin() {
       await requestJson(url, { method: editingQuestion ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(questionForm) });
       setQuestionForm(emptyQuestion);
       setEditingQuestion(null);
-      showNotice(editingQuestion ? "Questão atualizada. As avaliações já publicadas preservam a versão anterior." : "Questão cadastrada no banco.");
+      showNotice(editingQuestion ? "Questão atualizada." : "Questão cadastrada.");
       await assessmentQuery.refetch();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível salvar a questão.");
@@ -367,7 +367,7 @@ export default function AssessmentAdmin() {
         ? "Indicação cancelada."
         : action === "close"
           ? "Avaliação encerrada pelo responsável e resultado calculado."
-          : "Tentativa liberada excepcionalmente e registrada na auditoria.");
+          : "Tentativa liberada.");
       await assessmentQuery.refetch();
     } catch (reasonCaught) {
       setError(reasonCaught instanceof Error ? reasonCaught.message : "Não foi possível alterar a indicação.");
@@ -413,17 +413,17 @@ export default function AssessmentAdmin() {
     }
   }
 
-  if (loading && !data) return <div className="assessment-loading"><LoaderCircle className="spin" /><p>Carregando o módulo de avaliações…</p></div>;
-  if (!data) return <div className="empty-state"><FileQuestion /><h2>Módulo indisponível</h2><p>{error || (assessmentQuery.error instanceof Error ? assessmentQuery.error.message : "Aplique as migrações 009 e 010 no Supabase para ativar esta área.")}</p><button className="button button-primary" type="button" onClick={() => void assessmentQuery.refetch()}><RefreshCw /> Tentar novamente</button></div>;
+  if (loading && !data) return <div className="assessment-loading"><LoaderCircle className="spin" /><p>Carregando avaliações…</p></div>;
+  if (!data) return <div className="empty-state"><FileQuestion /><h2>Avaliações indisponíveis</h2><p>Tente novamente em alguns instantes.</p><button className="button button-primary" type="button" onClick={() => void assessmentQuery.refetch()}><RefreshCw /> Tentar novamente</button></div>;
 
   const publishedAssessments = data.assessments.filter((assessment) => assessment.status === "publicado");
   const completedAssignments = data.assignments.filter((assignment) => assignment.status === "corrigido");
   const seniorOfficers = data.members.filter((member) => delegableAssessmentRanks.includes(member.rank));
 
   return <div className="assessment-admin-module">
-    {notice && <div className="admin-notice">{notice}</div>}
+    <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
     <div className="assessment-module-heading">
-      <div><p className="eyebrow">Formação e progressão</p><h2>Avaliações e simulados</h2><p>Banco de questões, indicações individuais, correções e histórico.</p></div>
+      <div><h2>Avaliações</h2></div>
       <button className="button button-ghost" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /> Atualizar</button>
     </div>
     {error && <div className="assessment-admin-error"><X /><span>{error}</span><button type="button" onClick={() => setError("")}>Fechar</button></div>}
@@ -445,19 +445,12 @@ export default function AssessmentAdmin() {
         <Metric icon={<UserCheck />} value={data.assignments.filter((assignment) => assignment.status === "em_andamento" || assignment.status === "convidado").length} label="Indicações abertas" />
         <Metric icon={<Edit3 />} value={data.reviews.length} label="Respostas a corrigir" />
       </div>
-      <div className="assessment-guidance-card"><ShieldCheck /><div><h3>Permissão independente</h3><p>Você acessa este módulo como {rankLabels[data.actor.rank]}. Ser ADM Principal não concede automaticamente a criação de avaliações; esta regra segue a hierarquia definida para o DK.</p></div></div>
-      <div className="assessment-workflow-list">
-        <span><b>1</b> Cadastre as questões com a fonte do manual.</span>
-        <span><b>2</b> Escolha as categorias e use seleção manual ou sorteio individual.</span>
-        <span><b>3</b> Selecione os indicados e compartilhe os links individuais.</span>
-        <span><b>4</b> Acompanhe a aplicação, encerre quando necessário e consulte as notas.</span>
-      </div>
-    </section>}
+      </section>}
 
     {tab === "questoes" && <section className="assessment-admin-panel">
       <form className="assessment-builder-form" onSubmit={saveQuestion}>
-        <header><div><p className="eyebrow">Banco de questões</p><h3>{editingQuestion ? "Editar questão" : "Cadastrar questão"}</h3></div>{editingQuestion && <button className="button button-ghost" type="button" onClick={() => { setEditingQuestion(null); setQuestionForm(emptyQuestion); }}><X /> Cancelar edição</button>}</header>
-        <div className="field full"><label htmlFor="question-prompt">Enunciado</label><textarea id="question-prompt" rows={5} value={questionForm.prompt} onChange={(event) => setQuestionForm({ ...questionForm, prompt: event.target.value })} placeholder="Digite a pergunta exatamente como o indicado deverá recebê-la." required /></div>
+        <header><div><h3>{editingQuestion ? "Editar questão" : "Cadastrar questão"}</h3></div>{editingQuestion && <button className="button button-ghost" type="button" onClick={() => { setEditingQuestion(null); setQuestionForm(emptyQuestion); }}><X /> Cancelar edição</button>}</header>
+        <div className="field full"><label htmlFor="question-prompt">Enunciado</label><textarea id="question-prompt" rows={5} value={questionForm.prompt} onChange={(event) => setQuestionForm({ ...questionForm, prompt: event.target.value })} placeholder="Texto da pergunta" required /></div>
         <div className="assessment-form-grid">
           <label className="field"><span>Tipo</span><select value={questionForm.question_type} onChange={(event) => setQuestionForm({ ...questionForm, question_type: event.target.value as AssessmentQuestionType })}>{assessmentQuestionTypeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
           <label className="field"><span>Manual de origem</span><input value={questionForm.manual_title} onChange={(event) => setQuestionForm({ ...questionForm, manual_title: event.target.value })} placeholder="Ex.: Manual DK — Nível 3" required /></label>
@@ -471,7 +464,7 @@ export default function AssessmentAdmin() {
           {questionForm.scope_type === "patente" ? rankGroups.map((group) => <div className="assessment-checkbox-group" key={group.category}><strong>{group.category}</strong><div>{group.ranks.map((rank) => <label key={rank.value}><input type="checkbox" checked={questionForm.rank_scopes.includes(rank.value)} onChange={() => setQuestionForm({ ...questionForm, rank_scopes: toggleValue(questionForm.rank_scopes, rank.value) })} /> {rank.label}</label>)}</div></div>) : <div className="assessment-checkbox-group"><div>{graduationOptions.filter((item) => item.value !== "sem_graduacao").map((level) => <label key={level.value}><input type="checkbox" checked={questionForm.graduation_scopes.includes(level.value)} onChange={() => setQuestionForm({ ...questionForm, graduation_scopes: toggleValue(questionForm.graduation_scopes, level.value) })} /> {level.label}</label>)}</div></div>}
         </fieldset>
         {questionForm.question_type === "objetiva" ? <fieldset className="assessment-options-editor"><legend>Alternativas — marque uma resposta correta</legend>{questionForm.options.map((option, index) => <label key={index} className={questionForm.correct_option === index ? "correct" : ""}><input type="radio" name="correct-option" checked={questionForm.correct_option === index} onChange={() => setQuestionForm({ ...questionForm, correct_option: index })} /><span>{String.fromCharCode(65 + index)}</span><input value={option} onChange={(event) => setQuestionForm({ ...questionForm, options: questionForm.options.map((current, optionIndex) => optionIndex === index ? event.target.value : current) })} placeholder={`Alternativa ${String.fromCharCode(65 + index)}`} required /></label>)}</fieldset> : <label className="field full"><span>Gabarito esperado</span><textarea rows={5} value={questionForm.expected_answer} onChange={(event) => setQuestionForm({ ...questionForm, expected_answer: event.target.value })} placeholder="Descreva os elementos que precisam aparecer na resposta." required /></label>}
-        <label className="field full"><span>Explicação do gabarito (opcional)</span><textarea rows={3} value={questionForm.explanation} onChange={(event) => setQuestionForm({ ...questionForm, explanation: event.target.value })} placeholder="Justificativa interna para os responsáveis pela correção." /></label>
+        <label className="field full"><span>Explicação do gabarito (opcional)</span><textarea rows={3} value={questionForm.explanation} onChange={(event) => setQuestionForm({ ...questionForm, explanation: event.target.value })} placeholder="Justificativa para a correção" /></label>
         {editingQuestion && <label className="check-field"><input type="checkbox" checked={questionForm.active} onChange={(event) => setQuestionForm({ ...questionForm, active: event.target.checked })} /> Questão ativa e disponível para novas avaliações</label>}
         <button className="button button-primary" type="submit" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : editingQuestion ? <Check /> : <Plus />} {editingQuestion ? "Salvar alterações" : "Cadastrar questão"}</button>
       </form>
@@ -482,7 +475,7 @@ export default function AssessmentAdmin() {
 
     {tab === "avaliacoes" && <section className="assessment-admin-panel">
       <form className="assessment-builder-form" onSubmit={createAssessment}>
-        <header><div><p className="eyebrow">Montagem</p><h3>Criar avaliação</h3><p>O objetivo e os conteúdos cobrados são independentes.</p></div></header>
+        <header><div><h3>Criar avaliação</h3></div></header>
         <div className="assessment-form-grid">
           <label className="field full"><span>Título</span><input value={assessmentForm.title} onChange={(event) => setAssessmentForm({ ...assessmentForm, title: event.target.value })} placeholder="Ex.: Avaliação de indicação para 1º Sargento" required /></label>
           <label className="field full"><span>Descrição</span><textarea rows={3} value={assessmentForm.description} onChange={(event) => setAssessmentForm({ ...assessmentForm, description: event.target.value })} placeholder="Orientações que aparecerão antes do início." /></label>
@@ -499,16 +492,16 @@ export default function AssessmentAdmin() {
         {assessmentForm.selection_mode === "manual" ? <>
           <div className="assessment-selection-heading"><div><h4>Seleção manual das questões</h4><p>{eligibleQuestions.length} compatíveis · {selectedQuestionIds.size} de {assessmentForm.question_count} selecionadas</p></div><button className="button button-ghost" type="button" onClick={selectAutomatically}><Sparkles /> Preencher automaticamente</button></div>
           <div className="assessment-question-selector">{eligibleQuestions.length ? eligibleQuestions.map((question) => <label className={selectedQuestionIds.has(question.id) ? "selected" : ""} key={question.id}><input type="checkbox" checked={selectedQuestionIds.has(question.id)} disabled={!selectedQuestionIds.has(question.id) && selectedQuestionIds.size >= assessmentForm.question_count} onChange={() => setSelectedQuestionIds((current) => { const next = new Set(current); if (next.has(question.id)) next.delete(question.id); else next.add(question.id); return next; })} /><span><strong>{question.prompt}</strong><small>{question.manual_title} · {question.question_type === "objetiva" ? "Objetiva" : "Aberta"}</small></span></label>) : <div className="assessment-inline-empty"><FileQuestion /><p>Nenhuma questão ativa corresponde aos conteúdos e à área escolhidos.</p></div>}</div>
-        </> : <div className={`assessment-random-summary ${eligibleQuestions.length < assessmentForm.question_count ? "insufficient" : ""}`}><Shuffle /><div><strong>{eligibleQuestions.length} questões objetivas no banco filtrado</strong><p>Cada indicado receberá {assessmentForm.question_count} questões sorteadas ao gerar o link. O conjunto fica fixo para aquela indicação e uma nova indicação gera um novo sorteio.</p>{eligibleQuestions.length < assessmentForm.question_count && <small>Cadastre mais {assessmentForm.question_count - eligibleQuestions.length} questão(ões) compatível(is) antes de publicar.</small>}</div></div>}
+        </> : <div className={`assessment-random-summary ${eligibleQuestions.length < assessmentForm.question_count ? "insufficient" : ""}`}><Shuffle /><div><strong>{eligibleQuestions.length} questões objetivas no banco filtrado</strong><p>Cada indicado recebe {assessmentForm.question_count} questões sorteadas.</p>{eligibleQuestions.length < assessmentForm.question_count && <small>Cadastre mais {assessmentForm.question_count - eligibleQuestions.length} questão(ões) compatível(is) antes de publicar.</small>}</div></div>}
         <button className="button button-primary" type="submit" disabled={busy || (assessmentForm.selection_mode === "manual" ? selectedQuestionIds.size !== assessmentForm.question_count : eligibleQuestions.length < assessmentForm.question_count)}>{busy ? <LoaderCircle className="spin" /> : <BookOpenCheck />} Publicar avaliação</button>
       </form>
-      <div className="assessment-list-heading"><div><h3>Avaliações publicadas</h3><p>As questões ficam congeladas na versão utilizada na publicação.</p></div></div>
-      <div className="assessment-template-grid">{publishedAssessments.map((assessment) => <article key={assessment.id}><header>{assessment.selection_mode === "sorteio_individual" ? <Shuffle /> : <BookOpenCheck />}<span>{assessment.question_count} questões</span></header><h4>{assessment.title}</h4><p>{assessment.description || "Sem descrição adicional."}</p><dl><div><dt>Objetivo</dt><dd>{assessment.target_type === "patente" ? rankLabels[assessment.target_rank!] : graduationLabels[assessment.target_graduation!]}</dd></div><div><dt>Conteúdos</dt><dd>{assessment.content_type === "patente" ? assessment.content_rank_scopes.map((rank) => rankLabels[rank]).join(", ") : assessment.content_graduation_scopes.map((level) => graduationLabels[level]).join(", ")}</dd></div><div><dt>Montagem</dt><dd>{assessment.selection_mode === "sorteio_individual" ? "Sorteio individual" : "Questões fixas"}</dd></div><div><dt>Área</dt><dd>{assessmentTrackOptions.find((item) => item.value === assessment.track)?.label}</dd></div><div><dt>Aprovação</dt><dd>{Number(assessment.passing_score)}%</dd></div><div><dt>Tempo</dt><dd>{assessment.duration_minutes ? `${assessment.duration_minutes} min` : "Livre"}</dd></div></dl></article>)}</div>
+      <div className="assessment-list-heading"><div><h3>Avaliações publicadas</h3></div></div>
+      <div className="assessment-template-grid">{publishedAssessments.map((assessment) => <article key={assessment.id}><header>{assessment.selection_mode === "sorteio_individual" ? <Shuffle /> : <BookOpenCheck />}<span>{assessment.question_count} questões</span></header><h4>{assessment.title}</h4>{assessment.description && <p>{assessment.description}</p>}<dl><div><dt>Objetivo</dt><dd>{assessment.target_type === "patente" ? rankLabels[assessment.target_rank!] : graduationLabels[assessment.target_graduation!]}</dd></div><div><dt>Conteúdos</dt><dd>{assessment.content_type === "patente" ? assessment.content_rank_scopes.map((rank) => rankLabels[rank]).join(", ") : assessment.content_graduation_scopes.map((level) => graduationLabels[level]).join(", ")}</dd></div><div><dt>Montagem</dt><dd>{assessment.selection_mode === "sorteio_individual" ? "Sorteio individual" : "Questões fixas"}</dd></div><div><dt>Área</dt><dd>{assessmentTrackOptions.find((item) => item.value === assessment.track)?.label}</dd></div><div><dt>Aprovação</dt><dd>{Number(assessment.passing_score)}%</dd></div><div><dt>Tempo</dt><dd>{assessment.duration_minutes ? `${assessment.duration_minutes} min` : "Livre"}</dd></div></dl></article>)}</div>
     </section>}
 
     {tab === "indicacoes" && <section className="assessment-admin-panel">
       <form className="assessment-builder-form" onSubmit={createAssignments}>
-        <header><div><p className="eyebrow">Convocação individual</p><h3>Criar nova indicação</h3><p>Cada integrante receberá um link exclusivo e uma única tentativa.</p></div></header>
+        <header><div><h3>Criar nova indicação</h3></div></header>
         <div className="assessment-form-grid">
           <label className="field"><span>Avaliação</span><select value={effectiveAssignmentAssessmentId} onChange={(event) => setAssignmentAssessmentId(event.target.value)} required><option value="">Selecione</option>{publishedAssessments.map((assessment) => <option value={assessment.id} key={assessment.id}>{assessment.title}</option>)}</select></label>
           <label className="field"><span>Data limite (opcional)</span><input type="datetime-local" value={assignmentExpiresAt} onChange={(event) => setAssignmentExpiresAt(event.target.value)} /></label>
@@ -516,7 +509,7 @@ export default function AssessmentAdmin() {
         <fieldset className="assessment-member-selector"><legend>Integrantes indicados</legend><div>{data.members.map((member) => <label className={assignmentMemberIds.has(member.id) ? "selected" : ""} key={member.id}><input type="checkbox" checked={assignmentMemberIds.has(member.id)} onChange={() => setAssignmentMemberIds((current) => { const next = new Set(current); if (next.has(member.id)) next.delete(member.id); else next.add(member.id); return next; })} /><span><strong>{member.nickname}</strong><small>{member.full_name} · {rankLabels[member.rank]}</small></span></label>)}</div></fieldset>
         <button className="button button-primary" type="submit" disabled={busy || !effectiveAssignmentAssessmentId || !assignmentMemberIds.size}>{busy ? <LoaderCircle className="spin" /> : <Link2 />} Gerar {assignmentMemberIds.size || ""} link(s)</button>
       </form>
-      <div className="assessment-list-heading"><div><h3>Indicações registradas</h3><p>Situações atualizadas automaticamente a cada 10 segundos durante a aplicação.</p></div></div>
+      <div className="assessment-list-heading"><div><h3>Indicações registradas</h3></div></div>
       <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Situação</th><th>Início / conclusão</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>{data.assignments.map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td><span className={`assessment-status status-${assignment.status}`}>{assessmentAssignmentStatusLabels[assignment.status]}</span></td><td><small>{assignment.started_at ? `Início: ${formatDate(assignment.started_at)}` : "Ainda não iniciou"}</small><small>{assignment.submitted_at ? `Fim: ${formatDate(assignment.submitted_at)}` : "Ainda não concluiu"}</small></td><td>{formatDate(assignment.expires_at)}</td><td className="row-actions"><button type="button" onClick={() => void copyAssignmentLink(assignment)} aria-label="Copiar link"><Copy /></button><button type="button" onClick={() => shareAssignment(assignment)} aria-label="Compartilhar no WhatsApp"><MessageCircle /></button>{assignment.status === "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "cancel")} aria-label="Cancelar indicação"><X /></button>}{assignment.status === "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "close")} aria-label="Encerrar avaliação e calcular resultado"><Square /></button>}{data.actor.canDelegate && assignment.status !== "convidado" && assignment.status !== "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "reset")} aria-label="Liberar nova tentativa excepcional"><RefreshCw /></button>}</td></tr>)}</tbody></table></div>
     </section>}
 
@@ -526,7 +519,7 @@ export default function AssessmentAdmin() {
     </section>}
 
     {tab === "resultados" && <section className="assessment-admin-panel">
-      <div className="assessment-list-heading"><div><h3>Histórico de resultados</h3><p>Resultados vinculados ao perfil e à indicação de cada integrante.</p></div></div>
+      <div className="assessment-list-heading"><div><h3>Histórico de resultados</h3></div></div>
       <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Acertos</th><th>Erros</th><th>Resultado</th><th>Conclusão</th></tr></thead><tbody>{data.assignments.filter((assignment) => assignment.status === "corrigido" || assignment.status === "aguardando_correcao").map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td>{assignment.correct_count ?? "—"}</td><td>{assignment.incorrect_count ?? "—"}</td><td>{assignment.status === "aguardando_correcao" ? <span className="assessment-status status-aguardando_correcao">Aguardando correção</span> : <><strong>{Number(assignment.score_percent ?? 0).toFixed(1)}%</strong><small>{assignment.passed ? "Aprovado" : "Não aprovado"}</small></>}</td><td>{formatDate(assignment.graded_at ?? assignment.submitted_at)}</td></tr>)}</tbody></table></div>
     </section>}
 

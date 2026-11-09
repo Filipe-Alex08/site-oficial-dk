@@ -30,7 +30,7 @@ export default function DocumentManager() {
     queryKey: ["admin-documents"],
     enabled: Boolean(supabase),
     queryFn: async () => {
-      if (!supabase) throw new Error("Banco não configurado.");
+      if (!supabase) throw new Error("Serviço indisponível no momento.");
       const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as InternalDocument[];
@@ -44,7 +44,7 @@ export default function DocumentManager() {
       if (!response.ok) throw new Error(result.error || "Não foi possível enviar o documento.");
     },
     onSuccess: async () => {
-      show("Documento enviado e protegido."); formRef.current?.reset(); setFileName(""); setRules([]);
+      show("Documento enviado."); formRef.current?.reset(); setFileName(""); setRules([]);
       await queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
     },
     onError: (error: Error) => show(error.message),
@@ -109,8 +109,8 @@ export default function DocumentManager() {
     removeMutation.mutate(id);
   }
   return <div>
-    {notice && <div className="admin-notice">{notice}</div>}
-    <div className="admin-title"><div><h2>Documentos internos</h2><p>Envie PDFs e defina quem poderá acessá-los.</p></div></div>
+    <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
+    <div className="admin-title"><div><h2>Documentos</h2></div></div>
     <form className="admin-form" onSubmit={upload} ref={formRef}>
       <div className="form-grid">
         <div className="field"><label htmlFor="document-title">Título</label><input id="document-title" name="title" placeholder="Ex.: Manual de combate" required /></div>
@@ -118,7 +118,7 @@ export default function DocumentManager() {
         <div className="field field-full"><label>Descrição</label><textarea name="description" /></div>
         <div className="field field-full">{renderRules()}</div>
       </div>
-      <button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando..." : "Enviar PDF"}</button>
+      <button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button>
     </form>
     {documentsQuery.isPending && <p className="empty-state" role="status">Carregando documentos…</p>}
     {documentsQuery.isError && <p className="empty-state" role="alert">Falha ao carregar documentos. <button className="text-button" onClick={() => void documentsQuery.refetch()}>Tentar novamente</button></p>}
@@ -128,6 +128,6 @@ export default function DocumentManager() {
       <a href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" title="Abrir"><Download /></a>
       {editing !== document.id && <button className="document-edit-access" type="button" onClick={() => { const savedRules = document.access_rules ?? []; const normalized = savedRules.map((rule, index) => index === 0 ? rule : { ...rule, join: rule.join ?? document.access_logic ?? "or" }); setRules(normalized); setEditing(document.id); }} title="Editar acesso" aria-label={`Editar acesso de ${document.title}`}><Pencil size={17} /></button>}
       <button type="button" disabled={removeMutation.isPending} onClick={() => remove(document.id)} title="Excluir">{removeMutation.isPending && removeMutation.variables === document.id ? <span className="inline-spinner" /> : <Trash2 />}</button>
-    </article>)}</div> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento cadastrado</h3><p>Envie o primeiro PDF usando o formulário acima.</p></div> : null}
+    </article>)}</div> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento enviado</h3></div> : null}
   </div>;
 }

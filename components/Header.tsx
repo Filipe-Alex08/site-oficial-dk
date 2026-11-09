@@ -35,6 +35,14 @@ export default function Header() {
   const [account, setAccount] = useState<HeaderAccount | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [signingOut, setSigningOut] = useState(false);
+  const [lastPath, setLastPath] = useState(pathname);
+  // Ao navegar, fecha menus abertos (ajuste de estado durante a renderização).
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
+    setOpen(false);
+    setActivitiesOpen(false);
+    setAccountOpen(false);
+  }
   const accountRef = useRef<HTMLDivElement>(null);
   const activitiesRef = useRef<HTMLDivElement>(null);
 
@@ -105,12 +113,6 @@ export default function Header() {
       window.removeEventListener("dk-profile-updated", loadCurrentAccount);
     };
   }, []);
-
-  useEffect(() => {
-    setOpen(false);
-    setActivitiesOpen(false);
-    setAccountOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";

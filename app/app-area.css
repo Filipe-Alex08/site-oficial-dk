@@ -1,0 +1,113 @@
+/* =========================================================
+   Área interna (membros, administração, login e cadastro)
+   Visual de aplicativo: Inter em tudo, cantos arredondados,
+   cartões em camadas e menos decoração.
+   ========================================================= */
+
+.app-area h1,
+.app-area h2 {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.app-area h1 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
+.app-area h2 { font-size: 1.35rem; }
+.app-area .section { padding: 28px 0 72px; }
+.app-area .eyebrow { margin-bottom: 8px; }
+
+/* ---------- Cabeçalho de página ---------- */
+.page-header {
+  background: linear-gradient(180deg, var(--surface-1), var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding-block: 28px 24px;
+}
+.page-header p { max-width: 60ch; margin-top: 6px; }
+.page-header-action { display: flex; flex-wrap: wrap; gap: 10px; }
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--text-subtle);
+  font-size: 0.88rem;
+}
+.breadcrumb-item { display: inline-flex; align-items: center; gap: 6px; }
+.breadcrumb a { color: var(--text-muted); padding-block: 4px; }
+.breadcrumb a:hover { color: var(--text); text-decoration: underline; }
+.breadcrumb [aria-current="page"] { color: var(--text); }
+
+/* ---------- Login e cadastro ---------- */
+.auth-page {
+  min-height: calc(100vh - var(--header-h));
+  display: grid;
+  place-items: center;
+  padding: 40px 16px 64px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(var(--accent-rgb), 0.12), transparent 60%),
+    var(--bg);
+}
+.auth-card {
+  width: min(100%, 460px);
+  padding: clamp(24px, 5vw, 40px);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.auth-card-wide { width: min(100%, 680px); }
+.auth-brand { display: block; width: 56px; margin: 0 auto 18px; }
+.auth-brand img { display: block; width: 56px; height: 56px; border-radius: 50%; }
+.auth-card h1 { margin-bottom: 8px; text-align: center; font-size: 1.6rem; }
+.auth-description { margin-bottom: 20px; text-align: center; }
+.auth-card .form-message { margin: 0 0 16px; }
+.auth-card .form-card {
+  max-width: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.auth-card .login-form,
+.auth-card .registration-form { width: 100%; }
+
+/* ---------- Avisos (toasts) ---------- */
+.toast-stack {
+  position: fixed;
+  z-index: 120;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--accent-bright);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  font-size: 0.92rem;
+  pointer-events: auto;
+  animation: toast-in 0.2s ease-out;
+}
+.toast.is-error { border-left-color: var(--danger); }
+.toast.is-success { border-left-color: var(--ok); }
+.toast .text-button { margin-left: auto; white-space: nowrap; }
+@keyframes toast-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+@media (max-width: 620px) {
+  .toast-stack { right: 16px; bottom: 16px; left: 16px; width: auto; }
+}

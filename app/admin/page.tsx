@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import PageHero from "@/components/PageHero";
+import Unavailable from "@/components/member/Unavailable";
 import type { AdminRole } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -9,14 +10,7 @@ export const metadata: Metadata = { title: "Administração" };
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  if (!supabase) {
-    return (
-      <>
-        <PageHero eyebrow="CMS" title="Painel administrativo" description="Configure o Supabase para ativar o gerenciamento do site." />
-        <section className="section"><div className="container info-band"><strong>Banco ainda não conectado</strong><p>Siga o guia em docs/SETUP.md.</p></div></section>
-      </>
-    );
-  }
+  if (!supabase) return <Unavailable />;
 
   const { data: { user } } = await supabase.auth.getUser();
   // O layout também redireciona, mas ele e esta página renderizam em paralelo:
@@ -29,5 +23,5 @@ export default async function AdminPage() {
   ]);
   const roles = (data?.map((item) => item.role) || []) as AdminRole[];
 
-  return <AdminDashboard roles={roles} canManageAssessments={Boolean(canManageAssessments)} currentUserId={user.id} />;
+  return <Suspense fallback={null}><AdminDashboard roles={roles} canManageAssessments={Boolean(canManageAssessments)} currentUserId={user.id} /></Suspense>;
 }

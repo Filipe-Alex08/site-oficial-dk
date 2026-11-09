@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, ClipboardCheck, FileText, LogOut, Settings, Shield, UserRound } from "lucide-react";
-import PageHero from "@/components/PageHero";
+import { CalendarDays, ClipboardCheck, FileText, LogOut, Settings } from "lucide-react";
+import AppPageHeader from "@/components/member/AppPageHeader";
+import Unavailable from "@/components/member/Unavailable";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
@@ -17,14 +18,7 @@ export const metadata: Metadata = { title: "Painel do Membro" };
 export default async function MemberPage() {
   const supabase = await createClient();
 
-  if (!supabase) {
-    return (
-      <>
-        <PageHero eyebrow="Configuração necessária" title="Área do Membro" description="Conecte o projeto ao Supabase para habilitar autenticação e dados internos." />
-        <section className="section"><div className="container info-band"><strong>Consulte o arquivo docs/SETUP.md</strong><p>O guia explica como criar o banco e configurar as variáveis do projeto.</p></div></section>
-      </>
-    );
-  }
+  if (!supabase) return <Unavailable />;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
@@ -44,12 +38,10 @@ export default async function MemberPage() {
 
   return (
     <>
-      <section className="member-heading">
-        <div className="container member-heading-inner">
-          <div><p className="eyebrow">Área interna</p><h1>Salve, {profile.nickname}!</h1><p>Seu perfil e os acessos internos do DK estão reunidos aqui.</p></div>
-          <form action="/auth/signout" method="post"><button className="button button-ghost" type="submit"><LogOut size={18} /> Sair</button></form>
-        </div>
-      </section>
+      <AppPageHeader
+        title={`Salve, ${profile.nickname}!`}
+        action={<form action="/auth/signout" method="post"><button className="button button-ghost" type="submit"><LogOut size={18} /> Sair</button></form>}
+      />
       <section className="section">
         <div className="container member-grid">
           <article className="profile-card">
@@ -77,11 +69,10 @@ export default async function MemberPage() {
             <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)} />
           </article>
           <div className="member-options">
-            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação, consulte a lista e compartilhe pelo WhatsApp.</p></Link>
-            <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos internos</h3><p>Acesse somente os documentos liberados para seu perfil e sua patente.</p></Link>
-            <Link className="card" href="/membro/documentos"><span className="card-icon"><Shield /></span><h3>Conteúdos de graduação</h3><p>Consulte os materiais disponíveis para seu nível de Bronze, Prata ou Ouro.</p></Link>
-            <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações e simulados</h3><p>Acesse suas indicações, realize avaliações e acompanhe o histórico de resultados.</p></Link>
-            {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Gerencie as áreas permitidas para seu perfil.</p></Link>}
+            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p></Link>
+            <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos</h3><p>Materiais liberados para o seu perfil.</p></Link>
+            <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações</h3><p>Suas indicações, provas e resultados.</p></Link>
+            {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Mídias, calendário, membros e mais.</p></Link>}
           </div>
         </div>
       </section>

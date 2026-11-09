@@ -39,7 +39,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const supabase = createClient();
-    if (!supabase) return setMessage("Não foi possível conectar ao banco de dados.");
+    if (!supabase) return setMessage("Serviço indisponível no momento. Tente novamente.");
 
     setSaving(true);
     setMessage("");
@@ -120,7 +120,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
 
   return (
     <>
-    {profile.access_request_id && <p className="profile-edit-help" role="status">Patente, graduação e ordem aguardando aprovação do administrador.</p>}
+    {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
     <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
       {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button> : (
         <form onSubmit={submit}>
@@ -138,7 +138,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
             <datalist id="member-build-options">{buildOptions.map((build) => <option key={build} value={build} />)}</datalist>
           </div>
-          <p className="profile-edit-help">{canEditAccessDirectly ? "Como administrador, suas alterações de patente, graduação e ordem são aplicadas diretamente ao seu perfil." : "Patente, graduação e ordem serão enviadas para aprovação do administrador. Seus acessos atuais permanecem até a aprovação."}</p>
+          <p className="profile-edit-help">{canEditAccessDirectly ? "Suas alterações de patente e graduação valem na hora." : "Alterações de patente e graduação passam por aprovação; seus acessos atuais continuam até lá."}</p>
           <div className="profile-edit-actions">
             <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
             <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving}><X size={16} /> Cancelar</button>

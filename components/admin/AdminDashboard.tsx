@@ -1,7 +1,8 @@
 "use client";
 
-import { BookOpenCheck, CalendarPlus, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { BookOpenCheck, CalendarPlus, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import DocumentManager from "@/components/admin/DocumentManager";
@@ -11,6 +12,7 @@ import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
 import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 import { adminRoleOptions, graduationLabels, graduationOptions, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
+import { friendlyError } from "@/lib/friendly-error";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
 
@@ -24,6 +26,12 @@ type MemberAccessForm = {
   graduation_level: GraduationLevel;
   graduation_order: string;
 };
+
+const statusLabels: Record<string, string> = {
+  pendente: "Pendente", aprovado: "Aprovado", suspenso: "Suspenso", recusado: "Recusado",
+  confirmado: "Confirmado", a_definir: "A definir", adiado: "Adiado", cancelado: "Cancelado", finalizado: "Finalizado",
+};
+const statusLabel = (status: string) => statusLabels[status] ?? status;
 
 const emptyPost = { title: "", slug: "", excerpt: "", content: "", category: "Treinos", cover_url: "", youtube_url: "", tiktok_url: "", published: false };
 const emptyActivity = { title: "", starts_at: "", ends_at: "", location: "", type: "Treino", status: "confirmado" as ActivityStatus, description: "", attendance_open: true };
@@ -65,7 +73,14 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     ...(canManageAssessments ? ["simulados" as const] : []),
   ];
 
-  const [section, setSection] = useState<Section>("resumo");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedSection = searchParams.get("secao");
+  const section: Section = (allowed as string[]).includes(requestedSection ?? "") ? (requestedSection as Section) : "resumo";
+  function setSection(next: Section) {
+    router.push(next === "resumo" ? pathname : `${pathname}?secao=${next}`, { scroll: false });
+  }
   const [posts, setPosts] = useState<Post[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -76,7 +91,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   const [memberForm, setMemberForm] = useState<MemberAccessForm | null>(null);
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ text: string; kind: "success" | "error" } | null>(null);
   const [syncingInstagram, setSyncingInstagram] = useState(false);
   const [quota, setQuota] = useState<{ used: number; limit: number; start: string | null; end: string | null } | null>(null);
   const [quotaError, setQuotaError] = useState("");
@@ -110,8 +125,10 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
 
   function show(text: string) {
-    setNotice(text);
-    window.setTimeout(() => setNotice(""), 3500);
+    // Erros costumam começar com negação ou citar falha; o resto é confirmação.
+    const kind = /^n[aã]o\b|falha|erro|inv[aá]lid|permiss[aã]o|precisa ser|sem conex/i.test(text) ? "error" : "success";
+    setNotice({ text, kind });
+    window.setTimeout(() => setNotice(null), 4500);
   }
 
   async function savePost(event: FormEvent) {
@@ -119,7 +136,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     if (!supabase) return;
     const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, published_at: new Date().toISOString() };
     const result = editingPost ? await supabase.from("posts").update(payload).eq("id", editingPost) : await supabase.from("posts").insert(payload);
-    if (result.error) return show(result.error.message);
+    if (result.error) return show(friendlyError(result.error));
     setPostForm(emptyPost);
     setEditingPost(null);
     show("Publicação salva.");
@@ -130,7 +147,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     if (!supabase || !window.confirm("Excluir esta publicação?")) return;
     const { error } = await supabase.from("posts").delete().eq("id", id);
     setSelectedPostIds((current) => { const next = new Set(current); next.delete(id); return next; });
-    show(error ? error.message : "Publicação excluída.");
+    show(error ? friendlyError(error) : "Publicação excluída.");
     await dashboardQuery.refetch();
   }
 
@@ -155,7 +172,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     if (!window.confirm(`Excluir ${count} publicação(ões) selecionada(s)? Esta ação não pode ser desfeita.`)) return;
     const { error } = await supabase.from("posts").delete().in("id", Array.from(selectedPostIds));
     if (!error) setSelectedPostIds(new Set());
-    show(error ? error.message : `${count} publicação(ões) excluída(s).`);
+    show(error ? friendlyError(error) : `${count} publicação(ões) excluída(s).`);
     await dashboardQuery.refetch();
   }
 
@@ -175,7 +192,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       show(`${result.imported} nova(s), ${result.refreshed || 0} atualizada(s) e ${result.skipped} sem alteração.${result.failed ? ` Falhas: ${result.failed}.` : ""}`);
       await dashboardQuery.refetch();
     } catch (error) {
-      show(error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram.");
+      show(friendlyError(error, "Não foi possível sincronizar o Instagram."));
     } finally {
       setSyncingInstagram(false);
       void refreshQuota();
@@ -191,7 +208,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       if (!response.ok) throw new Error(result.error || "Falha ao consultar a cota.");
       setQuota(result);
     } catch (error) {
-      setQuotaError(error instanceof Error ? error.message : "Falha ao consultar a cota.");
+      setQuotaError(friendlyError(error, "Falha ao consultar a cota."));
     } finally {
       setLoadingQuota(false);
     }
@@ -213,7 +230,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       ends_at: activityForm.ends_at ? new Date(activityForm.ends_at).toISOString() : null,
     };
     const result = editingActivity ? await supabase.from("activities").update(payload).eq("id", editingActivity) : await supabase.from("activities").insert(payload);
-    if (result.error) return show(result.error.message);
+    if (result.error) return show(friendlyError(result.error));
     setActivityForm(emptyActivity);
     setEditingActivity(null);
     show("Atividade salva.");
@@ -223,14 +240,14 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   async function removeActivity(id: string) {
     if (!supabase || !window.confirm("Excluir esta atividade e sua lista de presença?")) return;
     const { error } = await supabase.from("activities").delete().eq("id", id);
-    show(error ? error.message : "Atividade excluída.");
+    show(error ? friendlyError(error) : "Atividade excluída.");
     await dashboardQuery.refetch();
   }
 
   async function updateMemberStatus(id: string, status: string) {
     const response = await fetch(`/api/admin/members/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     const result = await response.json();
-    show(response.ok ? "Cadastro atualizado." : result.error);
+    show(response.ok ? "Cadastro atualizado." : friendlyError(result.error));
     await dashboardQuery.refetch();
   }
 
@@ -254,7 +271,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       body: JSON.stringify({ access_request_action: action, access_request_id: member.access_request_id }),
     });
     const result = await response.json();
-    show(response.ok ? (action === "approve" ? "Dados aprovados e acessos atualizados." : "Solicitação recusada.") : result.error);
+    show(response.ok ? (action === "approve" ? "Dados aprovados e acessos atualizados." : "Solicitação recusada.") : friendlyError(result.error));
     await dashboardQuery.refetch();
   }
 
@@ -272,7 +289,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       } : { member_kind: memberForm.member_kind }),
     });
     const result = await response.json();
-    if (!response.ok) return show(result.error);
+    if (!response.ok) return show(friendlyError(result.error));
     show("Acessos internos atualizados.");
     setMemberForm(null);
     await dashboardQuery.refetch();
@@ -284,7 +301,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     const result = enabled
       ? await supabase.from("user_admin_roles").insert({ user_id: userId, role })
       : await supabase.from("user_admin_roles").delete().eq("user_id", userId).eq("role", role);
-    show(result.error ? result.error.message : "Permissão administrativa atualizada.");
+    show(result.error ? friendlyError(result.error) : "Permissão administrativa atualizada.");
     await dashboardQuery.refetch();
   }
 
@@ -312,7 +329,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     if (!window.confirm("Excluir permanentemente este membro e seu acesso?")) return;
     const response = await fetch(`/api/admin/members/${id}`, { method: "DELETE" });
     const result = await response.json();
-    show(response.ok ? "Membro excluído." : result.error);
+    show(response.ok ? "Membro excluído." : friendlyError(result.error));
     await dashboardQuery.refetch();
   }
 
@@ -328,9 +345,18 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       setInvites((current) => [data as Invite, ...current]);
       show("Convite criado.");
     } catch (error) {
-      show(error instanceof Error || (error && typeof error === "object" && "message" in error) ? String(error.message) : "Não foi possível criar o convite.");
+      show(friendlyError(error, "Não foi possível criar o convite."));
     } finally {
       setInviteBusy(null);
+    }
+  }
+
+  async function copyInviteLink(code: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/area-do-membro/cadastro?convite=${code}`);
+      show("Link do convite copiado.");
+    } catch {
+      show("Não foi possível copiar o link.");
     }
   }
 
@@ -343,7 +369,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       setInvites((current) => current.map((invite) => invite.id === id ? data as Invite : invite));
       show("Convite desativado.");
     } catch (error) {
-      show(error instanceof Error || (error && typeof error === "object" && "message" in error) ? String(error.message) : "Não foi possível desativar o convite.");
+      show(friendlyError(error, "Não foi possível desativar o convite."));
     } finally {
       setInviteBusy(null);
     }
@@ -352,7 +378,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   return (
     <section className="admin-shell">
       <aside className="admin-sidebar">
-        <div><p className="eyebrow">CMS do DK</p><h1>Administração</h1></div>
+        <h1>Administração</h1>
         <nav>
           <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
           {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
@@ -367,30 +393,30 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
 
       <div className="admin-content">
         {section === "presencas" && canCalendar && <AttendanceManager />}
-        {notice && <div className="admin-notice">{notice}</div>}
-        {dashboardQuery.isPending && <div className="admin-notice" role="status"><span className="inline-spinner" /> Carregando dados administrativos…</div>}
-        {dashboardQuery.isError && <div className="admin-notice" role="alert">Não foi possível atualizar os dados. <button className="text-button" onClick={() => void dashboardQuery.refetch()}>Tentar novamente</button></div>}
-        {dashboardQuery.isFetching && !dashboardQuery.isPending && <div className="admin-notice" role="status"><span className="inline-spinner" /> Atualizando…</div>}
+        <div className="toast-stack" aria-live="polite">
+          {notice && <div className={`toast is-${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{notice.text}</div>}
+          {dashboardQuery.isError && <div className="toast is-error" role="alert">Não foi possível atualizar os dados. <button className="text-button" type="button" onClick={() => void dashboardQuery.refetch()}>Tentar novamente</button></div>}
+          {dashboardQuery.isFetching && !dashboardQuery.isError && <div className="toast" role="status"><span className="inline-spinner" /> {dashboardQuery.isPending ? "Carregando…" : "Atualizando…"}</div>}
+        </div>
         {section === "resumo" && <div>
-          <AdminTitle title="Visão geral" description="Acesse somente as áreas permitidas para o seu perfil administrativo." />
+          <AdminTitle title="Visão geral" />
           <div className="metric-grid">
-            {canMedia && <Metric label="Publicações" value={posts.length} />}
-            {canCalendar && <Metric label="Atividades" value={activities.length} />}
-            {canMembers && <Metric label="Membros" value={members.length} />}
-            {canMembers && <Metric label="Pendentes" value={members.filter((member) => member.status === "pendente").length} />}
+            {canMedia && <Metric label="Publicações" value={posts.length} onClick={() => setSection("midias")} />}
+            {canCalendar && <Metric label="Atividades" value={activities.length} onClick={() => setSection("calendario")} />}
+            {canMembers && <Metric label="Membros" value={members.length} onClick={() => setSection("membros")} />}
+            {canMembers && <Metric label="Aguardando aprovação" value={members.filter((member) => member.status === "pendente").length} highlight onClick={() => setSection("membros")} />}
           </div>
-          <div className="permission-card"><ShieldCheck /><div><h3>Permissões ativas</h3><p>{allowed.filter((item) => item !== "resumo").join(", ") || "Consulta do painel"}</p></div></div>
         </div>}
 
         {section === "midias" && canMedia && <div>
-          <AdminTitle title="Mídias" description="Crie, edite, publique ou remova postagens da linha do tempo." />
+          <AdminTitle title="Mídias" />
           <section className="apify-quota-panel" aria-labelledby="apify-quota-title">
-            <div className="apify-quota-heading"><h3 id="apify-quota-title">Cota da Apify</h3><button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button></div>
+            <div className="apify-quota-heading"><h3 id="apify-quota-title">Cota de importação do Instagram</h3><button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button></div>
             {quotaError && <p className="apify-quota-error" role="alert">{quotaError}</p>}
             {quota ? <div className="apify-quota-metric"><div className="apify-quota-values"><div><span>Utilizado neste ciclo</span><strong>US$ {quota.used.toFixed(2)}</strong></div><div><span>Limite mensal</span><strong>{quota.limit > 0 ? `US$ ${quota.limit.toFixed(2)}` : "Indisponível"}</strong></div></div>{quota.limit > 0 && <div className="apify-quota-progress" role="progressbar" aria-label="Cota mensal utilizada" aria-valuenow={Math.min(100, Math.round(quota.used / quota.limit * 100))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.min(100, Math.max(0, quota.used / quota.limit * 100))}%` }} /></div>}<div className="apify-quota-footer"><span>{quota.limit > 0 ? `${Math.round(quota.used / quota.limit * 100)}% do limite utilizado` : "Limite não informado pela Apify"}</span>{quota.start && quota.end && <span>Ciclo: {new Date(quota.start).toLocaleDateString("pt-BR")} a {new Date(quota.end).toLocaleDateString("pt-BR")}</span>}</div></div> : !quotaError && <p className="apify-quota-empty">{loadingQuota ? "Consultando a cota…" : "Cota ainda não consultada."}</p>}
           </section>
           <section className="instagram-sync-panel" aria-labelledby="instagram-sync-title">
-            <div className="instagram-sync-heading"><h3 id="instagram-sync-title">Sincronizar publicações do Instagram</h3><p>Importa automaticamente todas as publicações encontradas no intervalo selecionado.</p></div>
+            <div className="instagram-sync-heading"><h3 id="instagram-sync-title">Importar do Instagram</h3><p>Traz as publicações do período escolhido.</p></div>
             <div className="instagram-import-controls">
               <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
               <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
@@ -400,11 +426,11 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
               </button>
             </div>
           </section>
-          <div className="manual-post-heading"><h3>Criar publicação manualmente</h3><p>Cadastre uma publicação do site sem sincronizar com o Instagram.</p></div>
+          <div className="manual-post-heading"><h3>Nova publicação</h3></div>
           <form className="admin-form" onSubmit={savePost}>
             <div className="form-grid">
               <div className="field"><label>Título</label><input value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required /></div>
-              <div className="field"><label>Slug</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
+              <div className="field"><label>Endereço (URL)</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
               <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
               <div className="field"><label>Imagem de capa (URL)</label><input type="url" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
               <div className="field"><label>YouTube (URL)</label><input type="url" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
@@ -421,12 +447,12 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
               <Trash2 size={17} /> Excluir selecionados{selectedPostIds.size ? ` (${selectedPostIds.size})` : ""}
             </button>
           </div>
-          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/midias/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
           <MediaGalleryManager posts={posts} />
         </div>}
 
         {section === "calendario" && canCalendar && <div>
-          <AdminTitle title="Calendário" description="Gerencie atividades e abra a confirmação de presença." />
+          <AdminTitle title="Calendário" />
           <form className="admin-form" onSubmit={saveActivity}>
             <div className="form-grid">
               <div className="field"><label>Atividade</label><input value={activityForm.title} onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })} required /></div>
@@ -440,11 +466,11 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
             </div>
             <div className="form-actions"><button className="button button-primary" type="submit">{editingActivity ? "Atualizar" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
           </form>
-          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]}>{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{item.status.replace("_", " ")}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); }}><Edit3 /></button><button title="Excluir" onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]}>{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); }}><Edit3 /></button><button title="Excluir" onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "membros" && canMembers && <div>
-          <AdminTitle title="Membros" description="Confirme patente, graduação, nível interno e permissões administrativas." />
+          <AdminTitle title="Membros" />
           {members.filter((member) => member.access_request_id).map((member) => <article className="admin-form" key={member.access_request_id}>
             <h3>Conferência de {member.full_name} (@{member.nickname})</h3>
             <p>Atual: {rankLabels[member.rank]} · {graduationLabels[member.graduation_level]} · {member.graduation_order || "Sem ordem"}</p>
@@ -473,12 +499,13 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
             {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}</fieldset>}
             <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
           </form>}
-          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => `ADM ${role}`).join(", ") || "Sem permissão de ADM") : "ADMs gerenciados pelo Principal"}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{member.graduation_level !== "sem_graduacao" ? <GraduationInsignia level={member.graduation_level} order={member.graduation_order} /> : <small>Sem graduação</small>}</div></td><td><span className={`badge ${member.status}`}>{member.status}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
+          {!principal && <p className="admin-hint">Funções de administrador são gerenciadas pelo ADM Principal.</p>}
+          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{member.graduation_level !== "sem_graduacao" ? <GraduationInsignia level={member.graduation_level} order={member.graduation_order} /> : <small>Sem graduação</small>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
         </div>}
 
         {section === "convites" && canMembers && <div>
-          <AdminTitle title="Convites" description="Gere links individuais para novos cadastros." action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>} />
-          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong><small>/area-do-membro/cadastro?convite={invite.code}</small></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"} disabled={Boolean(inviteBusy) || !invite.active} onClick={() => disableInvite(invite.id)}>{inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle />}</button></td></tr>)}</AdminTable>
+          <AdminTitle title="Convites" action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>} />
+          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Copiar link" aria-label="Copiar link do convite" onClick={() => void copyInviteLink(invite.code)}><Copy /></button><button title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"} disabled={Boolean(inviteBusy) || !invite.active} onClick={() => disableInvite(invite.id)}>{inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle />}</button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "documentos" && canMembers && <DocumentManager />}
@@ -492,12 +519,12 @@ function AdminNav({ icon, label, active, onClick }: { icon: React.ReactNode; lab
   return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span></button>;
 }
 
-function AdminTitle({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
-  return <div className="admin-title"><div><h2>{title}</h2><p>{description}</p></div>{action}</div>;
+function AdminTitle({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
+  return <div className="admin-title"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{action}</div>;
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return <article className="metric-card"><strong>{value}</strong><span>{label}</span></article>;
+function Metric({ label, value, onClick, highlight = false }: { label: string; value: number; onClick: () => void; highlight?: boolean }) {
+  return <button type="button" className={"metric-card" + (highlight && value > 0 ? " is-highlight" : "")} onClick={onClick}><strong>{value}</strong><span>{label}</span></button>;
 }
 
 function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {

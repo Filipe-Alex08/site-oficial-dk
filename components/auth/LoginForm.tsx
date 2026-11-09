@@ -38,7 +38,7 @@ export default function LoginForm() {
     setMessage(null);
 
     if (!isSupabaseConfigured()) {
-      setMessage({ type: "error", text: "Configure o Supabase para habilitar o login." });
+      setMessage({ type: "error", text: "Login indisponível no momento. Tente novamente mais tarde." });
       setGoogleLoading(false);
       return;
     }
@@ -67,7 +67,7 @@ export default function LoginForm() {
     const form = new FormData(event.currentTarget);
 
     if (!isSupabaseConfigured()) {
-      setMessage({ type: "error", text: "Configure o Supabase para habilitar o login." });
+      setMessage({ type: "error", text: "Login indisponível no momento. Tente novamente mais tarde." });
       setLoading(false);
       return;
     }
@@ -105,15 +105,15 @@ export default function LoginForm() {
         <input id="password" name="password" type="password" autoComplete="current-password" required minLength={8} />
       </div>
       <button className="button button-primary" type="submit" disabled={loading || googleLoading}>
-        <LogIn size={18} /> {loading ? "Entrando..." : "Entrar"}
+        <LogIn size={18} /> {loading ? "Entrando…" : "Entrar"}
       </button>
       <div className="login-divider" aria-hidden="true">ou</div>
       <button className="button button-ghost" type="button" onClick={handleGoogle} disabled={loading || googleLoading}>
-        <GoogleIcon /> {googleLoading ? "Redirecionando..." : "Entrar com Google"}
+        <GoogleIcon /> {googleLoading ? "Redirecionando…" : "Continuar com Google"}
       </button>
       {message && <p className={"form-message " + message.type}>{message.text}</p>}
       <p className="form-help">
-        Recebeu um convite? <Link href="/area-do-membro/cadastro">Faça seu cadastro</Link>.
+        Tem um convite? <Link href="/area-do-membro/cadastro">Criar conta</Link>
       </p>
     </form>
   );

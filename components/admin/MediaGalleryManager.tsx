@@ -20,7 +20,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
     queryKey: ["admin-media-items"],
     enabled: Boolean(supabase),
     queryFn: async () => {
-      if (!supabase) throw new Error("Banco não configurado.");
+      if (!supabase) throw new Error("Serviço indisponível no momento.");
       const { data, error } = await supabase.from("media_items").select("*").order("sort_order");
       if (error) throw error;
       return (data ?? []) as MediaItem[];
@@ -45,7 +45,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
   });
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!supabase) throw new Error("Banco não configurado.");
+      if (!supabase) throw new Error("Serviço indisponível no momento.");
       const { error } = await supabase.from("media_items").delete().eq("id", id);
       if (error) throw error;
     },
