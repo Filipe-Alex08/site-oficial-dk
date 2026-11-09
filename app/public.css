@@ -6,7 +6,7 @@
 .section-heading h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
 .section-heading h2::after { content: ""; display: block; width: 40px; height: 3px; margin-top: 14px; background: var(--accent-bright); border-radius: 2px; }
 .section-heading > p { max-width: 620px; margin-top: 14px; }
-.calendar-section { background: var(--surface-1); border-top: 1px solid var(--border); }
+.calendar-section { background: var(--surface-1); }
 .activity-list {
   display: grid;
   gap: 16px;
@@ -399,6 +399,13 @@
   overflow: hidden;
   background: #111111;
 }
+.media-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 55%, var(--surface-1) 100%);
+}
 .media-cover img,
 .media-cover video {
   position: absolute;
@@ -470,9 +477,9 @@
   padding: 85px 0 65px;
   text-align: left;
   background:
-    linear-gradient(90deg, rgba(6, 6, 6, 0.98), rgba(6, 6, 6, 0.58)),
+    linear-gradient(90deg, rgba(10, 10, 11, 0.98), rgba(10, 10, 11, 0.58)),
+    linear-gradient(180deg, transparent 45%, var(--bg)),
     url("/images/dk-events.webp") center / cover;
-  border-bottom: 1px solid var(--line);
 }
 .post-hero-content {
   max-width: 920px;
@@ -648,6 +655,7 @@
     height: 230px;
     min-height: 230px;
   }
+  .media-cover::after { background: linear-gradient(180deg, transparent 55%, var(--surface-1) 100%); }
   .event-options {
     grid-template-columns: 1fr;
   }
