@@ -961,14 +961,44 @@
   margin-bottom: 13px
 }
 
-.profile-edit-title {
+.profile-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 26px 0 16px;
   padding-top: 20px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border)
+}
+
+.profile-edit-title {
+  margin: 0;
   text-align: left;
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none
+}
+
+/* Leitura e edição se alternam com uma entrada suave. */
+.profile-edit-pane {
+  animation: profile-pane-in .26s ease both
+}
+
+@keyframes profile-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px)
+  }
+  to {
+    opacity: 1;
+    transform: none
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-edit-pane {
+    animation: none
+  }
 }

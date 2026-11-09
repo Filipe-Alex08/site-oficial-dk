@@ -2,7 +2,7 @@
 
 import { buildOptions } from "@/lib/insignias";
 
-import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -23,6 +23,20 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    // A troca entre leitura e edição muda a altura do card; sem isso, ao sair
+    // de um formulário longo a página ficaria rolada para o meio do nada.
+    if (firstRender.current) { firstRender.current = false; return; }
+    const card = rootRef.current?.closest(".profile-card") ?? rootRef.current;
+    if (!card) return;
+    const headerHeight = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 68;
+    if (card.getBoundingClientRect().top < headerHeight) {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      card.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
+  }, [editing]);
   useEffect(() => {
     if (message !== "Perfil atualizado.") return;
     const timeout = window.setTimeout(() => setMessage(""), 4000);
@@ -131,16 +145,19 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   const tierOf = (level: GraduationLevel) => (level === "sem_graduacao" ? undefined : level);
 
   return (
-    <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
+    <div ref={rootRef} className={`profile-edit ${editing ? "is-editing" : ""}`}>
       {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
       {!editing ? (
         <>
           <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button>
-          {children}
+          <div className="profile-edit-pane">{children}</div>
         </>
       ) : (
-        <form onSubmit={submit}>
-          <h3 className="profile-edit-title">Editar perfil</h3>
+        <form className="profile-edit-pane" onSubmit={submit}>
+          <div className="profile-edit-header">
+            <h3 className="profile-edit-title">Editar perfil</h3>
+            <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving} aria-label="Sair do modo de edição" title="Sair do modo de edição"><X size={16} /> Sair</button>
+          </div>
           <div className="profile-edit-fields">
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
