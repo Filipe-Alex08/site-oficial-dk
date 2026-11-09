@@ -7,9 +7,9 @@ import Unavailable from "@/components/member/Unavailable";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
-import { BuildInsignia, GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
+import { BuildInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { getBuildIcon } from "@/lib/insignias";
-import { graduationLabels, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { graduationLabels, graduationTracks, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -51,15 +51,15 @@ export default async function MemberPage() {
             <p>@{profile.nickname}</p>
             <div className="profile-insignias" role="group" aria-label="Patente, graduação e builds">
               <RankInsignia rank={profile.rank} variant="badge" />
-              {profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={profile.graduation_level} order={profile.graduation_order} variant="badge" />}
+              <GraduationInsignias profile={profile} variant="badge" />
               {getBuildIcon(profile.primary_build) && <BuildInsignia build={profile.primary_build} variant="badge" caption="Principal" />}
               {getBuildIcon(profile.secondary_build) && <BuildInsignia build={profile.secondary_build} variant="badge" caption="Secundária" />}
             </div>
+            {profile.graduation_review_needed && <p className="form-help">Sua graduação está em revisão: um administrador vai definir o nível em cada trilha.</p>}
             <dl>
               <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
               <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
-              <div><dt>Graduação</dt><dd>{graduationLabels[profile.graduation_level]}</dd></div>
-              <div><dt>Ordem</dt><dd>{profile.graduation_order || "Não informada"}</dd></div>
+              {graduationTracks.map((track) => <div key={track.value}><dt>{track.label}</dt><dd>{graduationLabels[profile[track.field] ?? "sem_graduacao"]}</dd></div>)}
               <div><dt>Casa</dt><dd>{profile.house || "Não informada"}</dd></div>
               <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
               <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>

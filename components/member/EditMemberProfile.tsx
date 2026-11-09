@@ -8,7 +8,7 @@ import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
 import Select from "@/components/ui/Select";
-import { graduationOptions, rankGroups } from "@/lib/member-access";
+import { graduationOptions, graduationTracks, rankGroups } from "@/lib/member-access";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house" | "shirt_number" | "primary_build" | "secondary_build">;
@@ -25,8 +25,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   }, [message]);
   const [form, setForm] = useState({
     rank: profile.requested_rank ?? profile.rank,
-    graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
-    graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
+    graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
+    graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
     full_name: profile.full_name,
     nickname: profile.nickname,
     birth_date: profile.birth_date || "",
@@ -46,8 +46,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     // Patente e graduação passam por aprovação de um administrador, inclusive
     // quando quem edita é o próprio administrador.
     const accessDetailsChanged = form.rank !== profile.rank
-      || form.graduation_level !== profile.graduation_level
-      || (form.graduation_order.trim() || null) !== (profile.graduation_order || null);
+      || form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao")
+      || form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao");
     const updated: EditableProfile = {
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim(),
@@ -59,8 +59,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     };
     const { error } = await supabase.rpc("update_own_member_profile_with_access_request", {
       requested_rank: form.rank,
-      requested_graduation_level: form.graduation_level,
-      requested_graduation_order: form.graduation_order.trim() || null,
+      requested_graduation_cavalaria: form.graduation_cavalaria,
+      requested_graduation_arquearia: form.graduation_arquearia,
       requested_full_name: updated.full_name,
       requested_nickname: updated.nickname,
       requested_birth_date: updated.birth_date,
@@ -82,8 +82,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
 
     setForm({
       rank: form.rank,
-      graduation_level: form.graduation_level,
-      graduation_order: form.graduation_order,
+      graduation_cavalaria: form.graduation_cavalaria,
+      graduation_arquearia: form.graduation_arquearia,
       full_name: updated.full_name,
       nickname: updated.nickname,
       birth_date: updated.birth_date || "",
@@ -104,8 +104,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   function cancel() {
     setForm({
       rank: profile.requested_rank ?? profile.rank,
-      graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
-      graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
+      graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
+      graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
       full_name: profile.full_name,
       nickname: profile.nickname,
       birth_date: profile.birth_date || "",
@@ -128,8 +128,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
             <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
-            <div className="field"><label htmlFor="profile-graduation">Graduação</label><Select id="profile-graduation" value={form.graduation_level} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, graduation_level: value as GraduationLevel }))} /></div>
-            <div className="field"><label htmlFor="profile-graduation-order">Ordem de graduação</label><input id="profile-graduation-order" value={form.graduation_order} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, graduation_order: event.target.value }))} /></div>
+            {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`profile-${track.field}`}>Graduação em {track.label}</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>)}
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
             <div className="field"><label htmlFor="member-house">Casa</label><input id="member-house" value={form.house} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, house: event.target.value }))} /></div>

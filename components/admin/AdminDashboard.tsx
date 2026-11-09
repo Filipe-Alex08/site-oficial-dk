@@ -10,8 +10,8 @@ import AttendanceManager from "@/components/admin/AttendanceManager";
 import AssessmentAdmin from "@/components/admin/AssessmentAdmin";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
-import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
-import { adminRoleOptions, graduationLabels, graduationOptions, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
+import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { friendlyError } from "@/lib/friendly-error";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
@@ -23,9 +23,17 @@ type MemberAccessForm = {
   full_name: string;
   member_kind: MemberKind;
   rank: DkRank;
-  graduation_level: GraduationLevel;
-  graduation_order: string;
+  graduation_cavalaria: GraduationLevel;
+  graduation_arquearia: GraduationLevel;
 };
+
+/** "Cavalaria: Prata · Arquearia: Bronze" para a conferência de pedidos. */
+function trackSummary(member: MemberProfile, requested = false) {
+  return graduationTracks.map((track) => {
+    const level = requested ? member[`requested_${track.field}`] ?? member[track.field] : member[track.field];
+    return `${track.label}: ${graduationLabels[level ?? "sem_graduacao"]}`;
+  }).join(" · ");
+}
 
 const statusLabels: Record<string, string> = {
   pendente: "Pendente", aprovado: "Aprovado", suspenso: "Suspenso", recusado: "Recusado",
@@ -258,8 +266,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       full_name: member.full_name,
       member_kind: member.member_kind,
       rank: member.rank,
-      graduation_level: member.graduation_level,
-      graduation_order: member.graduation_order || "",
+      graduation_cavalaria: member.graduation_cavalaria ?? "sem_graduacao",
+      graduation_arquearia: member.graduation_arquearia ?? "sem_graduacao",
     });
   }
 
@@ -284,8 +292,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
       body: JSON.stringify(principal ? {
         member_kind: memberForm.member_kind,
         rank: memberForm.rank,
-        graduation_level: memberForm.graduation_level,
-        graduation_order: memberForm.graduation_order,
+        graduation_cavalaria: memberForm.graduation_cavalaria,
+        graduation_arquearia: memberForm.graduation_arquearia,
       } : { member_kind: memberForm.member_kind }),
     });
     const result = await response.json();
@@ -405,6 +413,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
             {canCalendar && <Metric label="Atividades" value={activities.length} onClick={() => setSection("calendario")} />}
             {canMembers && <Metric label="Membros" value={members.length} onClick={() => setSection("membros")} />}
             {canMembers && <Metric label="Aguardando aprovação" value={members.filter((member) => member.status === "pendente").length} highlight onClick={() => setSection("membros")} />}
+            {canMembers && principal && <Metric label="Graduação a revisar" value={members.filter((member) => member.graduation_review_needed).length} highlight onClick={() => setSection("membros")} />}
           </div>
         </div>}
 
@@ -473,8 +482,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
           <AdminTitle title="Membros" />
           {members.filter((member) => member.access_request_id).map((member) => <article className="admin-form" key={member.access_request_id}>
             <h3>Conferência de {member.full_name} (@{member.nickname})</h3>
-            <p>Atual: {rankLabels[member.rank]} · {graduationLabels[member.graduation_level]} · {member.graduation_order || "Sem ordem"}</p>
-            <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {member.requested_graduation_level && graduationLabels[member.requested_graduation_level]} · {member.requested_graduation_order || "Sem ordem"}</p>
+            <p>Atual: {rankLabels[member.rank]} · {trackSummary(member)}</p>
+            <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {trackSummary(member, true)}</p>
             {member.id === currentUserId
               ? <p className="form-help">Sua própria solicitação precisa ser analisada por outro administrador.</p>
               : <div className="form-actions">
@@ -488,19 +497,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
               <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
               {principal ? <>
                 <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-                <div className="field"><label htmlFor="member-graduation">Graduação</label><Select id="member-graduation" value={memberForm.graduation_level} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, graduation_level: value as GraduationLevel })} /></div>
-                <div className="field"><label>Ordem de graduação</label><input value={memberForm.graduation_order} onChange={(event) => setMemberForm({ ...memberForm, graduation_order: event.target.value })} /></div>
+                {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label><Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel })} /></div>)}
               </> : <>
                 <div className="field"><label>Patente</label><p className="form-help">{rankLabels[memberForm.rank]}</p></div>
-                <div className="field"><label>Graduação</label><p className="form-help">{graduationLabels[memberForm.graduation_level]}</p></div>
-                <div className="field"><label>Ordem de graduação</label><p className="form-help">{memberForm.graduation_order || "Sem ordem"}</p></div>
+                {graduationTracks.map((track) => <div className="field" key={track.value}><label>Graduação em {track.label}</label><p className="form-help">{graduationLabels[memberForm[track.field]]}</p></div>)}
               </>}
             </div>
             {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}</fieldset>}
             <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
           </form>}
           {!principal && <p className="admin-hint">Funções de administrador são gerenciadas pelo ADM Principal.</p>}
-          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{member.graduation_level !== "sem_graduacao" ? <GraduationInsignia level={member.graduation_level} order={member.graduation_order} /> : <small>Sem graduação</small>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
+          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}{member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
         </div>}
 
         {section === "convites" && canMembers && <div>

@@ -9,7 +9,7 @@ import { apiFetch } from "@/lib/api-client";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
-import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
+import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 
 const activityLinks = [
   ["Swordplay e Boffering", "/atividades/swordplay"],
@@ -220,7 +220,7 @@ export default function Header() {
                   <div className="account-summary">
                     <strong>{displayName}</strong>
                     <span>{account.email}</span>
-                    {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} />{account.profile.graduation_level !== "sem_graduacao" && <GraduationInsignia level={account.profile.graduation_level} order={account.profile.graduation_order} />}</div>}
+                    {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} /><GraduationInsignias profile={account.profile} /></div>}
                     {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
                     {!account.profile && <small className="account-status">Cadastro incompleto</small>}
                   </div>
