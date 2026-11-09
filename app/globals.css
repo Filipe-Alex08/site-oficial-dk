@@ -469,10 +469,13 @@ textarea { min-height: 120px; resize: vertical; }
 .newcomer-strip { display: grid; grid-template-columns: minmax(280px, 36%) 1fr; margin-top: clamp(28px, 4vw, 48px); background: linear-gradient(180deg, var(--bg), var(--surface-1) 45%); }
 .newcomer-photo {
   min-height: 280px;
-  background:
-    linear-gradient(90deg, transparent 30%, var(--surface-1) 100%),
-    linear-gradient(180deg, var(--bg) 0%, transparent 32%, transparent 62%, var(--surface-1) 100%),
-    url("/images/dk-training.webp") center / cover;
+  background: url("/images/dk-training.webp") center / cover;
+  /* A foto some em transparência (e não em cor), então não sobra emenda sobre
+     o fundo da faixa. Borda direita bem suave; topo e base só levemente. */
+  -webkit-mask-image: linear-gradient(90deg, #000 48%, transparent 100%), linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, #000 48%, transparent 100%), linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-composite: intersect;
 }
 .newcomer-content { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: clamp(28px, 4vw, 56px); padding: 40px clamp(24px, 4vw, 56px) 40px 24px; }
 .newcomer-copy h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
@@ -625,7 +628,13 @@ a.card:hover { border-color: var(--border-strong); background: var(--surface-2);
   .home-portal-grid { grid-template-columns: 1fr 1fr; }
   .home-portal-events { grid-column: 1 / -1; }
   .newcomer-strip { grid-template-columns: 1fr; }
-  .newcomer-photo { min-height: 240px; background: linear-gradient(180deg, var(--bg) 0%, transparent 30%, transparent 55%, var(--surface-1) 100%), url("/images/dk-training.webp") center / cover; }
+  .newcomer-photo {
+    min-height: 240px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 55%, transparent 100%);
+    -webkit-mask-composite: source-over;
+    mask-composite: add;
+  }
   .newcomer-content { grid-template-columns: 1fr; padding: 28px 24px 36px; }
   .footer-main { grid-template-columns: 1fr auto; }
   .footer-links { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
