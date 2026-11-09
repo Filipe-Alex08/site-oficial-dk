@@ -21,10 +21,26 @@ export function getMemberTheme(profile: (GraduationFields & Pick<MemberProfile, 
   return level === "bronze" || level === "prata" || level === "ouro" ? level : "padrao";
 }
 
-export const graduationTracks: Array<{ value: "cavalaria" | "arquearia"; label: string; field: "graduation_cavalaria" | "graduation_arquearia" }> = [
-  { value: "cavalaria", label: "Cavalaria", field: "graduation_cavalaria" },
-  { value: "arquearia", label: "Arquearia", field: "graduation_arquearia" },
+export const graduationTracks: Array<{
+  value: "cavalaria" | "arquearia";
+  label: string;
+  field: "graduation_cavalaria" | "graduation_arquearia";
+  houseField: "house_cavalaria" | "house_arquearia";
+}> = [
+  { value: "cavalaria", label: "Cavalaria", field: "graduation_cavalaria", houseField: "house_cavalaria" },
+  { value: "arquearia", label: "Arquearia", field: "graduation_arquearia", houseField: "house_arquearia" },
 ];
+
+/**
+ * Casa do integrante em uma trilha. Sem as colunas por trilha (banco sem a
+ * migração 016), cai na casa única antiga.
+ */
+export function houseFor(profile: Pick<MemberProfile, "house" | "house_cavalaria" | "house_arquearia"> | null | undefined, track: "cavalaria" | "arquearia"): string {
+  if (!profile) return "";
+  const hasTracks = profile.house_cavalaria !== undefined || profile.house_arquearia !== undefined;
+  const value = hasTracks ? (track === "cavalaria" ? profile.house_cavalaria : profile.house_arquearia) : profile.house;
+  return value ?? "";
+}
 
 export const memberKindOptions: Array<{ value: MemberKind; label: string }> = [
   { value: "membro", label: "Membro" },

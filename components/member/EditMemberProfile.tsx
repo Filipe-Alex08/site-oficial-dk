@@ -8,10 +8,10 @@ import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
 import Select from "@/components/ui/Select";
-import { graduationOptions, graduationTracks, rankGroups } from "@/lib/member-access";
+import { graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
-type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house" | "shirt_number" | "primary_build" | "secondary_build">;
+type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
 export default function EditMemberProfile({ profile, canEditAccessDirectly = false }: { profile: MemberProfile; canEditAccessDirectly?: boolean }) {
   const router = useRouter();
@@ -30,7 +30,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     full_name: profile.full_name,
     nickname: profile.nickname,
     birth_date: profile.birth_date || "",
-    house: profile.house || "",
+    house_cavalaria: houseFor(profile, "cavalaria"),
+    house_arquearia: houseFor(profile, "arquearia"),
     shirt_number: profile.shirt_number?.toString() || "",
     primary_build: profile.primary_build || "",
     secondary_build: profile.secondary_build || "",
@@ -52,7 +53,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim(),
       birth_date: form.birth_date || null,
-      house: form.house.trim() || null,
+      house_cavalaria: form.house_cavalaria.trim() || null,
+      house_arquearia: form.house_arquearia.trim() || null,
       shirt_number: form.shirt_number === "" ? null : Number(form.shirt_number),
       primary_build: form.primary_build.trim() || null,
       secondary_build: form.secondary_build.trim() || null,
@@ -64,7 +66,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       requested_full_name: updated.full_name,
       requested_nickname: updated.nickname,
       requested_birth_date: updated.birth_date,
-      requested_house: updated.house,
+      requested_house_cavalaria: updated.house_cavalaria,
+      requested_house_arquearia: updated.house_arquearia,
       requested_shirt_number: updated.shirt_number,
       requested_primary_build: updated.primary_build,
       requested_secondary_build: updated.secondary_build,
@@ -87,7 +90,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       full_name: updated.full_name,
       nickname: updated.nickname,
       birth_date: updated.birth_date || "",
-      house: updated.house || "",
+      house_cavalaria: updated.house_cavalaria || "",
+      house_arquearia: updated.house_arquearia || "",
       shirt_number: updated.shirt_number?.toString() || "",
       primary_build: updated.primary_build || "",
       secondary_build: updated.secondary_build || "",
@@ -109,7 +113,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       full_name: profile.full_name,
       nickname: profile.nickname,
       birth_date: profile.birth_date || "",
-      house: profile.house || "",
+      house_cavalaria: houseFor(profile, "cavalaria"),
+      house_arquearia: houseFor(profile, "arquearia"),
       shirt_number: profile.shirt_number?.toString() || "",
       primary_build: profile.primary_build || "",
       secondary_build: profile.secondary_build || "",
@@ -131,7 +136,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`profile-${track.field}`}>Graduação em {track.label}</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>)}
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
-            <div className="field"><label htmlFor="member-house">Casa</label><input id="member-house" value={form.house} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, house: event.target.value }))} /></div>
+            {graduationTracks.map((track) => <div className="field" key={track.houseField}><label htmlFor={`member-${track.houseField}`}>Casa na {track.label}</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>)}
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>

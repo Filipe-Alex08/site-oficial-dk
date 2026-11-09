@@ -9,7 +9,7 @@ import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
 import { BuildInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { getBuildIcon } from "@/lib/insignias";
-import { graduationLabels, graduationTracks, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -60,7 +60,7 @@ export default async function MemberPage() {
               <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
               <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
               {graduationTracks.map((track) => <div key={track.value}><dt>{track.label}</dt><dd>{graduationLabels[profile[track.field] ?? "sem_graduacao"]}</dd></div>)}
-              <div><dt>Casa</dt><dd>{profile.house || "Não informada"}</dd></div>
+              {graduationTracks.map((track) => <div key={track.houseField}><dt>Casa na {track.label}</dt><dd>{houseFor(profile, track.value) || "Não informada"}</dd></div>)}
               <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
               <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
               <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>

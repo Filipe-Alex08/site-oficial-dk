@@ -8,7 +8,7 @@ const moduleExports = {};
 vm.runInNewContext(ts.transpileModule(fs.readFileSync("lib/member-access.ts", "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText, { exports: moduleExports });
-const { getMemberTheme } = moduleExports;
+const { getMemberTheme, houseFor } = moduleExports;
 
 test("uses the approved graduation even when the order is missing", () => {
   for (const graduation_order of [null, undefined, "", "Outra ordem", "Cavalaria", "Arquearia", "Ordem dos Cavaleiros", "Cavaleiro", "Cavaleira", "Arqueiro", "Arqueira", "Ordem dos Arqueiros", " ORDEM DOS CAVALEIROS "]) {
@@ -49,4 +49,15 @@ test("never themes a member who is not approved, whatever the tracks say", () =>
   for (const status of ["pendente", "suspenso", "recusado", "desativado"]) {
     assert.equal(getMemberTheme({ status, graduation_cavalaria: "ouro", graduation_arquearia: "ouro" }), "padrao");
   }
+});
+
+test("each track has its own house, falling back to the single legacy house only without track columns", () => {
+  const profile = { house: "Casa A", house_cavalaria: "Casa A", house_arquearia: "Casa B" };
+  assert.equal(houseFor(profile, "cavalaria"), "Casa A");
+  assert.equal(houseFor(profile, "arquearia"), "Casa B");
+  // Coluna existe e está vazia: não herda a casa da outra trilha.
+  assert.equal(houseFor({ house: "Casa A", house_cavalaria: "Casa A", house_arquearia: null }, "arquearia"), "");
+  // Banco ainda sem a migração 016.
+  assert.equal(houseFor({ house: "Casa A" }, "arquearia"), "Casa A");
+  assert.equal(houseFor(null, "cavalaria"), "");
 });

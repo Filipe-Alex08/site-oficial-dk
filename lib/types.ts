@@ -238,7 +238,10 @@ export type MemberProfile = {
   requested_rank?: DkRank | null;
   requested_graduation_level?: GraduationLevel | null;
   requested_graduation_order?: string | null;
+  /** Derivada: casa de uma das trilhas (mantida pelo banco). */
   house?: string | null;
+  house_cavalaria?: string | null;
+  house_arquearia?: string | null;
   shirt_number?: number | null;
   primary_build?: string | null;
   secondary_build?: string | null;
