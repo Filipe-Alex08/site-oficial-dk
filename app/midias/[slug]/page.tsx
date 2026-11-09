@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
-import { demoPosts } from "@/lib/content";
 import type { Post } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { cache } from "react";
@@ -12,7 +11,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 const loadPost = cache(async (slug: string) => {
   const supabase = await createClient();
-  if (!supabase) return demoPosts.find((item) => item.slug === slug);
+  if (!supabase) return undefined;
 
   const { data } = await supabase
     .from("posts")
@@ -63,8 +62,8 @@ export default async function PostPage({ params }: Props) {
           {post.youtube_url && <p><a className="text-link" href={post.youtube_url} target="_blank" rel="noopener noreferrer">Assistir no YouTube <ExternalLink size={16} /></a></p>}
           {post.tiktok_url && <p><a className="text-link" href={post.tiktok_url} target="_blank" rel="noopener noreferrer">Assistir no TikTok <ExternalLink size={16} /></a></p>}
         </section>}
-        <h2>Fotos e vídeos</h2>
-        {post.media_items?.length ? (
+        {post.media_items?.length ? (<>
+          <h2>Fotos e vídeos</h2>
           <div className="media-gallery">{[...post.media_items].sort((a,b) => a.sort_order-b.sort_order).map((item, index) => (
             <figure className="gallery-item" key={item.id}>
               {item.type === "video" ? (
@@ -80,9 +79,7 @@ export default async function PostPage({ params }: Props) {
               {item.caption && item.caption !== post.content && <figcaption>{item.caption}</figcaption>}
             </figure>
           ))}</div>
-        ) : (
-          <div className="empty-state"><ImageIcon /><h3>Galeria em preparação</h3><p>As fotos e os vídeos poderão ser adicionados pelo CMS.</p></div>
-        )}
+        </>) : null}
       </div></div></section>
     </article>
   );

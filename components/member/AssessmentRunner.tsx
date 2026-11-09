@@ -76,7 +76,7 @@ export default function AssessmentRunner({ token }: { token: string }) {
   });
 
   if (assessmentQuery.isPending) return <div className="assessment-loading"><LoaderCircle className="spin" /><p>Carregando sua indicação…</p></div>;
-  if (!assessmentQuery.data) return <div className="empty-state"><AlertTriangle /><h2>Avaliação indisponível</h2><p>{assessmentQuery.error instanceof Error ? assessmentQuery.error.message : "Este link não pertence ao usuário conectado."}</p></div>;
+  if (!assessmentQuery.data) return <div className="empty-state"><AlertTriangle /><h2>Avaliação indisponível</h2><p>{assessmentQuery.error instanceof Error ? assessmentQuery.error.message : "Não foi possível abrir esta avaliação."}</p></div>;
   return <AssessmentRunnerLoaded token={token} initialPayload={assessmentQuery.data} />;
 }
 
@@ -207,7 +207,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
       <span><strong>{track}</strong> área</span>
       <span><strong>{content}</strong> conteúdos</span>
     </div>
-    <div className="assessment-warning"><LockKeyhole /><p><strong>Tentativa única.</strong> Depois de iniciar, esta indicação ficará vinculada ao seu perfil. Se fechar a página, você poderá continuar a mesma tentativa enquanto houver prazo.</p></div>
+    <div className="assessment-warning"><LockKeyhole /><p><strong>Tentativa única.</strong> Se fechar a página, você continua de onde parou enquanto houver prazo.</p></div>
     {error && <p className="assessment-error">{error}</p>}
     <button className="button button-primary assessment-start" type="button" onClick={() => requestAction("start")} disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ClipboardIcon />} Iniciar avaliação</button>
   </article>;
@@ -219,7 +219,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
     {payload.assignment.status === "aguardando_correcao" ? <p>Suas respostas foram entregues. O resultado final será registrado após a correção de {payload.assignment.pending_open_count} questão(ões) aberta(s).</p> : payload.assignment.status === "corrigido" ? <>
       <strong className="assessment-final-score">{Number(payload.assignment.score_percent ?? 0).toFixed(1)}%</strong>
       <p>{payload.assignment.correct_count ?? 0} acertos · {payload.assignment.incorrect_count ?? 0} erros</p>
-      <span className="assessment-decision">{payload.assignment.passed ? "Resultado aprovado" : "Resultado abaixo do percentual de aprovação"}</span>
+      <span className="assessment-decision">{payload.assignment.passed ? "Aprovado" : "Não aprovado"}</span>
     </> : <p>Esta indicação está {assessmentAssignmentStatusLabels[payload.assignment.status].toLocaleLowerCase("pt-BR")} e não pode ser respondida.</p>}
     <Link className="button button-primary" href="/membro/simulados">Voltar ao histórico</Link>
   </article>;

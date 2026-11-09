@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
-import { RankInsignia } from "@/components/member/Insignia";
+import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -28,6 +28,15 @@ function responseLine(entry: AttendanceEntry, index: number) {
   const guests = entry.guest_count ? ` +${entry.guest_count} ${entry.guest_count === 1 ? "convidado" : "convidados"}` : "";
   const note = entry.note ? ` (${entry.note})` : "";
   return `${index + 1}. ${entry.nickname}${guests}${note}`;
+}
+
+function AttendanceInsignias({ entry }: { entry: AttendanceEntry }) {
+  return (
+    <span className="attendance-insignias">
+      <RankInsignia rank={entry.rank} variant="icon" />
+      <GraduationInsignias profile={entry} variant="icon" />
+    </span>
+  );
 }
 
 function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: RosterEntry[]) {
@@ -70,7 +79,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
     queryKey,
     enabled: Boolean(supabase),
     queryFn: async () => {
-      if (!supabase) throw new Error("Banco não configurado.");
+      if (!supabase) throw new Error("Serviço indisponível no momento.");
       const [attendanceResults, rosterResult] = await Promise.all([
         Promise.all(activities.map(async (activity) => {
           const { data: rows, error } = await supabase.rpc("get_activity_attendance", { requested_activity_id: activity.id });
@@ -87,7 +96,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   const roster = data?.roster ?? [];
   const responseMutation = useMutation({
     mutationFn: async ({ activity, response }: { activity: Activity; response: AttendanceResponse | null }) => {
-      if (!supabase) throw new Error("Banco não configurado.");
+      if (!supabase) throw new Error("Serviço indisponível no momento.");
       if (response) {
         const form = forms[activity.id] ?? { guest_count: 0, note: "" };
         const { error } = await supabase.from("activity_attendance").upsert({ activity_id: activity.id, user_id: userId, response, guest_count: response === "vai" ? form.guest_count : 0, note: form.note.trim() || null }, { onConflict: "activity_id,user_id" });
@@ -151,7 +160,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   }
 
   if (!activities.length) {
-    return <div className="empty-state"><Users /><h2>Nenhuma atividade disponível</h2><p>As atividades abertas para confirmação aparecerão aqui.</p></div>;
+    return <div className="empty-state"><Users /><h2>Nenhuma atividade aberta</h2></div>;
   }
 
   if (isPending) return <div className="empty-state" role="status">Carregando presenças…</div>;
@@ -185,13 +194,12 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
             </div>
 
             <div className="attendance-columns">
-              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
-              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
+              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
+              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
             </div>
 
             <footer>
-              <p>O compartilhamento envia texto formatado. As marcações com @ precisam ser adicionadas manualmente no WhatsApp.</p>
-              <div><button className="button button-ghost" onClick={() => copyList(activity)}><Clipboard size={17} /> Copiar lista</button><button className="button button-primary" onClick={() => shareOnWhatsApp(activity)}><MessageCircle size={17} /> WhatsApp</button></div>
+              <div><button className="button button-ghost" onClick={() => copyList(activity)}><Clipboard size={17} /> Copiar lista</button><button className="button button-primary" onClick={() => shareOnWhatsApp(activity)}><MessageCircle size={17} /> Enviar no WhatsApp</button></div>
             </footer>
           </article>
         );

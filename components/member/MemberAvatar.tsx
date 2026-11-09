@@ -44,7 +44,7 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
 
     const supabase = createClient();
     if (!supabase) {
-      setMessage("Não foi possível conectar ao banco de dados.");
+      setMessage("Serviço indisponível no momento. Tente novamente.");
       return;
     }
 
@@ -89,7 +89,7 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
     if (!avatarPath) return;
     const supabase = createClient();
     if (!supabase) {
-      setMessage("Não foi possível conectar ao banco de dados.");
+      setMessage("Serviço indisponível no momento. Tente novamente.");
       setMenuOpen(false);
       return;
     }

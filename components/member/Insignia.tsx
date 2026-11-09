@@ -5,7 +5,7 @@ import { getBuildIcon, getGraduationIcon, getGraduationTrack, rankIcons } from "
 import type { DkRank, DocumentTrack, GraduationLevel } from "@/lib/types";
 import InsigniaBadge from "@/components/member/InsigniaBadge";
 
-type Variant = "inline" | "badge";
+type Variant = "inline" | "badge" | "icon";
 
 export function InsigniaColorFilters() {
   return <svg className="insignia-color-filters" aria-hidden="true" focusable="false" width="0" height="0">
@@ -26,6 +26,7 @@ function Insignia({ src, label, variant = "inline", kind = "rank", caption, artC
   const art = <span className={`insignia-art ${artClass}`} aria-hidden="true">
       {src ? <Image src={src} alt="" width={64} height={64} /> : kind === "graduation" ? <Award /> : <Shield />}
     </span>;
+  if (variant === "icon") return <span className={`insignia insignia-icon insignia-${kind}`} role="img" aria-label={label} title={label}>{art}</span>;
   if (variant === "badge") return <InsigniaBadge label={label} caption={caption} kind={kind}>{art}</InsigniaBadge>;
   return <span className={`insignia insignia-${variant} insignia-${kind}`}>
     {art}
@@ -43,6 +44,26 @@ export function GraduationInsignia({ level, order, track, variant }: {
   const resolvedTrack = track ?? getGraduationTrack(order);
   const label = resolvedTrack ? `${resolvedTrack === "cavalaria" ? "Cavalaria" : "Arquearia"} ${graduationLabels[level]}` : graduationLabels[level];
   return <Insignia src={getGraduationIcon(level, resolvedTrack)} label={label} variant={variant} kind="graduation" artClass={resolvedTrack === "arquearia" ? `archery-${level}` : ""} />;
+}
+
+/**
+ * Uma insígnia por trilha com graduação (Cavalaria e/ou Arquearia). Sem as
+ * colunas de trilha (banco sem a migração 015), cai na graduação única antiga.
+ */
+export function GraduationInsignias({ profile, variant }: {
+  profile: { graduation_level?: GraduationLevel | null; graduation_order?: string | null; graduation_cavalaria?: GraduationLevel | null; graduation_arquearia?: GraduationLevel | null };
+  variant?: Variant;
+}) {
+  const hasTracks = profile.graduation_cavalaria != null || profile.graduation_arquearia != null;
+  if (!hasTracks) {
+    const level = profile.graduation_level;
+    return level && level !== "sem_graduacao" ? <GraduationInsignia level={level} order={profile.graduation_order} variant={variant} /> : null;
+  }
+  const { graduation_cavalaria: cavalaria, graduation_arquearia: arquearia } = profile;
+  return <>
+    {cavalaria && cavalaria !== "sem_graduacao" && <GraduationInsignia level={cavalaria} track="cavalaria" variant={variant} />}
+    {arquearia && arquearia !== "sem_graduacao" && <GraduationInsignia level={arquearia} track="arquearia" variant={variant} />}
+  </>;
 }
 
 export function BuildInsignia({ build, variant, caption }: { build?: string | null; variant?: Variant; caption?: string }) {

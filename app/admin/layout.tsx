@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
-  if (!supabase) return children;
+  if (!supabase) return <div className="app-area">{children}</div>;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
@@ -20,5 +20,5 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   ]);
   if (!roles?.length && !canManageAssessments) redirect("/membro");
 
-  return children;
+  return <div className="app-area">{children}</div>;
 }

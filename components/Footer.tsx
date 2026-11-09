@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="container footer-main">
         <div className="footer-brand">
           <Link href="/" aria-label="Death Knights, página inicial">
-            <Image className="footer-emblem" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={64} height={64} />
+            <Image className="footer-emblem" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={56} height={56} />
           </Link>
           <div>
             <strong>DK — Death Knights</strong>
@@ -21,53 +21,28 @@ export default function Footer() {
         <nav className="footer-links" aria-label="Links do rodapé">
           <Link href="/">Início</Link>
           <Link href="/sobre">Sobre</Link>
-          <Link href="/atividades/jogos">Atividades</Link>
+          <Link href="/atividades/swordplay">Atividades</Link>
           <Link href="/midias">Mídias</Link>
           <Link href="/eventos">Eventos</Link>
         </nav>
 
-        <div className="social-links" aria-label="Redes sociais">
-          <a
-            href={socialLinks.instagram}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Instagram"
-          >
+        <div className="social-links">
+          <a href={socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
             <Instagram />
           </a>
-          <a
-            href={socialLinks.whatsapp}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="WhatsApp"
-          >
+          <a href={socialLinks.whatsapp} target="_blank" rel="noreferrer" aria-label="WhatsApp">
             <WhatsAppIcon />
           </a>
-          {socialLinks.youtube ? (
-            <a
-              href={socialLinks.youtube}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="YouTube"
-            >
+          {socialLinks.youtube && (
+            <a href={socialLinks.youtube} target="_blank" rel="noreferrer" aria-label="YouTube">
               <Youtube />
             </a>
-          ) : (
-            <span
-              className="social-disabled"
-              title="Adicione o link do YouTube nas configurações"
-            >
-              <Youtube />
-            </span>
           )}
         </div>
       </div>
 
       <div className="container footer-base">
-        <p className="copyright">
-          © {new Date().getFullYear()} DK — Death Knights. Todos os direitos
-          reservados.
-        </p>
+        <p className="copyright">© {new Date().getFullYear()} DK — Death Knights. Todos os direitos reservados.</p>
         <p>Humildade • Honra • Respeito</p>
       </div>
     </footer>

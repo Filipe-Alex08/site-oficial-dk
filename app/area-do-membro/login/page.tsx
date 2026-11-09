@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import AuthShell from "@/components/auth/AuthShell";
 import LoginForm from "@/components/auth/LoginForm";
-import PageHero from "@/components/PageHero";
 import { loginErrorMessage } from "@/lib/auth-callback";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Área do Membro" };
+export const metadata: Metadata = { title: "Entrar" };
 
 export default async function LoginPage({
   searchParams,
@@ -24,9 +24,8 @@ export default async function LoginPage({
   }
 
   return (
-    <>
-      <PageHero eyebrow="Acesso restrito" title="Área do Membro" description="Entre com sua conta aprovada para acessar as informações internas do DK." />
-      <section className="section"><div className="container auth-wrap">{notice && <p className="form-message error">{notice}</p>}<LoginForm /></div></section>
-    </>
+    <AuthShell title="Entrar" description="Acesse a área do membro." notice={notice}>
+      <LoginForm />
+    </AuthShell>
   );
 }

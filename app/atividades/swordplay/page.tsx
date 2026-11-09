@@ -9,9 +9,8 @@ export default function SwordplayPage() {
   return (
     <>
       <PageHero
-        eyebrow="Atividades"
         title="Swordplay e Boffering"
-        description="Uma prática com equipamentos acolchoados que combina técnica, estratégia e movimento."
+        description="Combate esportivo com equipamentos acolchoados."
         variant="training"
       />
       <section className="section">

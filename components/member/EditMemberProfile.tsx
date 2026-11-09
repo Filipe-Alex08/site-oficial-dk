@@ -2,22 +2,41 @@
 
 import { buildOptions } from "@/lib/insignias";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
 import Select from "@/components/ui/Select";
-import { graduationOptions, rankGroups } from "@/lib/member-access";
+import { graduationLabels, graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
+import TrackGroup from "@/components/member/TrackGroup";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
-type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house" | "shirt_number" | "primary_build" | "secondary_build">;
+type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
-export default function EditMemberProfile({ profile, canEditAccessDirectly = false }: { profile: MemberProfile; canEditAccessDirectly?: boolean }) {
+/**
+ * Perfil do membro com edição no próprio lugar: `children` é a visão somente
+ * leitura (renderizada no servidor) e some enquanto o formulário está aberto.
+ */
+export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children: ReactNode }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    // A troca entre leitura e edição muda a altura do card; sem isso, ao sair
+    // de um formulário longo a página ficaria rolada para o meio do nada.
+    if (firstRender.current) { firstRender.current = false; return; }
+    const card = rootRef.current?.closest(".profile-card") ?? rootRef.current;
+    if (!card) return;
+    const headerHeight = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 68;
+    if (card.getBoundingClientRect().top < headerHeight) {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      card.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
+  }, [editing]);
   useEffect(() => {
     if (message !== "Perfil atualizado.") return;
     const timeout = window.setTimeout(() => setMessage(""), 4000);
@@ -25,12 +44,13 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   }, [message]);
   const [form, setForm] = useState({
     rank: profile.requested_rank ?? profile.rank,
-    graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
-    graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
+    graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
+    graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
     full_name: profile.full_name,
     nickname: profile.nickname,
     birth_date: profile.birth_date || "",
-    house: profile.house || "",
+    house_cavalaria: houseFor(profile, "cavalaria"),
+    house_arquearia: houseFor(profile, "arquearia"),
     shirt_number: profile.shirt_number?.toString() || "",
     primary_build: profile.primary_build || "",
     secondary_build: profile.secondary_build || "",
@@ -39,32 +59,34 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const supabase = createClient();
-    if (!supabase) return setMessage("Não foi possível conectar ao banco de dados.");
+    if (!supabase) return setMessage("Serviço indisponível no momento. Tente novamente.");
 
     setSaving(true);
     setMessage("");
     // Patente e graduação passam por aprovação de um administrador, inclusive
     // quando quem edita é o próprio administrador.
     const accessDetailsChanged = form.rank !== profile.rank
-      || form.graduation_level !== profile.graduation_level
-      || (form.graduation_order.trim() || null) !== (profile.graduation_order || null);
+      || form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao")
+      || form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao");
     const updated: EditableProfile = {
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim(),
       birth_date: form.birth_date || null,
-      house: form.house.trim() || null,
+      house_cavalaria: form.house_cavalaria.trim() || null,
+      house_arquearia: form.house_arquearia.trim() || null,
       shirt_number: form.shirt_number === "" ? null : Number(form.shirt_number),
       primary_build: form.primary_build.trim() || null,
       secondary_build: form.secondary_build.trim() || null,
     };
     const { error } = await supabase.rpc("update_own_member_profile_with_access_request", {
       requested_rank: form.rank,
-      requested_graduation_level: form.graduation_level,
-      requested_graduation_order: form.graduation_order.trim() || null,
+      requested_graduation_cavalaria: form.graduation_cavalaria,
+      requested_graduation_arquearia: form.graduation_arquearia,
       requested_full_name: updated.full_name,
       requested_nickname: updated.nickname,
       requested_birth_date: updated.birth_date,
-      requested_house: updated.house,
+      requested_house_cavalaria: updated.house_cavalaria,
+      requested_house_arquearia: updated.house_arquearia,
       requested_shirt_number: updated.shirt_number,
       requested_primary_build: updated.primary_build,
       requested_secondary_build: updated.secondary_build,
@@ -82,12 +104,13 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
 
     setForm({
       rank: form.rank,
-      graduation_level: form.graduation_level,
-      graduation_order: form.graduation_order,
+      graduation_cavalaria: form.graduation_cavalaria,
+      graduation_arquearia: form.graduation_arquearia,
       full_name: updated.full_name,
       nickname: updated.nickname,
       birth_date: updated.birth_date || "",
-      house: updated.house || "",
+      house_cavalaria: updated.house_cavalaria || "",
+      house_arquearia: updated.house_arquearia || "",
       shirt_number: updated.shirt_number?.toString() || "",
       primary_build: updated.primary_build || "",
       secondary_build: updated.secondary_build || "",
@@ -104,12 +127,13 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   function cancel() {
     setForm({
       rank: profile.requested_rank ?? profile.rank,
-      graduation_level: profile.requested_graduation_level ?? profile.graduation_level,
-      graduation_order: (profile.access_request_id ? profile.requested_graduation_order : profile.graduation_order) || "",
+      graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
+      graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
       full_name: profile.full_name,
       nickname: profile.nickname,
       birth_date: profile.birth_date || "",
-      house: profile.house || "",
+      house_cavalaria: houseFor(profile, "cavalaria"),
+      house_arquearia: houseFor(profile, "arquearia"),
       shirt_number: profile.shirt_number?.toString() || "",
       primary_build: profile.primary_build || "",
       secondary_build: profile.secondary_build || "",
@@ -118,35 +142,52 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     setEditing(false);
   }
 
+  const tierOf = (level: GraduationLevel) => (level === "sem_graduacao" ? undefined : level);
+
   return (
-    <>
-    {profile.access_request_id && <p className="profile-edit-help" role="status">Patente, graduação e ordem aguardando aprovação do administrador.</p>}
-    <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
-      {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button> : (
-        <form onSubmit={submit}>
+    <div ref={rootRef} className={`profile-edit ${editing ? "is-editing" : ""}`}>
+      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
+      {!editing ? (
+        <>
+          <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button>
+          <div className="profile-edit-pane">{children}</div>
+        </>
+      ) : (
+        <>
+        {/* Mesmo canto e mesmo estilo do lápis: o botão só troca de ícone. */}
+        <button className="profile-edit-trigger" type="button" aria-label="Sair do modo de edição" title="Sair do modo de edição" onClick={cancel} disabled={saving}><X size={14} /></button>
+        <form className="profile-edit-pane" onSubmit={submit}>
+          <div className="profile-edit-header">
+            <h3 className="profile-edit-title">Editar perfil</h3>
+          </div>
           <div className="profile-edit-fields">
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
-            <div className="field"><label htmlFor="profile-graduation">Graduação</label><Select id="profile-graduation" value={form.graduation_level} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, graduation_level: value as GraduationLevel }))} /></div>
-            <div className="field"><label htmlFor="profile-graduation-order">Ordem de graduação</label><input id="profile-graduation-order" value={form.graduation_order} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, graduation_order: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
-            <div className="field"><label htmlFor="member-house">Casa</label><input id="member-house" value={form.house} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, house: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
             <datalist id="member-build-options">{buildOptions.map((build) => <option key={build} value={build} />)}</datalist>
+            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
           </div>
-          <p className="profile-edit-help">{canEditAccessDirectly ? "Como administrador, suas alterações de patente, graduação e ordem são aplicadas diretamente ao seu perfil." : "Patente, graduação e ordem serão enviadas para aprovação do administrador. Seus acessos atuais permanecem até a aprovação."}</p>
+          {graduationTracks.map((track) => (
+            <TrackGroup key={track.value} title={track.label} tier={tierOf(form[track.field])}>
+              <div className="profile-edit-fields">
+                <div className="field"><label htmlFor={`profile-${track.field}`}>Graduação</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>
+                <div className="field"><label htmlFor={`member-${track.houseField}`}>Casa</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>
+              </div>
+            </TrackGroup>
+          ))}
+          <p className="profile-edit-help">{canEditAccessDirectly ? "Suas alterações de patente e graduação valem na hora." : "Alterações de patente e graduação passam por aprovação; seus acessos atuais continuam até lá."}</p>
           <div className="profile-edit-actions">
             <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
             <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving}><X size={16} /> Cancelar</button>
           </div>
         </form>
+        </>
       )}
       {message && <p className={`profile-edit-message ${message === "Perfil atualizado." ? "success" : "error"}`} role="status">{message}</p>}
     </div>
-    </>
   );
 }

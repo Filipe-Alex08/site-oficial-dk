@@ -41,20 +41,20 @@ export default function CalendarViews({
     <>
       <div className="calendar-mode-toggle" role="group" aria-label="Modo de visualização do calendário">
         <button type="button" className={view === "cronograma" ? "active" : ""} aria-pressed={view === "cronograma"} onClick={() => setView("cronograma")}>
-          <List size={17} /> Cronograma
+          <List size={17} /> Próximas
         </button>
         <button type="button" className={view === "agenda" ? "active" : ""} aria-pressed={view === "agenda"} onClick={() => setView("agenda")}>
-          <CalendarRange size={17} /> Agenda
+          <CalendarRange size={17} /> Ano todo
         </button>
       </div>
 
-      {isApprovedMember && view === "agenda" && birthdaysUnavailable && <p role="status">Não foi possível carregar os aniversários. Tente atualizar a página em alguns instantes.</p>}
-      {isApprovedMember && !birthdaysUnavailable && !birthdays.length && view === "agenda" && <p role="status">Nenhum aniversário cadastrado para os membros aprovados.</p>}
+      {isApprovedMember && view === "agenda" && birthdaysUnavailable && <p role="status">Aniversários indisponíveis no momento.</p>}
+      
       {isApprovedMember && view === "cronograma" && <section className="calendar-birthdays" aria-label="Aniversariantes do mês">
         <h3><Cake size={20} aria-hidden="true" /> Aniversariantes do mês</h3>
-        {birthdaysUnavailable ? <p role="status">Aniversários temporariamente indisponíveis.</p> : monthBirthdays.length ? <ul>
+        {birthdaysUnavailable ? <p role="status">Aniversários indisponíveis no momento.</p> : monthBirthdays.length ? <ul>
           {monthBirthdays.map((member) => <li key={member.user_id}><strong>{String(member.day).padStart(2, "0")}/{String(member.month).padStart(2, "0")}</strong> {member.nickname}</li>)}
-        </ul> : <p>Nenhum aniversário cadastrado neste mês.</p>}
+        </ul> : <p>Nenhum aniversário neste mês.</p>}
       </section>}
 
       {view === "cronograma" ? (
@@ -63,7 +63,6 @@ export default function CalendarViews({
             <div className="empty-state">
               <CalendarDays />
               <h3>Nenhuma atividade agendada</h3>
-              <p>As próximas atividades do DK aparecerão aqui assim que forem cadastradas.</p>
             </div>
           )}
           {upcomingActivities.map((activity) => {

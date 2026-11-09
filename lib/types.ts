@@ -40,6 +40,9 @@ export type AttendanceEntry = {
   user_id: string;
   nickname: string;
   rank: DkRank;
+  /** Só vêm depois da migração 015; antes dela ficam ausentes. */
+  graduation_cavalaria?: GraduationLevel | null;
+  graduation_arquearia?: GraduationLevel | null;
   response: AttendanceResponse;
   guest_count: number;
   note?: string | null;
@@ -81,6 +84,8 @@ export type MediaItem = {
 
 export type Game = {
   id: string;
+  /** Usado na URL: /atividades/jogos/<slug> */
+  slug: string;
   name: string;
   summary: string;
   objective: string;
@@ -219,13 +224,24 @@ export type MemberProfile = {
   avatar_path?: string | null;
   member_kind: MemberKind;
   rank: DkRank;
+  /** Derivada: maior nível entre as trilhas (mantida pelo banco). */
   graduation_level: GraduationLevel;
+  /** Derivada das trilhas (mantida pelo banco). */
   graduation_order?: string | null;
+  graduation_cavalaria?: GraduationLevel;
+  graduation_arquearia?: GraduationLevel;
+  requested_graduation_cavalaria?: GraduationLevel | null;
+  requested_graduation_arquearia?: GraduationLevel | null;
+  /** Tinha graduação, mas a ordem não dizia a trilha: o ADM Principal define. */
+  graduation_review_needed?: boolean;
   access_request_id?: string | null;
   requested_rank?: DkRank | null;
   requested_graduation_level?: GraduationLevel | null;
   requested_graduation_order?: string | null;
+  /** Derivada: casa de uma das trilhas (mantida pelo banco). */
   house?: string | null;
+  house_cavalaria?: string | null;
+  house_arquearia?: string | null;
   shirt_number?: number | null;
   primary_build?: string | null;
   secondary_build?: string | null;

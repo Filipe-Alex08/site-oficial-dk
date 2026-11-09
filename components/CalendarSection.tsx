@@ -1,12 +1,11 @@
 import CalendarViews from "@/components/CalendarViews";
 import { saoPauloDate, type MemberBirthday } from "@/lib/birthdays";
-import { demoActivities } from "@/lib/content";
 import type { Activity, AttendanceResponse } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function CalendarSection() {
-  let activities: Activity[] = demoActivities;
+  let activities: Activity[] = [];
   let isApprovedMember = false;
   let birthdays: MemberBirthday[] = [];
   let birthdaysUnavailable = false;
@@ -69,8 +68,7 @@ export default async function CalendarSection() {
     <section className="section calendar-section" id="calendario">
       <div className="container">
         <div className="section-heading">
-          <div><p className="eyebrow">Cronograma</p><h2>Calendário do DK</h2></div>
-          <p>Confira os próximos treinos e atividades. Alterações são publicadas diretamente pela equipe responsável.</p>
+          <h2>Calendário do DK</h2>
         </div>
         <CalendarViews activities={activities} upcomingActivities={upcomingActivities} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} initialYear={currentYear} birthdays={isApprovedMember ? birthdays : []} birthdaysUnavailable={isApprovedMember && birthdaysUnavailable} currentMonth={saoPauloDate(now).month} />
       </div>
