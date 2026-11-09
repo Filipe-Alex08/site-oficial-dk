@@ -40,6 +40,9 @@ export type AttendanceEntry = {
   user_id: string;
   nickname: string;
   rank: DkRank;
+  /** Só vem depois da migração 014; antes dela fica ausente. */
+  graduation_level?: GraduationLevel | null;
+  graduation_order?: string | null;
   response: AttendanceResponse;
   guest_count: number;
   note?: string | null;

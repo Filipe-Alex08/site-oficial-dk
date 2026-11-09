@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
-import { RankInsignia } from "@/components/member/Insignia";
+import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -28,6 +28,16 @@ function responseLine(entry: AttendanceEntry, index: number) {
   const guests = entry.guest_count ? ` +${entry.guest_count} ${entry.guest_count === 1 ? "convidado" : "convidados"}` : "";
   const note = entry.note ? ` (${entry.note})` : "";
   return `${index + 1}. ${entry.nickname}${guests}${note}`;
+}
+
+function AttendanceInsignias({ entry }: { entry: AttendanceEntry }) {
+  const hasGraduation = entry.graduation_level && entry.graduation_level !== "sem_graduacao";
+  return (
+    <span className="attendance-insignias">
+      <RankInsignia rank={entry.rank} variant="icon" />
+      {hasGraduation && <GraduationInsignia level={entry.graduation_level!} order={entry.graduation_order} variant="icon" />}
+    </span>
+  );
 }
 
 function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: RosterEntry[]) {
@@ -185,8 +195,8 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
             </div>
 
             <div className="attendance-columns">
-              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
-              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<small><RankInsignia rank={entry.rank} /></small></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
+              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
+              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
             </div>
 
             <footer>

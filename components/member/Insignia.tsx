@@ -5,7 +5,7 @@ import { getBuildIcon, getGraduationIcon, getGraduationTrack, rankIcons } from "
 import type { DkRank, DocumentTrack, GraduationLevel } from "@/lib/types";
 import InsigniaBadge from "@/components/member/InsigniaBadge";
 
-type Variant = "inline" | "badge";
+type Variant = "inline" | "badge" | "icon";
 
 export function InsigniaColorFilters() {
   return <svg className="insignia-color-filters" aria-hidden="true" focusable="false" width="0" height="0">
@@ -26,6 +26,7 @@ function Insignia({ src, label, variant = "inline", kind = "rank", caption, artC
   const art = <span className={`insignia-art ${artClass}`} aria-hidden="true">
       {src ? <Image src={src} alt="" width={64} height={64} /> : kind === "graduation" ? <Award /> : <Shield />}
     </span>;
+  if (variant === "icon") return <span className={`insignia insignia-icon insignia-${kind}`} role="img" aria-label={label} title={label}>{art}</span>;
   if (variant === "badge") return <InsigniaBadge label={label} caption={caption} kind={kind}>{art}</InsigniaBadge>;
   return <span className={`insignia insignia-${variant} insignia-${kind}`}>
     {art}
