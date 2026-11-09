@@ -311,14 +311,14 @@
 .attendance-insignias {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   margin-left: 8px;
   vertical-align: middle
 }
 
 .attendance-insignias .insignia-art {
-  width: 18px;
-  height: 22px
+  width: 22px;
+  height: 27px
 }
 
 .attendance-card>footer {
