@@ -418,8 +418,7 @@ textarea { min-height: 120px; resize: vertical; }
 .home-hero-content { max-width: 620px; }
 .home-hero-content h1 { font-size: clamp(2.8rem, 6vw, 4.8rem); line-height: 1; text-shadow: 0 8px 50px rgba(0, 0, 0, 0.7); }
 .home-hero-content h1 span { display: block; margin-top: 6px; color: var(--accent-bright); font-size: 0.7em; font-weight: 500; }
-.home-hero-content > p:not(.eyebrow) { max-width: 520px; margin-top: 20px; color: #d2d2d6; font-size: 1.1rem; line-height: 1.6; }
-.home-hero-content > .eyebrow { margin-bottom: 14px; }
+.home-hero-content > p { max-width: 520px; margin-top: 20px; color: #d2d2d6; font-size: 1.1rem; line-height: 1.6; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 
 .home-portals { padding: clamp(28px, 4vw, 48px) 0 0; }
