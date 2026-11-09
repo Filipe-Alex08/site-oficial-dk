@@ -2,19 +2,23 @@
 
 import { buildOptions } from "@/lib/insignias";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
 import Select from "@/components/ui/Select";
 import { graduationLabels, graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
-import TrackSection from "@/components/member/TrackSection";
+import TrackGroup from "@/components/member/TrackGroup";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
-export default function EditMemberProfile({ profile, canEditAccessDirectly = false }: { profile: MemberProfile; canEditAccessDirectly?: boolean }) {
+/**
+ * Perfil do membro com edição no próprio lugar: `children` é a visão somente
+ * leitura (renderizada no servidor) e some enquanto o formulário está aberto.
+ */
+export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children: ReactNode }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -124,34 +128,38 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     setEditing(false);
   }
 
+  const tierOf = (level: GraduationLevel) => (level === "sem_graduacao" ? undefined : level);
+
   return (
-    <>
-    {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
     <div className={`profile-edit ${editing ? "is-editing" : ""}`}>
-      {!editing ? <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button> : (
+      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
+      {!editing ? (
+        <>
+          <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button>
+          {children}
+        </>
+      ) : (
         <form onSubmit={submit}>
+          <h3 className="profile-edit-title">Editar perfil</h3>
           <div className="profile-edit-fields">
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
-            {graduationTracks.map((track) => (
-              <TrackSection
-                key={track.value}
-                title={track.label}
-                hint={graduationLabels[form[track.field]]}
-                defaultOpen={(profile[track.field] ?? "sem_graduacao") !== "sem_graduacao" || Boolean(houseFor(profile, track.value))}
-              >
-                <div className="field"><label htmlFor={`profile-${track.field}`}>Graduação</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>
-                <div className="field"><label htmlFor={`member-${track.houseField}`}>Casa</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>
-              </TrackSection>
-            ))}
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
             <datalist id="member-build-options">{buildOptions.map((build) => <option key={build} value={build} />)}</datalist>
+            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
           </div>
+          {graduationTracks.map((track) => (
+            <TrackGroup key={track.value} title={track.label} tier={tierOf(form[track.field])}>
+              <div className="profile-edit-fields">
+                <div className="field"><label htmlFor={`profile-${track.field}`}>Graduação</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>
+                <div className="field"><label htmlFor={`member-${track.houseField}`}>Casa</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>
+              </div>
+            </TrackGroup>
+          ))}
           <p className="profile-edit-help">{canEditAccessDirectly ? "Suas alterações de patente e graduação valem na hora." : "Alterações de patente e graduação passam por aprovação; seus acessos atuais continuam até lá."}</p>
           <div className="profile-edit-actions">
             <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
@@ -161,6 +169,5 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       )}
       {message && <p className={`profile-edit-message ${message === "Perfil atualizado." ? "success" : "error"}`} role="status">{message}</p>}
     </div>
-    </>
   );
 }

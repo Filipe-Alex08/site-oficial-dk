@@ -8,7 +8,7 @@ import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
 import { BuildInsignia, GraduationInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
-import TrackSection from "@/components/member/TrackSection";
+import TrackGroup from "@/components/member/TrackGroup";
 import { getBuildIcon } from "@/lib/insignias";
 import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
@@ -57,32 +57,33 @@ export default async function MemberPage() {
               {getBuildIcon(profile.secondary_build) && <BuildInsignia build={profile.secondary_build} variant="badge" caption="Secundária" />}
             </div>
             {profile.graduation_review_needed && <p className="form-help">Sua graduação está em revisão: um administrador vai definir o nível em cada trilha.</p>}
-            <dl>
-              <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
-              <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
-              <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
-              <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
-              <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
-              <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
-            </dl>
-            {graduationTracks.map((track) => {
-              const level = profile[track.field] ?? "sem_graduacao";
-              const house = houseFor(profile, track.value);
-              return (
-                <TrackSection
-                  key={track.value}
-                  title={track.label}
-                  icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" /> : undefined}
-                  defaultOpen={level !== "sem_graduacao" || Boolean(house)}
-                >
-                  <dl>
-                    <div><dt>Graduação</dt><dd>{graduationLabels[level]}</dd></div>
-                    <div><dt>Casa</dt><dd>{house || "Não informada"}</dd></div>
-                  </dl>
-                </TrackSection>
-              );
-            })}
-            <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)} />
+            <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)}>
+              <dl>
+                <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
+                <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
+                <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
+                <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
+                <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
+                <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
+              </dl>
+              {graduationTracks.map((track) => {
+                const level = profile[track.field] ?? "sem_graduacao";
+                const house = houseFor(profile, track.value);
+                return (
+                  <TrackGroup
+                    key={track.value}
+                    title={track.label}
+                    icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" /> : undefined}
+                    tier={level !== "sem_graduacao" ? level : undefined}
+                  >
+                    <dl>
+                      <div><dt>Graduação</dt><dd>{graduationLabels[level]}</dd></div>
+                      <div><dt>Casa</dt><dd>{house || "Não informada"}</dd></div>
+                    </dl>
+                  </TrackGroup>
+                );
+              })}
+            </EditMemberProfile>
           </article>
           <div className="member-options">
             <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p></Link>

@@ -660,6 +660,9 @@
 }
 
 .profile-edit-trigger {
+  position: absolute;
+  top: 13px;
+  right: 13px;
   width: 26px;
   height: 26px;
   display: grid;
@@ -757,9 +760,6 @@
 }
 
 .profile-edit {
-  position: absolute;
-  top: 13px;
-  right: 13px;
   margin: 0;
   padding: 0;
   border: 0
@@ -783,13 +783,6 @@
   border-color: var(--border-strong);
   background: #191919;
   color: #d1d1d1
-}
-
-.profile-edit.is-editing {
-  position: static;
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line)
 }
 
 .profile-edit-fields {
@@ -851,22 +844,11 @@
   border-color: var(--border-strong)
 }
 
-/* Feedback is independent of the edit button's fixed corner position. */
-.profile-edit:not(.is-editing) {
-  width: 26px;
-  height: 26px
-}
-
-.profile-edit:not(.is-editing)>.profile-edit-trigger {
-  position: absolute;
-  top: 0;
-  right: 0
-}
-
+/* O aviso de sucesso aparece no canto do card, sem empurrar o conteúdo. */
 .profile-edit:not(.is-editing)>.profile-edit-message {
   position: absolute;
-  top: 34px;
-  right: 0;
+  top: 46px;
+  right: 13px;
   width: max-content;
   max-width: min(240px,calc(100vw - 100px));
   margin: 0;
@@ -918,86 +900,67 @@
   margin-top: 0
 }
 
-/* Seções recolhíveis por trilha (Cavalaria e Arquearia) */
-.track-section {
-  margin-top: 12px;
+/* Blocos por trilha (Cavalaria e Arquearia) no perfil do membro */
+.track-group {
+  --tier: var(--border-strong);
+  margin-top: 14px;
+  padding: 14px 16px 6px;
   text-align: left;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-top: 2px solid var(--tier);
+  border-radius: var(--r-md)
 }
 
-.track-section summary {
+.track-group[data-tier="bronze"] {
+  --tier: #b87a4b
+}
+
+.track-group[data-tier="prata"] {
+  --tier: #b8bcc4
+}
+
+.track-group[data-tier="ouro"] {
+  --tier: #d4a73c
+}
+
+.track-group-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 8px 14px;
-  list-style: none;
-  cursor: pointer;
-  border-radius: var(--r-md);
-}
-
-.track-section summary::-webkit-details-marker {
-  display: none
-}
-
-.track-section summary:hover {
-  background: rgba(255, 255, 255, 0.04)
-}
-
-.track-section-title {
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
+  margin: 0 0 4px;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: .95rem;
   font-weight: 700;
-  font-size: .92rem
+  letter-spacing: 0;
+  text-transform: none
 }
 
-.track-section-title .insignia-art {
+.track-group-title .insignia-art {
   width: 20px;
   height: 24px
 }
 
-.track-section-hint {
-  margin-left: auto;
-  color: var(--text-muted);
-  font-size: .82rem
-}
-
-.track-section-chevron {
-  flex: 0 0 auto;
-  margin-left: auto;
-  color: var(--text-muted);
-  transition: transform .2s
-}
-
-.track-section-hint + .track-section-chevron {
-  margin-left: 0
-}
-
-.track-section[open] .track-section-chevron {
-  transform: rotate(180deg)
-}
-
-.track-section-body {
-  padding: 0 14px 14px
-}
-
-.track-section-body .field + .field {
-  margin-top: 13px
-}
-
-.profile-card .track-section-body dl {
+.profile-card .track-group dl {
   margin: 0
 }
 
-.profile-card .track-section-body dl div:first-child {
+.profile-card .track-group dl div:first-child {
   border-top: 0
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .track-section-chevron {
-    transition: none
-  }
+.track-group .field {
+  margin-bottom: 13px
+}
+
+.profile-edit-title {
+  margin: 26px 0 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none
 }
