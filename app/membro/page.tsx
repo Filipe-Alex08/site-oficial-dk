@@ -7,7 +7,8 @@ import Unavailable from "@/components/member/Unavailable";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
-import { BuildInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import { BuildInsignia, GraduationInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import TrackSection from "@/components/member/TrackSection";
 import { getBuildIcon } from "@/lib/insignias";
 import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
@@ -59,13 +60,28 @@ export default async function MemberPage() {
             <dl>
               <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
               <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
-              {graduationTracks.map((track) => <div key={track.value}><dt>{track.label}</dt><dd>{graduationLabels[profile[track.field] ?? "sem_graduacao"]}</dd></div>)}
-              {graduationTracks.map((track) => <div key={track.houseField}><dt>Casa na {track.label}</dt><dd>{houseFor(profile, track.value) || "Não informada"}</dd></div>)}
               <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
               <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
               <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
               <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
             </dl>
+            {graduationTracks.map((track) => {
+              const level = profile[track.field] ?? "sem_graduacao";
+              const house = houseFor(profile, track.value);
+              return (
+                <TrackSection
+                  key={track.value}
+                  title={track.label}
+                  icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" /> : undefined}
+                  defaultOpen={level !== "sem_graduacao" || Boolean(house)}
+                >
+                  <dl>
+                    <div><dt>Graduação</dt><dd>{graduationLabels[level]}</dd></div>
+                    <div><dt>Casa</dt><dd>{house || "Não informada"}</dd></div>
+                  </dl>
+                </TrackSection>
+              );
+            })}
             <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)} />
           </article>
           <div className="member-options">

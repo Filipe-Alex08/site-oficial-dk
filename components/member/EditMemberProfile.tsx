@@ -8,7 +8,8 @@ import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
 import Select from "@/components/ui/Select";
-import { graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
+import { graduationLabels, graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
+import TrackSection from "@/components/member/TrackSection";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
@@ -133,10 +134,19 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
             <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
             <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
-            {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`profile-${track.field}`}>Graduação em {track.label}</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>)}
             <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
-            {graduationTracks.map((track) => <div className="field" key={track.houseField}><label htmlFor={`member-${track.houseField}`}>Casa na {track.label}</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>)}
+            {graduationTracks.map((track) => (
+              <TrackSection
+                key={track.value}
+                title={track.label}
+                hint={graduationLabels[form[track.field]]}
+                defaultOpen={(profile[track.field] ?? "sem_graduacao") !== "sem_graduacao" || Boolean(houseFor(profile, track.value))}
+              >
+                <div className="field"><label htmlFor={`profile-${track.field}`}>Graduação</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>
+                <div className="field"><label htmlFor={`member-${track.houseField}`}>Casa</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>
+              </TrackSection>
+            ))}
             <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
             <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
