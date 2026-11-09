@@ -269,9 +269,19 @@ textarea { min-height: 120px; resize: vertical; }
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(8, 8, 8, 0.88);
   border-bottom: 1px solid var(--border);
+}
+/* O desfoque fica numa camada própria: backdrop-filter no próprio header faria
+   dele o bloco de referência do menu mobile (position: fixed) e o menu
+   encolheria para a altura do cabeçalho. */
+.site-header::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgba(8, 8, 8, 0.88);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .header-inner { width: min(1320px, calc(100% - 48px)); min-height: var(--header-h); margin: auto; display: flex; align-items: center; gap: 28px; }
 .brand { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; }
@@ -615,12 +625,36 @@ a.card:hover { border-color: var(--border-strong); background: var(--surface-2);
     background: var(--bg);
   }
   .main-nav.is-open { display: flex; }
-  .main-nav > a, .nav-dropdown > button { width: 100%; min-height: 52px; padding: 0 14px; justify-content: space-between; font-size: 1.05rem; }
+  .main-nav { gap: 0; padding: 8px 16px 32px; }
+  .main-nav > a, .nav-dropdown > button {
+    width: 100%;
+    min-height: 58px;
+    padding: 0 6px;
+    justify-content: flex-start;
+    color: var(--text);
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .main-nav > a:hover, .nav-dropdown > button:hover { background: none; }
   .main-nav > a.active::after, .nav-dropdown > button.active::after { display: none; }
-  .main-nav > a.active, .nav-dropdown > button.active { background: rgba(255, 255, 255, 0.06); }
+  .main-nav > a.active, .nav-dropdown > button.active { color: var(--accent-bright); background: none; }
   .nav-dropdown > button svg { display: none; }
-  .dropdown-panel { position: static; display: block; min-width: 0; margin: 0 0 8px 14px; padding: 0 0 0 10px; background: none; border: 0; border-left: 2px solid var(--border-strong); border-radius: 0; box-shadow: none; }
-  .dropdown-panel a { padding: 12px; font-size: 1rem; }
+  .dropdown-panel {
+    position: static;
+    display: block;
+    min-width: 0;
+    margin: 12px 0 8px;
+    padding: 6px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: none;
+  }
+  .dropdown-panel a { display: flex; align-items: center; min-height: 50px; padding: 0 14px; color: var(--text-muted); font-size: 1.02rem; font-weight: 500; }
+  .dropdown-panel a + a { border-top: 1px solid var(--border); border-radius: 0; }
+  .dropdown-panel a.active { color: var(--accent-bright); background: var(--surface-3); }
   .nav-dropdown:hover .dropdown-panel { display: block; }
   .header-account { margin-left: 4px; }
   .header-account-label { display: none; }
