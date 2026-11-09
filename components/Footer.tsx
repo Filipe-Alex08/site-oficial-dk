@@ -42,7 +42,7 @@ export default function Footer() {
       </div>
 
       <div className="container footer-base">
-        <p className="copyright">© {new Date().getFullYear()} DK — Death Knights</p>
+        <p className="copyright">© {new Date().getFullYear()} DK — Death Knights. Todos os direitos reservados.</p>
         <p>Humildade • Honra • Respeito</p>
       </div>
     </footer>

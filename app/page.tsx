@@ -25,6 +25,7 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">
+            <p className="eyebrow">DK — Death Knights</p>
             <h1>
               Swordplay
               <span>com propósito</span>
@@ -98,7 +99,7 @@ export default function HomePage() {
               empresta os equipamentos para você participar com segurança.
             </p>
             <small>
-              <CalendarDays size={16} aria-hidden="true" /> Domingos • Parque Ecológico da Pampulha
+              <CalendarDays size={16} aria-hidden="true" /> Normalmente aos domingos • Parque Ecológico da Pampulha
             </small>
           </div>
 
