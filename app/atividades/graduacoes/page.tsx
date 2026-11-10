@@ -54,6 +54,127 @@ export default function GraduationPage() {
               </p>
             </article>
           </div>
+
+          <div className="section-heading">
+            <h2>Cavalaria e Arquearia</h2>
+            <p>
+              As graduações de Bronze, Prata e Ouro acompanham o desenvolvimento
+              do integrante em duas trilhas. Cada uma trabalha equipamentos,
+              funções e habilidades próprias, sempre priorizando segurança,
+              controle técnico e atuação coletiva.
+            </p>
+          </div>
+
+          <div className="card-grid">
+            <article className="card">
+              <div className="graduation-insignias">
+                <GraduationInsignia level="bronze" track="cavalaria" variant="badge" />
+                <GraduationInsignia level="prata" track="cavalaria" variant="badge" />
+                <GraduationInsignia level="ouro" track="cavalaria" variant="badge" />
+              </div>
+              <h3>Cavalaria</h3>
+              <p>
+                No DK, a Cavalaria reúne as categorias de combate corpo a corpo.
+                O desenvolvimento parte do manejo seguro do equipamento e avança
+                para o domínio de distância, movimentação, leitura do adversário
+                e integração com as formações de campo.
+              </p>
+              <div className="detail-list">
+                <div className="detail-item">
+                  <strong>Defensores e escudistas</strong>
+                  <span>
+                    Utilizam escudos nórdicos, escudos torre ou broquéis,
+                    combinados com espada ou lança. A evolução começa pela
+                    postura, cobertura e proteção pessoal, avançando para o
+                    controle de espaços, a proteção de aliados e a sustentação
+                    das formações.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Lanceiros e armas de haste</strong>
+                  <span>
+                    Trabalham alcance, controle da ponta e manutenção da
+                    distância. O desenvolvimento inclui ataques seguros e
+                    precisos, apoio à linha de frente, leitura de oportunidades
+                    e coordenação com escudeiros e outros lanceiros.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Especialistas em duas armas (Dual)</strong>
+                  <span>
+                    Utilizam duas espadas ou adagas acolchoadas. A progressão
+                    desenvolve coordenação entre as mãos, alternância entre
+                    ataque e defesa, ritmo, mobilidade e capacidade de pressionar
+                    o adversário sem perder o controle técnico.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Guerreiros e espada longa</strong>
+                  <span>
+                    Utilizam um equipamento de maior alcance, normalmente
+                    controlado com as duas mãos. O aprendizado evolui do manejo
+                    básico e das defesas para transições mais eficientes,
+                    controle de distância, movimentação e domínio do espaço ao
+                    redor.
+                  </span>
+                </div>
+              </div>
+            </article>
+
+            <article className="card">
+              <div className="graduation-insignias">
+                <GraduationInsignia level="bronze" track="arquearia" variant="badge" />
+                <GraduationInsignia level="prata" track="arquearia" variant="badge" />
+                <GraduationInsignia level="ouro" track="arquearia" variant="badge" />
+              </div>
+              <h3>Arquearia</h3>
+              <p>
+                A Arquearia desenvolve o uso responsável do arco e das flechas
+                adaptadas ao Swordplay. A progressão combina segurança,
+                repetição técnica, precisão e capacidade de apoiar a equipe a
+                partir de diferentes posições do campo.
+              </p>
+              <div className="detail-list">
+                <div className="detail-item">
+                  <strong>Arco, flechas e segurança</strong>
+                  <span>
+                    O primeiro estágio envolve conhecer, inspecionar e manusear
+                    corretamente os equipamentos, respeitar a linha de disparo e
+                    recolher as flechas de forma segura. Esse cuidado permanece
+                    obrigatório em todos os níveis.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Fundamentos do disparo</strong>
+                  <span>
+                    O integrante desenvolve postura, encaixe da flecha, puxada,
+                    ancoragem, mira e soltura controlada. A evolução busca tornar
+                    esses movimentos consistentes, reduzindo variações entre um
+                    disparo e outro.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Precisão e adaptação</strong>
+                  <span>
+                    Com o avanço técnico, o arqueiro trabalha agrupamento,
+                    leitura do alvo e adaptação a diferentes distâncias,
+                    posições e ângulos, mantendo calma e controle durante a
+                    execução.
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <strong>Posicionamento e atuação coletiva</strong>
+                  <span>
+                    Nos níveis mais avançados, o desenvolvimento inclui escolher
+                    linhas de tiro seguras, movimentar-se sem comprometer os
+                    aliados, identificar oportunidades de disparo e oferecer
+                    suporte às formações e aos objetivos da equipe.
+                  </span>
+                </div>
+              </div>
+            </article>
+          </div>
+
           <div className="info-band">
             <strong>Recruta</strong>
             <p>
