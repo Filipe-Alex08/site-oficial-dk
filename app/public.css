@@ -377,6 +377,10 @@
 .graduation.silver { --tier: #b8bcc4; }
 .graduation.gold { --tier: #d4a73c; }
 .graduation h3 { color: var(--tier); }
+.section-stacked { padding-bottom: clamp(32px, 4vw, 48px); }
+.section-continued { padding-top: 0; }
+.track-list { display: grid; gap: 24px; }
+.track-list + .info-band { margin-top: 24px; }
 .media-feed {
   max-width: 1120px;
   display: grid;
