@@ -1,9 +1,10 @@
 # Migrações
 
-Aqui não existe CLI nem tabela de histórico: cada arquivo é colado no **SQL
-Editor** do Supabase à mão, seguindo o `docs/SETUP.md`. O banco **não guarda os
-nomes dos arquivos** — ele só sabe o que já foi executado porque alguém lembra.
-É por isso que o prefixo numérico importa: ele é a única indicação de ordem.
+As instalações existentes ainda podem aplicar cada arquivo pelo **SQL Editor**,
+na ordem indicada em `docs/SETUP.md`. Os arquivos históricos usam uma sequência
+curta e possuem duplicatas conhecidas. Migrações novas são geradas pela CLI do
+Supabase e usam um carimbo de data e hora, que também preserva a ordem sem
+reutilizar os prefixos antigos.
 
 ## Renomear não quebra o site
 
@@ -14,10 +15,8 @@ igual. O que renomear quebra é a **próxima aplicação manual**, por dois moti
 1. Um arquivo renomeado deixa de casar com o nome citado no `docs/SETUP.md` e
    nos outros documentos, então quem for aplicar "as que faltam" pode executar
    de novo algo que já rodou.
-2. Se um dia o projeto passar a usar a CLI do Supabase, ela grava um registro por
-   migração identificado pelo prefixo numérico — e dois arquivos com o mesmo
-   prefixo não cabem nesse registro. A duplicata precisa ser resolvida **antes**
-   de adotar a CLI, não depois.
+2. Em um projeto que passe a registrar o histórico pela CLI, as duplicatas
+   antigas precisam ser reconciliadas antes do primeiro `db push`.
 
 ## Duplicatas conhecidas
 
@@ -36,8 +35,8 @@ planejada, e vale conferir isso ao criar um banco novo.
 
 **Recomendação:** deixe os arquivos existentes com os nomes atuais. Renomeá-los
 não traz nenhum ganho para o banco em produção e cria divergência entre o
-repositório e o que já foi executado. Num banco novo, renumere antes da primeira
-aplicação, se quiser.
+repositório e o que já foi executado. Gere os próximos arquivos com
+`supabase migration new nome_da_alteracao`.
 
 ## Verificação
 
@@ -46,5 +45,5 @@ npm run check:migrations
 ```
 
 O script aceita os três prefixos duplicados acima e **falha se aparecer um
-quarto**. Se você está criando uma migração nova e o script reclamar, renomeie
-o arquivo novo para o próximo número livre.
+quarto**. Uma migração nova com carimbo de data e hora não deve reutilizar
+nenhum prefixo existente.

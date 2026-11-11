@@ -91,6 +91,28 @@ button.metric-card:hover { border-color: var(--border-strong); background: var(-
   border-radius: var(--r-lg);
 }
 .admin-form h3 { margin-bottom: 14px; }
+
+.activity-admin-notice {
+  max-width: 360px;
+  color: var(--warn);
+}
+
+.calendar-sync-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.calendar-sync-status.is-synced { color: var(--ok); border-color: var(--ok); }
+.calendar-sync-status.is-error { color: var(--danger); border-color: var(--danger); }
+.calendar-sync-status.is-pending { color: var(--warn); border-color: var(--warn); }
+.calendar-external-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: .78rem; }
 .check-field { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 500; cursor: pointer; }
 .check-field input { width: 18px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
@@ -892,7 +914,7 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 }
 
 .attendance-metrics {
-  grid-template-columns: repeat(3,minmax(0,1fr))
+  grid-template-columns: repeat(auto-fit,minmax(160px,1fr))
 }
 
 .attendance-admin-help {
@@ -926,8 +948,10 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 }
 
 .attendance-member-list table {
-  min-width: 480px
+  min-width: 840px
 }
+
+.attendance-history table { min-width: 1080px; }
 
 .attendance-pagination {
   display: flex;

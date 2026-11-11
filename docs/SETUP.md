@@ -52,6 +52,13 @@ Guarde a senha do banco em um gerenciador de senhas. Não envie a senha nem chav
    10. `008_member_birthdays.sql`
    11. `009_assessment_module.sql`
    12. `010_assessment_random_assignments.sql`
+   13. `011_member_access_requests.sql`
+   14. `012_instagram_media_storage.sql`
+   15. `013_admin_authorization_hardening.sql`
+   16. `014_attendance_graduation.sql`
+   17. `015_graduation_tracks.sql`
+   18. `016_house_tracks.sql`
+   19. `20261111005828_calendar_google_notifications_presence.sql`
 
    Em projetos que já receberam alguma dessas alterações, confira o histórico e aplique apenas as que ainda faltam. Não reexecute scripts de criação inicial em um banco já configurado.
 
@@ -196,6 +203,10 @@ O ADM de Atividades informa início, término, local e se a confirmação está 
 - copiar a lista ou abri-la no WhatsApp.
 
 O WhatsApp recebe o texto formatado, mas não permite que o site crie marcações reais com `@`. Essas marcações precisam ser adicionadas manualmente depois que a mensagem for aberta.
+
+Depois da migração `20261111005828_calendar_google_notifications_presence.sql`, a resposta **Vou/Não vou** passa a ser tratada como intenção. O ADM de Atividades registra separadamente quem realmente compareceu, faltou ou apresentou justificativa. O calendário também aceita avisos públicos com prazo de exibição, inclusive para cancelamentos e adiamentos.
+
+Para espelhar essas atividades em um calendário institucional do Google, siga `docs/GOOGLE-CALENDAR.md`. A integração é opcional: sem as credenciais, o calendário e as presenças do site continuam funcionando normalmente.
 
 ## 10. Avaliações e simulados
 

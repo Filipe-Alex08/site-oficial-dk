@@ -4,6 +4,17 @@ import type { Activity, AttendanceResponse } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+function googleCalendarPublicUrl() {
+  const value = process.env.GOOGLE_CALENDAR_PUBLIC_URL?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function CalendarSection() {
   let activities: Activity[] = [];
   let isApprovedMember = false;
@@ -59,6 +70,9 @@ export default async function CalendarSection() {
   const upcomingActivities = activities
     .filter((activity) => new Date(activity.starts_at) >= now)
     .slice(0, 8);
+  const activeNotices = activities
+    .filter((activity) => activity.notice_message && activity.notice_expires_at && new Date(activity.notice_expires_at) > now)
+    .sort((a, b) => new Date(b.notice_published_at || 0).getTime() - new Date(a.notice_published_at || 0).getTime());
   const currentYear = Number(new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
@@ -70,7 +84,7 @@ export default async function CalendarSection() {
         <div className="section-heading">
           <h2>Calendário do DK</h2>
         </div>
-        <CalendarViews activities={activities} upcomingActivities={upcomingActivities} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} initialYear={currentYear} birthdays={isApprovedMember ? birthdays : []} birthdaysUnavailable={isApprovedMember && birthdaysUnavailable} currentMonth={saoPauloDate(now).month} />
+        <CalendarViews activities={activities} upcomingActivities={upcomingActivities} activeNotices={activeNotices} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} initialYear={currentYear} birthdays={isApprovedMember ? birthdays : []} birthdaysUnavailable={isApprovedMember && birthdaysUnavailable} currentMonth={saoPauloDate(now).month} googleCalendarUrl={googleCalendarPublicUrl()} />
       </div>
     </section>
   );

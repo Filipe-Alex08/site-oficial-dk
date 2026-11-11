@@ -1,5 +1,11 @@
 export type ActivityStatus = "confirmado" | "a_definir" | "adiado" | "cancelado" | "finalizado";
 
+export type ActivityNoticeLevel = "informativo" | "atencao" | "urgente";
+
+export type GoogleCalendarSyncStatus = "disabled" | "pending" | "synced" | "error";
+
+export type ActualAttendanceStatus = "presente" | "ausente" | "justificado";
+
 export type MemberKind = "membro" | "oficial";
 
 export type GraduationLevel = "sem_graduacao" | "bronze" | "prata" | "ouro";
@@ -32,6 +38,15 @@ export type Activity = {
   status: ActivityStatus;
   description?: string | null;
   attendance_open?: boolean;
+  notice_level?: ActivityNoticeLevel | null;
+  notice_message?: string | null;
+  notice_published_at?: string | null;
+  notice_expires_at?: string | null;
+  /** Campos administrativos retornados apenas pela API protegida. */
+  google_sync_status?: GoogleCalendarSyncStatus;
+  google_sync_error?: string | null;
+  google_event_html_link?: string | null;
+  google_last_synced_at?: string | null;
 };
 
 export type AttendanceResponse = "vai" | "nao_vai";
@@ -46,6 +61,17 @@ export type AttendanceEntry = {
   response: AttendanceResponse;
   guest_count: number;
   note?: string | null;
+  updated_at: string;
+};
+
+export type ActualAttendanceEntry = {
+  activity_id: string;
+  user_id: string;
+  actual_status: ActualAttendanceStatus;
+  guest_count: number;
+  note?: string | null;
+  validated_by?: string | null;
+  validated_at: string;
   updated_at: string;
 };
 

@@ -7,6 +7,8 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 ### Área pública
 
 - Página Inicial estável com calendário dinâmico
+- Avisos públicos de alteração ou cancelamento de atividades
+- Calendário institucional opcional sincronizado com o Google Agenda
 - Sobre o DK e Como Participar
 - Swordplay/Boffering
 - Tipos de Atividades
@@ -28,6 +30,7 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - Graduações Bronze, Prata e Ouro com acesso progressivo
 - Documentos e PDFs privados conforme o nível de acesso
 - Confirmação de presença em atividades, convidados e observações
+- Separação entre intenção de participação e comparecimento validado
 - Lista formatada para compartilhamento no WhatsApp
 - Nome, apelido, patente, ordem, casa, camisa e builds
 - Identificação automática do signo pela data de nascimento
@@ -40,6 +43,7 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - ADM Principal: acesso completo
 - ADM de Mídias: publicações
 - ADM de Atividades: calendário
+- ADM de Atividades: avisos, sincronização e validação de comparecimento
 - ADM de Membros: cadastros, convites e exclusão
 - ADM Principal: documentos privados e atribuição dos quatro papéis de ADM
 - Gestores de Avaliações: Generais e Oficiais Superiores autorizados

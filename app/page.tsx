@@ -15,6 +15,11 @@ import {
 import CalendarSection from "@/components/CalendarSection";
 import { socialLinks } from "@/lib/content";
 
+// O calendário contém avisos urgentes e dados diferentes para visitantes e
+// membros autenticados. A página precisa refletir cada alteração sem depender
+// de uma nova compilação ou de uma versão estática em cache.
+export const dynamic = "force-dynamic";
+
 export const metadata = pageMetadata("Swordplay em Belo Horizonte | DK Death Knights", "Treine Swordplay e boffering com o DK em Belo Horizonte. Conheça os jogos, acompanhe o calendário e saiba como participar, mesmo sem experiência.", "/");
 
 export default function HomePage() {

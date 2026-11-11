@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenCheck, CalendarPlus, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { BookOpenCheck, CalendarPlus, Copy, Edit3, ExternalLink, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -13,8 +13,9 @@ import Select from "@/components/ui/Select";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { friendlyError } from "@/lib/friendly-error";
+import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import { createClient } from "@/lib/supabase/client";
-import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
+import type { Activity, ActivityNoticeLevel, ActivityStatus, AdminRole, DkRank, GraduationLevel, GoogleCalendarSyncStatus, MemberKind, MemberProfile, Post } from "@/lib/types";
 
 type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados";
 type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
@@ -42,7 +43,28 @@ const statusLabels: Record<string, string> = {
 const statusLabel = (status: string) => statusLabels[status] ?? status;
 
 const emptyPost = { title: "", slug: "", excerpt: "", content: "", category: "Treinos", cover_url: "", youtube_url: "", tiktok_url: "", published: false };
-const emptyActivity = { title: "", starts_at: "", ends_at: "", location: "", type: "Treino", status: "confirmado" as ActivityStatus, description: "", attendance_open: true };
+type ActivityForm = {
+  title: string;
+  starts_at: string;
+  ends_at: string;
+  location: string;
+  type: string;
+  status: ActivityStatus;
+  description: string;
+  attendance_open: boolean;
+  notice_level: ActivityNoticeLevel | "none";
+  notice_message: string;
+  notice_expires_at: string;
+};
+
+const emptyActivity: ActivityForm = { title: "", starts_at: "", ends_at: "", location: "", type: "Treino", status: "confirmado", description: "", attendance_open: true, notice_level: "none", notice_message: "", notice_expires_at: "" };
+
+const googleSyncLabels: Record<GoogleCalendarSyncStatus, string> = {
+  disabled: "Não configurado",
+  pending: "Sincronizando",
+  synced: "Sincronizado",
+  error: "Falha no Google",
+};
 
 function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -99,7 +121,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   const [memberForm, setMemberForm] = useState<MemberAccessForm | null>(null);
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ text: string; kind: "success" | "error" } | null>(null);
+  const [notice, setNotice] = useState<{ text: string; kind: "success" | "error" | "warning" } | null>(null);
   const [syncingInstagram, setSyncingInstagram] = useState(false);
   const [quota, setQuota] = useState<{ used: number; limit: number; start: string | null; end: string | null } | null>(null);
   const [quotaError, setQuotaError] = useState("");
@@ -107,12 +129,18 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   const [instagramDateRange, setInstagramDateRange] = useState(defaultInstagramDateRange);
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
+  const [syncingActivity, setSyncingActivity] = useState<string | null>(null);
+  const [savingActivity, setSavingActivity] = useState(false);
 
   const load = useCallback(async () => {
     if (!supabase) return;
     const jobs: Array<PromiseLike<unknown>> = [];
     if (canMedia) jobs.push(supabase.from("posts").select("*").order("created_at", { ascending: false }).then(({ data }) => setPosts((data || []) as Post[])));
-    if (canCalendar) jobs.push(supabase.from("activities").select("*").order("starts_at").then(({ data }) => setActivities((data || []) as Activity[])));
+    if (canCalendar) jobs.push(apiFetch("/api/admin/activities").then(async (response) => {
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível carregar o calendário.");
+      setActivities((result.activities || []) as Activity[]);
+    }));
     if (canMembers) {
       jobs.push(supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(({ data }) => setMembers((data || []) as MemberProfile[])));
       jobs.push(supabase.from("invites").select("*").order("created_at", { ascending: false }).then(({ data }) => setInvites((data || []) as Invite[])));
@@ -132,9 +160,9 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
 
   const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
 
-  function show(text: string) {
+  function show(text: string, forcedKind?: "success" | "error" | "warning") {
     // Erros costumam começar com negação ou citar falha; o resto é confirmação.
-    const kind = /^n[aã]o\b|falha|erro|inv[aá]lid|permiss[aã]o|precisa ser|sem conex/i.test(text) ? "error" : "success";
+    const kind = forcedKind ?? (/^n[aã]o\b|falha|erro|inv[aá]lid|permiss[aã]o|precisa ser|sem conex/i.test(text) ? "error" : "success");
     setNotice({ text, kind });
     window.setTimeout(() => setNotice(null), 4500);
   }
@@ -231,25 +259,61 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
 
   async function saveActivity(event: FormEvent) {
     event.preventDefault();
-    if (!supabase) return;
-    const payload = {
-      ...activityForm,
-      starts_at: new Date(activityForm.starts_at).toISOString(),
-      ends_at: activityForm.ends_at ? new Date(activityForm.ends_at).toISOString() : null,
-    };
-    const result = editingActivity ? await supabase.from("activities").update(payload).eq("id", editingActivity) : await supabase.from("activities").insert(payload);
-    if (result.error) return show(friendlyError(result.error));
-    setActivityForm(emptyActivity);
-    setEditingActivity(null);
-    show("Atividade salva.");
-    await dashboardQuery.refetch();
+    if (savingActivity) return;
+    setSavingActivity(true);
+    try {
+      const payload = {
+        ...activityForm,
+        starts_at: new Date(activityForm.starts_at).toISOString(),
+        ends_at: activityForm.ends_at ? new Date(activityForm.ends_at).toISOString() : null,
+        notice_level: activityForm.notice_level === "none" ? null : activityForm.notice_level,
+        notice_message: activityForm.notice_level === "none" ? null : activityForm.notice_message,
+        notice_expires_at: activityForm.notice_level === "none" || !activityForm.notice_expires_at ? null : new Date(activityForm.notice_expires_at).toISOString(),
+        ...(editingActivity ? { id: editingActivity } : {}),
+      };
+      const response = await jsonApiFetch("/api/admin/activities", payload, { method: editingActivity ? "PATCH" : "POST" });
+      const result = await response.json();
+      if (!response.ok) return show(friendlyError(result.error));
+      setActivityForm(emptyActivity);
+      setEditingActivity(null);
+      if (result.googleSync?.status === "error") show(`Atividade salva, mas o Google Agenda não foi atualizado: ${result.googleSync.message}`, "warning");
+      else if (result.googleSync?.status === "disabled") show("Atividade salva. O Google Agenda ainda não está configurado.", "warning");
+      else show("Atividade salva e sincronizada com o Google Agenda.");
+      await dashboardQuery.refetch();
+    } catch (error) {
+      show(friendlyError(error, "Não foi possível salvar a atividade."), "error");
+    } finally {
+      setSavingActivity(false);
+    }
   }
 
   async function removeActivity(id: string) {
-    if (!supabase || !window.confirm("Excluir esta atividade e sua lista de presença?")) return;
-    const { error } = await supabase.from("activities").delete().eq("id", id);
-    show(error ? friendlyError(error) : "Atividade excluída.");
-    await dashboardQuery.refetch();
+    if (!window.confirm("Excluir esta atividade, sua lista de presença e o evento no Google Agenda?")) return;
+    try {
+      const response = await jsonApiFetch("/api/admin/activities", { id }, { method: "DELETE" });
+      const result = await response.json();
+      show(response.ok ? "Atividade excluída." : friendlyError(result.error), response.ok ? "success" : "error");
+      await dashboardQuery.refetch();
+    } catch (error) {
+      show(friendlyError(error, "Não foi possível excluir a atividade."), "error");
+    }
+  }
+
+  async function syncActivity(id: string) {
+    setSyncingActivity(id);
+    try {
+      const response = await jsonApiFetch("/api/admin/activities", { id }, { method: "PUT" });
+      const result = await response.json();
+      if (!response.ok) return show(friendlyError(result.error), "error");
+      if (result.googleSync?.status === "synced") show("Atividade sincronizada com o Google Agenda.");
+      else if (result.googleSync?.status === "disabled") show("O Google Agenda ainda não está configurado.", "warning");
+      else show(`Não foi possível sincronizar: ${result.googleSync?.message || "falha desconhecida"}`, "warning");
+      await dashboardQuery.refetch();
+    } catch (error) {
+      show(friendlyError(error, "Não foi possível sincronizar a atividade."), "error");
+    } finally {
+      setSyncingActivity(null);
+    }
   }
 
   async function updateMemberStatus(id: string, status: string) {
@@ -469,13 +533,29 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
               <div className="field"><label>Término</label><input type="datetime-local" value={activityForm.ends_at} onChange={(event) => setActivityForm({ ...activityForm, ends_at: event.target.value })} /></div>
               <div className="field"><label>Local</label><input value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required /></div>
               <div className="field"><label>Tipo</label><input value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required /></div>
-              <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => setActivityForm({ ...activityForm, status: value as ActivityStatus })} /></div>
+              <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => {
+                const status = value as ActivityStatus;
+                setActivityForm({
+                  ...activityForm,
+                  status,
+                  attendance_open: status === "cancelado" || status === "finalizado" ? false : activityForm.attendance_open,
+                  notice_level: activityForm.notice_level === "none" && status === "cancelado" ? "urgente" : activityForm.notice_level === "none" && status === "adiado" ? "atencao" : activityForm.notice_level,
+                });
+              }} /></div>
               <div className="field field-full"><label>Descrição</label><textarea value={activityForm.description} onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })} /></div>
+              <div className="field"><label htmlFor="activity-notice-level">Aviso público</label><Select id="activity-notice-level" value={activityForm.notice_level} options={[{ value: "none", label: "Sem aviso" }, { value: "informativo", label: "Informativo" }, { value: "atencao", label: "Atenção" }, { value: "urgente", label: "Urgente" }]} onChange={(value) => setActivityForm({
+                ...activityForm,
+                notice_level: value as ActivityNoticeLevel | "none",
+                notice_message: value === "none" ? "" : activityForm.notice_message,
+                notice_expires_at: value === "none" ? "" : activityForm.notice_expires_at,
+              })} /></div>
+              <div className="field"><label>Exibir aviso até</label><input type="datetime-local" value={activityForm.notice_expires_at} disabled={activityForm.notice_level === "none"} required={activityForm.notice_level !== "none"} onChange={(event) => setActivityForm({ ...activityForm, notice_expires_at: event.target.value })} /></div>
+              <div className="field field-full"><label>Mensagem do aviso</label><textarea maxLength={500} value={activityForm.notice_message} disabled={activityForm.notice_level === "none"} required={activityForm.notice_level !== "none"} onChange={(event) => setActivityForm({ ...activityForm, notice_message: event.target.value })} placeholder="Ex.: atividade cancelada devido às condições climáticas." /><small>Esta mensagem aparece em destaque no calendário público e na descrição do evento sincronizado.</small></div>
               <label className="check-field"><input type="checkbox" checked={activityForm.attendance_open} onChange={(event) => setActivityForm({ ...activityForm, attendance_open: event.target.checked })} /> Permitir confirmação de presença</label>
             </div>
-            <div className="form-actions"><button className="button button-primary" type="submit">{editingActivity ? "Atualizar" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
+            <div className="form-actions"><button className="button button-primary" type="submit" disabled={savingActivity}>{savingActivity ? "Salvando…" : editingActivity ? "Atualizar" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" disabled={savingActivity} onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
           </form>
-          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]}>{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); }}><Edit3 /></button><button title="Excluir" onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Google Agenda", "Ações"]}>{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small>{item.notice_message && <small className="activity-admin-notice">Aviso: {item.notice_message}</small>}</td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td><span className={`calendar-sync-status is-${item.google_sync_status || "disabled"}`}>{googleSyncLabels[item.google_sync_status || "disabled"]}</span>{item.google_sync_error && <small title={item.google_sync_error}>{item.google_sync_error}</small>}{item.google_event_html_link && <a className="calendar-external-link" href={item.google_event_html_link} target="_blank" rel="noopener noreferrer">Abrir <ExternalLink size={13} /></a>}</td><td className="row-actions"><button title="Sincronizar com o Google" aria-label={`Sincronizar ${item.title} com o Google Agenda`} disabled={syncingActivity === item.id} onClick={() => void syncActivity(item.id)}><RefreshCw className={syncingActivity === item.id ? "spin" : ""} /></button><button title="Editar" onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true, notice_level: item.notice_level || "none", notice_message: item.notice_message || "", notice_expires_at: toDateTimeInput(item.notice_expires_at) }); }}><Edit3 /></button><button title="Excluir" onClick={() => void removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "membros" && canMembers && <div>

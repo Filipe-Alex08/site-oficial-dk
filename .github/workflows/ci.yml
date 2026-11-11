@@ -23,5 +23,11 @@ jobs:
       - name: Verificar código
         run: npm run lint
 
+      - name: Validar migrações
+        run: npm run check:migrations
+
+      - name: Executar testes
+        run: npm test
+
       - name: Gerar aplicação
         run: npm run build
