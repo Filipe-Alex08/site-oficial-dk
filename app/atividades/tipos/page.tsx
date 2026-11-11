@@ -1,5 +1,5 @@
 import { pageMetadata } from "@/lib/seo";
-import { Flag, Handshake, Medal, Route, Swords, Users } from "lucide-react";
+import { Dices, Flag, Footprints, Handshake, Swords, Users } from "lucide-react";
 import PageHero from "@/components/PageHero";
 
 
@@ -7,7 +7,7 @@ const activities = [
   [
     "Treinos técnicos",
     "Exercícios voltados ao aprendizado e aperfeiçoamento da movimentação, controle dos equipamentos, posicionamento, defesa, ataque e atuação em conjunto com outros participantes.",
-    Medal,
+    Footprints,
   ],
   [
     "Duelos",
@@ -27,7 +27,7 @@ const activities = [
   [
     "Dinâmicas recreativas",
     "Jogos com regras e objetivos próprios, como captura de bandeira, Trollball e outras atividades desenvolvidas para estimular raciocínio rápido, adaptação, estratégia e diversão.",
-    Route,
+    Dices,
   ],
   [
     "Atividades de integração",
@@ -49,7 +49,7 @@ export default function ActivityTypesPage() {
       <section className="section">
         <div className="container card-grid">
           {activities.map(([title, text, Icon]) => {
-            const ActivityIcon = Icon as typeof Medal;
+            const ActivityIcon = Icon as typeof Footprints;
             return (
               <article className="card" key={title as string}>
                 <span className="card-icon">

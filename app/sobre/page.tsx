@@ -1,6 +1,6 @@
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
-import { HeartHandshake, MapPin, ShieldCheck, Swords, Users } from "lucide-react";
+import { Castle, Compass, ScrollText, ShieldPlus, Trees } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { socialLinks } from "@/lib/content";
@@ -15,11 +15,11 @@ export default function AboutPage() {
       <section className="section">
         <div className="container">
           <div className="card-grid about-grid">
-            <article className="card"><span className="card-icon"><Swords /></span><h3>O grupo</h3><p>O Death Knights é um grupo de Swordplay que reúne esporte, estratégia e combate medieval.</p></article>
-            <article className="card"><span className="card-icon"><Users /></span><h3>Nossa história</h3><p>Fundado em 2020, o DK nasceu a partir do antigo Graal-RJ e cresceu por meio de divisões e encontros em diferentes estados do Brasil.</p></article>
-            <article className="card"><span className="card-icon"><MapPin /></span><h3>Onde treinamos</h3><p>As atividades regulares do DK em Belo Horizonte acontecem aos domingos, no Parque Ecológico da Pampulha.</p></article>
-            <article className="card"><span className="card-icon"><HeartHandshake /></span><h3>Proposta</h3><p>Promovemos desenvolvimento técnico, atividades recreativas, integração, trabalho em equipe e participação em eventos.</p></article>
-            <article className="card"><span className="card-icon"><ShieldCheck /></span><h3>Segurança e acolhimento</h3><p>Os equipamentos são acolchoados e avaliados. Novos participantes recebem orientação e adaptação gradual às atividades.</p></article>
+            <article className="card"><span className="card-icon"><Castle /></span><h3>O grupo</h3><p>O Death Knights é um grupo de Swordplay que reúne esporte, estratégia e combate medieval.</p></article>
+            <article className="card"><span className="card-icon"><ScrollText /></span><h3>Nossa história</h3><p>Fundado em 2020, o DK nasceu a partir do antigo Graal-RJ e cresceu por meio de divisões e encontros em diferentes estados do Brasil.</p></article>
+            <article className="card"><span className="card-icon"><Trees /></span><h3>Onde treinamos</h3><p>As atividades regulares do DK em Belo Horizonte acontecem aos domingos, no Parque Ecológico da Pampulha.</p></article>
+            <article className="card"><span className="card-icon"><Compass /></span><h3>Proposta</h3><p>Promovemos desenvolvimento técnico, atividades recreativas, integração, trabalho em equipe e participação em eventos.</p></article>
+            <article className="card"><span className="card-icon"><ShieldPlus /></span><h3>Segurança e acolhimento</h3><p>Os equipamentos são acolchoados e avaliados. Novos participantes recebem orientação e adaptação gradual às atividades.</p></article>
           </div>
 
           <div className="join-panel" id="como-participar">

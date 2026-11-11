@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, ClipboardCheck, FileText, LogOut, Settings } from "lucide-react";
+import { CalendarCheck, ClipboardCheck, FileText, LogOut, Settings } from "lucide-react";
 import AppPageHeader from "@/components/member/AppPageHeader";
 import Unavailable from "@/components/member/Unavailable";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
@@ -86,7 +86,7 @@ export default async function MemberPage() {
             </EditMemberProfile>
           </article>
           <div className="member-options">
-            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarDays /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p></Link>
+            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarCheck /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p></Link>
             <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos</h3><p>Materiais liberados para o seu perfil.</p></Link>
             <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações</h3><p>Suas indicações, provas e resultados.</p></Link>
             {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Mídias, calendário, membros e mais.</p></Link>}

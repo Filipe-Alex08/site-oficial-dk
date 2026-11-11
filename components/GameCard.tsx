@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Camera, Map as MapIcon, ShieldCheck, Swords, Target, Trophy, Users, X } from "lucide-react";
+import { ArrowUpRight, Backpack, BookOpen, Clapperboard, Crown, Goal, Map as MapIcon, ShieldAlert, Split, X } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { Game } from "@/lib/types";
@@ -106,7 +106,7 @@ export default function GameCard({ game }: { game: Game }) {
               </button>
             </header>
             <div className="game-modal-content">
-              <section className="game-objective"><span className="game-section-icon"><Target /></span><div><h3>Objetivo do jogo</h3><p>{game.objective}</p></div></section>
+              <section className="game-objective"><span className="game-section-icon"><Goal /></span><div><h3>Objetivo do jogo</h3><p>{game.objective}</p></div></section>
               {game.fieldMap && <section className="game-field-map" aria-labelledby={`game-map-title-${game.id}`}>
                 <div className="game-section-heading"><MapIcon /><h3 id={`game-map-title-${game.id}`}>Mapa do campo</h3></div>
                 <div className="game-field-map-frame">
@@ -122,19 +122,19 @@ export default function GameCard({ game }: { game: Game }) {
               <div className="game-modal-columns">
                 <div className="game-modal-main">
                   <section className="game-rules">
-                    <div className="game-section-heading"><Swords /><h3>Como jogar</h3></div>
+                    <div className="game-section-heading"><BookOpen /><h3>Como jogar</h3></div>
                     <ol>{game.rules.map((rule, index) => <li key={`${index}-${rule}`}><span className="game-rule-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><p>{rule}</p></li>)}</ol>
                   </section>
-                  <section className="game-safety"><ShieldCheck /><div><h3>Segurança em primeiro lugar</h3><p>{game.safety}</p></div></section>
+                  <section className="game-safety"><ShieldAlert /><div><h3>Segurança em primeiro lugar</h3><p>{game.safety}</p></div></section>
                 </div>
                 <aside className="game-modal-sidebar" aria-label="Informações complementares do jogo">
                   <div className="game-facts">
-                    <section className="game-detail"><Users /><div><h3>Formação das equipes</h3><p>{game.teamFormation}</p></div></section>
-                    <section className="game-detail"><Trophy /><div><h3>Condição de vitória</h3><p>{game.victory}</p></div></section>
-                    <section className="game-detail"><Swords /><div><h3>Equipamentos permitidos</h3><p>{game.equipment}</p></div></section>
+                    <section className="game-detail"><Split /><div><h3>Formação das equipes</h3><p>{game.teamFormation}</p></div></section>
+                    <section className="game-detail"><Crown /><div><h3>Condição de vitória</h3><p>{game.victory}</p></div></section>
+                    <section className="game-detail"><Backpack /><div><h3>Equipamentos permitidos</h3><p>{game.equipment}</p></div></section>
                   </div>
                   {game.media?.length ? <section className="game-media" aria-label="Fotos e vídeos do jogo">
-                    <div className="game-section-heading"><Camera /><h3>Fotos e vídeos</h3></div>
+                    <div className="game-section-heading"><Clapperboard /><h3>Fotos e vídeos</h3></div>
                     <div className="game-media-gallery">{game.media.map((media, index) => <figure key={`${media.url}-${index}`}>
                       {media.type === "image"
                         // eslint-disable-next-line @next/next/no-img-element

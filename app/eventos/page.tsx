@@ -1,17 +1,17 @@
 import { pageMetadata } from "@/lib/seo";
 import {
   ArrowUpRight,
-  Award,
   CakeSlice,
-  Castle,
+  Drama,
+  Dumbbell,
+  Earth,
+  GraduationCap,
   Map,
   Network,
   PartyPopper,
   Presentation,
-  Shield,
   Sparkles,
-  Swords,
-  Users,
+  Trophy,
 } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import { socialLinks } from "@/lib/content";
@@ -21,7 +21,7 @@ const internalEvents = [
   [
     "Treinos especiais",
     "Atividades com propostas diferentes dos treinos regulares, podendo incluir desafios específicos, novas dinâmicas, convidados ou programações temáticas.",
-    Swords,
+    Dumbbell,
   ],
   [
     "Confraternizações",
@@ -31,17 +31,17 @@ const internalEvents = [
   [
     "Exames",
     "Avaliações voltadas ao desenvolvimento dos integrantes, considerando conhecimentos, habilidades e evolução dentro do sistema de graduações do DK.",
-    Award,
+    GraduationCap,
   ],
   [
     "Torneios",
     "Disputas internas organizadas em diferentes formatos, criadas para testar habilidades, estratégias e proporcionar novos desafios entre os participantes.",
-    Shield,
+    Trophy,
   ],
   [
     "Atividades entre divisões",
     "Encontros que reúnem integrantes de diferentes regiões do DK, promovendo integração, troca de experiências e atividades em conjunto entre as divisões.",
-    Users,
+    Network,
   ],
 ] as const;
 
@@ -126,7 +126,7 @@ export default function EventsPage() {
 
             <article className="card event-list-card">
               <span className="card-icon">
-                <Network />
+                <Earth />
               </span>
               <h3>Eventos regionais</h3>
               <p>
@@ -174,7 +174,7 @@ export default function EventsPage() {
               </p>
             </article>
             <article>
-              <Castle />
+              <Drama />
               <h3>Eventos temáticos</h3>
               <p>
                 Atividades para encontros ligados a RPG, fantasia, cultura

@@ -1,5 +1,5 @@
 import { pageMetadata } from "@/lib/seo";
-import { CircleDot, Shield, Swords, Target } from "lucide-react";
+import { Crosshair, Shield, Sword } from "lucide-react";
 import PageHero from "@/components/PageHero";
 
 
@@ -32,7 +32,7 @@ export default function SwordplayPage() {
           <div className="card-grid">
             <article className="card">
               <span className="card-icon">
-                <Swords />
+                <Sword />
               </span>
               <h3>Equipamentos de mão</h3>
               <p>
@@ -49,7 +49,7 @@ export default function SwordplayPage() {
             </article>
             <article className="card">
               <span className="card-icon">
-                <Target />
+                <Crosshair />
               </span>
               <h3>Longo alcance</h3>
               <p>Lanças e arquearia adaptadas ao padrão da atividade.</p>

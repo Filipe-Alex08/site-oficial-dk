@@ -2,13 +2,15 @@ import { pageMetadata, jsonLd, siteUrl, siteDescription } from "@/lib/seo";
 import Link from "next/link";
 import {
   ArrowRight,
-  BarChart3,
   CalendarDays,
   Camera,
-  Castle,
+  Flame,
+  HeartHandshake,
+  MapPinned,
   ShieldCheck,
   Swords,
-  Users,
+  Tent,
+  TrendingUp,
 } from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
 import { socialLinks } from "@/lib/content";
@@ -76,7 +78,7 @@ export default function HomePage() {
           <Link className="home-portal home-portal-events" href="/eventos">
             <div className="home-portal-heading">
               <span className="home-portal-icon">
-                <CalendarDays />
+                <Tent />
               </span>
               <h2>Eventos</h2>
             </div>
@@ -98,15 +100,15 @@ export default function HomePage() {
               empresta os equipamentos para você participar com segurança.
             </p>
             <small>
-              <CalendarDays size={16} aria-hidden="true" /> Normalmente aos domingos • Parque Ecológico da Pampulha
+              <MapPinned size={16} aria-hidden="true" /> Normalmente aos domingos • Parque Ecológico da Pampulha
             </small>
           </div>
 
           <div className="newcomer-values">
-            <div><Users /><span><strong>Comunidade</strong>acolhedora</span></div>
-            <div><BarChart3 /><span><strong>Evolução</strong>constante</span></div>
+            <div><HeartHandshake /><span><strong>Comunidade</strong>acolhedora</span></div>
+            <div><TrendingUp /><span><strong>Evolução</strong>constante</span></div>
             <div><ShieldCheck /><span><strong>Ambiente</strong>seguro</span></div>
-            <div><Castle /><span><strong>Tradição</strong>viva</span></div>
+            <div><Flame /><span><strong>Tradição</strong>viva</span></div>
           </div>
         </div>
       </section>
