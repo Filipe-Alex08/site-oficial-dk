@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Backpack, BookOpen, Clapperboard, Crown, Goal, Map as MapIcon, Maximize2, ShieldAlert, Split, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUpRight, BookOpen, Clapperboard, Maximize2, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -164,9 +164,8 @@ function GameDialog({ game, initialView, dialogRef, closeModal }: {
     >
       <header className="game-modal-header">
         <div>
-          {view === "map" && <span className="eyebrow">Mapa do campo</span>}
+          <span className="eyebrow">{view === "map" ? "Mapa do campo" : "Regras da modalidade"}</span>
           <h2 id={`game-title-${game.id}`}>{game.name}</h2>
-          {view === "details" && <p id={`game-summary-${game.id}`}>{game.summary}</p>}
         </div>
         <button ref={closeRef} className="game-modal-close" type="button" onClick={closeModal} aria-label="Fechar" autoFocus>
           <X size={22} aria-hidden="true" />
@@ -201,51 +200,50 @@ function GameDialog({ game, initialView, dialogRef, closeModal }: {
         </div>
       ) : (
         <div className="game-modal-content" key="details">
-          <section className="game-objective"><span className="game-section-icon"><Goal /></span><div><h3>Objetivo do jogo</h3><p>{game.objective}</p></div></section>
-          {game.fieldMap && <section className="game-field-map" aria-labelledby={`game-map-title-${game.id}`}>
-            <div className="game-section-heading">
-              <MapIcon aria-hidden="true" />
-              <h3 id={`game-map-title-${game.id}`}>Mapa do campo</h3>
-              <button className="button button-ghost button-small" type="button" onClick={() => switchView("map")}>
-                <Maximize2 size={15} aria-hidden="true" /> Ampliar mapa
+          <div className="game-details-intro">
+            <p id={`game-summary-${game.id}`}>{game.summary}</p>
+            {fieldMap && (
+              <button className="button button-ghost button-small game-details-map-button" type="button" onClick={() => switchView("map")}>
+                <Maximize2 size={15} aria-hidden="true" /> Abrir mapa do campo
               </button>
-            </div>
-            <div className="game-field-map-frame">
-              <Image
-                src={game.fieldMap.src}
-                alt={game.fieldMap.alt}
-                width={game.fieldMap.width}
-                height={game.fieldMap.height}
-                sizes="(max-width: 420px) calc(100vw - 52px), (max-width: 760px) calc(100vw - 72px), 956px"
-              />
-            </div>
-          </section>}
-          <div className="game-modal-columns">
-            <div className="game-modal-main">
-              <section className="game-rules">
-                <div className="game-section-heading"><BookOpen /><h3>Como jogar</h3></div>
-                <ol>{game.rules.map((rule, index) => <li key={`${index}-${rule}`}><span className="game-rule-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><p>{rule}</p></li>)}</ol>
-              </section>
-              <section className="game-safety"><ShieldAlert /><div><h3>Segurança em primeiro lugar</h3><p>{game.safety}</p></div></section>
-            </div>
-            <aside className="game-modal-sidebar" aria-label="Informações complementares do jogo">
-              <div className="game-facts">
-                <section className="game-detail"><Split /><div><h3>Formação das equipes</h3><p>{game.teamFormation}</p></div></section>
-                <section className="game-detail"><Crown /><div><h3>Condição de vitória</h3><p>{game.victory}</p></div></section>
-                <section className="game-detail"><Backpack /><div><h3>Equipamentos permitidos</h3><p>{game.equipment}</p></div></section>
-              </div>
-              {game.media?.length ? <section className="game-media" aria-label="Fotos e vídeos do jogo">
-                <div className="game-section-heading"><Clapperboard /><h3>Fotos e vídeos</h3></div>
-                <div className="game-media-gallery">{game.media.map((media, index) => <figure key={`${media.url}-${index}`}>
-                  {media.type === "image"
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={media.url} alt={media.caption || `Registro de ${game.name}`} loading="lazy" />
-                    : <video src={media.url} poster={media.poster} controls playsInline preload="metadata" aria-label={media.caption || `Vídeo de ${game.name}`} />}
-                  {media.caption && <figcaption>{media.caption}</figcaption>}
-                </figure>)}</div>
-              </section> : null}
-            </aside>
+            )}
           </div>
+          <div className="game-details-grid">
+            <section className="game-detail-card">
+              <h3>Objetivo</h3>
+              <p>{game.objective}</p>
+            </section>
+            <section className="game-detail-card">
+              <h3>Equipes e papéis</h3>
+              <p>{game.teamFormation}</p>
+            </section>
+            <section className="game-detail-card game-detail-card-wide game-detail-card-rules">
+              <h3>Regras</h3>
+              <ul>{game.rules.map((rule, index) => <li key={`${index}-${rule}`}>{rule}</li>)}</ul>
+            </section>
+            <section className="game-detail-card">
+              <h3>Condição de vitória</h3>
+              <p>{game.victory}</p>
+            </section>
+            <section className="game-detail-card">
+              <h3>Equipamentos permitidos</h3>
+              <p>{game.equipment}</p>
+            </section>
+            <section className="game-detail-card game-detail-card-wide game-detail-card-safety">
+              <h3>Segurança</h3>
+              <p>{game.safety}</p>
+            </section>
+          </div>
+          {game.media?.length ? <section className="game-media game-details-media" aria-label="Fotos e vídeos do jogo">
+            <div className="game-section-heading"><Clapperboard /><h3>Fotos e vídeos</h3></div>
+            <div className="game-media-gallery">{game.media.map((media, index) => <figure key={`${media.url}-${index}`}>
+              {media.type === "image"
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={media.url} alt={media.caption || `Registro de ${game.name}`} loading="lazy" />
+                : <video src={media.url} poster={media.poster} controls playsInline preload="metadata" aria-label={media.caption || `Vídeo de ${game.name}`} />}
+              {media.caption && <figcaption>{media.caption}</figcaption>}
+            </figure>)}</div>
+          </section> : null}
         </div>
       )}
     </section>

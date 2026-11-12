@@ -68,3 +68,27 @@ test("every game belongs to a supported catalog category", () => {
   assert.equal(Object.keys(gameCatalogMetadata).length, games.length);
   assert.deepEqual([...represented].sort(), [...supported].sort());
 });
+
+test("game details follow the approved information hierarchy", () => {
+  const component = fs.readFileSync("components/GameCard.tsx", "utf8");
+  const sections = [
+    "Objetivo",
+    "Equipes e papéis",
+    "Regras",
+    "Condição de vitória",
+    "Equipamentos permitidos",
+    "Segurança",
+  ];
+  let previous = -1;
+
+  for (const section of sections) {
+    const position = component.indexOf(`<h3>${section}</h3>`);
+    assert.ok(position > previous, section);
+    previous = position;
+  }
+
+  assert.match(component, /className="game-details-grid"/);
+  assert.match(component, /Abrir mapa do campo/);
+  assert.doesNotMatch(component, /<h3>Como jogar<\/h3>/);
+  assert.doesNotMatch(component, /<h3>Formação das equipes<\/h3>/);
+});
