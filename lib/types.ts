@@ -82,6 +82,8 @@ export type MediaItem = {
   sort_order: number;
 };
 
+export type GameCategory = "objetivos" | "batalhas" | "arquearia" | "duelos";
+
 export type Game = {
   id: string;
   /** Usado na URL: /atividades/jogos/<slug> */

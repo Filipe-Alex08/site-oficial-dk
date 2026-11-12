@@ -53,7 +53,7 @@ export const gameFieldMaps: Record<string, GameFieldMap> = {
   },
   "Defesa-da-Vila": {
     src: "/images/games/maps/defesa-da-vila.webp",
-    alt: "Mapa do campo de Defesa da Vila, com área de tiro, cinco flechas, jogador-alvo e pontos seguros.",
+    alt: "Vila atrás do arqueiro, área de tiro com cinco flechas e três zonas SAFE no trajeto dos jogadores-alvo.",
     width: 1536,
     height: 1024,
   },
