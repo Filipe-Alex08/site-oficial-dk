@@ -28,11 +28,33 @@ const canonicalHost = (() => {
 // "Always Use HTTPS", no edge, que não depende disso.
 const httpsRedirectEnabled = process.env.FORCE_HTTPS === "1";
 
-function httpsRedirect(request: NextRequest) {
-  if (!httpsRedirectEnabled || !canonicalHost) return null;
+// O Cloudflare informa o protocolo que o VISITANTE usou em CF-Visitor ({"scheme":"http"}).
+// Isso é seguro ligar sempre: só redireciona quando o visitante realmente veio por HTTP, e
+// depois do redirecionamento ele chega com "https", então não há laço possível.
+function cloudflareVisitorScheme(request: NextRequest) {
+  const raw = request.headers.get("cf-visitor");
+  if (!raw) return null;
+  try {
+    const scheme = JSON.parse(raw)?.scheme;
+    return typeof scheme === "string" ? scheme.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
 
-  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
-  if (forwardedProto !== "http") return null;
+function httpsRedirect(request: NextRequest) {
+  if (!canonicalHost) return null;
+
+  const visitorScheme = cloudflareVisitorScheme(request);
+  let plainHttp: boolean;
+  if (visitorScheme) {
+    plainHttp = visitorScheme === "http";
+  } else {
+    // Fora do Cloudflare: cai no X-Forwarded-Proto, que só vale com FORCE_HTTPS=1 (veja acima).
+    const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+    plainHttp = httpsRedirectEnabled && forwardedProto === "http";
+  }
+  if (!plainHttp) return null;
 
   const target = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${canonicalHost}`);
   return NextResponse.redirect(target, 308);
