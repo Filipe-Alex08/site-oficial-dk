@@ -1,19 +1,17 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
-import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 
 // Tempo real por "sinal de invalidação".
 //
-// Triggers do Postgres (migração 023) publicam no tópico público abaixo apenas
-// { table, op }: nenhuma linha, nenhum dado pessoal. O navegador escuta com a
-// chave pública e, ao receber o sinal, busca os dados de novo pelos caminhos de
-// sempre (proxy /api/supabase com a sessão do cookie HttpOnly e RLS). Assim o
-// token nunca chega ao JavaScript e nenhuma tabela entra na publicação
-// supabase_realtime.
-const TOPIC = "dk:changes";
-const EVENT = "change";
+// Triggers do Postgres (migração 023) avisam { table, op } e o servidor do site
+// repassa por Server-Sent Events (app/api/realtime). Nenhuma linha viaja no aviso:
+// ao recebê-lo, o componente busca os dados de novo pelos caminhos de sempre
+// (proxy /api/supabase com a sessão do cookie HttpOnly e RLS).
+const ENDPOINT = "/api/realtime";
+const RESYNC_TABLE = "*"; // o servidor reconectou ao banco: avisos podem ter sido perdidos
+const MIN_RETRY_MS = 5_000;
+const MAX_RETRY_MS = 5 * 60_000;
 
 type Listener = { tables: ReadonlySet<string>; notify: () => void };
 type RealtimeContextValue = { subscribe: (listener: Listener) => () => void };
@@ -22,47 +20,68 @@ const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 export default function RealtimeProvider({ children }: { children: ReactNode }) {
   const listeners = useRef(new Set<Listener>());
-  const connection = useRef<{ client: SupabaseClient; channel: RealtimeChannel } | null>(null);
+  const source = useRef<EventSource | null>(null);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryDelay = useRef(MIN_RETRY_MS);
+  const reconnected = useRef(false);
+  const connectRef = useRef<() => void>(() => undefined);
 
   const notifyAll = useCallback(() => {
     listeners.current.forEach((listener) => listener.notify());
   }, []);
 
-  const connect = useCallback(() => {
-    if (connection.current) return;
-    const client = createClient();
-    if (!client) return;
-
-    // Depois de cair e voltar, eventos podem ter sido perdidos: reconcilia tudo.
-    let wasDown = false;
-    const channel = client
-      .channel(TOPIC)
-      .on("broadcast", { event: EVENT }, ({ payload }) => {
-        const table = typeof payload?.table === "string" ? payload.table : null;
-        if (!table) return;
-        listeners.current.forEach((listener) => {
-          if (listener.tables.has(table)) listener.notify();
-        });
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          if (wasDown) notifyAll();
-          wasDown = false;
-        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          wasDown = true;
-        }
-      });
-    connection.current = { client, channel };
-  }, [notifyAll]);
-
   const disconnect = useCallback(() => {
-    const current = connection.current;
-    connection.current = null;
-    if (current) void current.client.removeChannel(current.channel);
+    if (retryTimer.current) { clearTimeout(retryTimer.current); retryTimer.current = null; }
+    source.current?.close();
+    source.current = null;
   }, []);
 
-  // O WebSocket só existe enquanto algum componente da tela precisa dele: páginas
-  // que não assinam nada (a maioria das públicas) não abrem conexão.
+  // A conexão existe só enquanto a aba está visível e alguém precisa dela: abas em
+  // segundo plano não seguram conexões no servidor.
+  const connect = useCallback(() => {
+    if (source.current || retryTimer.current) return;
+    if (typeof EventSource === "undefined") return;
+    if (document.visibilityState !== "visible" || listeners.current.size === 0) return;
+
+    const es = new EventSource(ENDPOINT);
+    source.current = es;
+
+    es.onopen = () => {
+      retryDelay.current = MIN_RETRY_MS;
+      // Depois de uma queda, o que mudou nesse intervalo não chegou: reconcilia.
+      if (reconnected.current) notifyAll();
+      reconnected.current = false;
+    };
+
+    es.addEventListener("change", (event) => {
+      let table: unknown;
+      try { table = JSON.parse((event as MessageEvent<string>).data)?.table; } catch { return; }
+      if (typeof table !== "string") return;
+      listeners.current.forEach((listener) => {
+        if (table === RESYNC_TABLE || listener.tables.has(table)) listener.notify();
+      });
+    });
+
+    es.onerror = () => {
+      reconnected.current = true;
+      // Enquanto o navegador ainda está tentando (CONNECTING), ele mesmo reconecta.
+      // CLOSED = o servidor recusou (503: tempo real indisponível): tenta de novo
+      // com espera crescente para não martelar o servidor.
+      if (es.readyState !== EventSource.CLOSED) return;
+      source.current = null;
+      es.close();
+      retryTimer.current = setTimeout(() => {
+        retryTimer.current = null;
+        connectRef.current();
+      }, retryDelay.current);
+      retryDelay.current = Math.min(retryDelay.current * 2, MAX_RETRY_MS);
+    };
+  }, [notifyAll]);
+
+  // A nova tentativa precisa chamar a versão atual de connect sem referenciá-la
+  // dentro da própria definição.
+  useEffect(() => { connectRef.current = connect; }, [connect]);
+
   const subscribe = useCallback((listener: Listener) => {
     listeners.current.add(listener);
     connect();
@@ -72,16 +91,23 @@ export default function RealtimeProvider({ children }: { children: ReactNode }) 
     };
   }, [connect, disconnect]);
 
-  // Ao voltar para a aba, atualiza o que pode ter mudado enquanto ela estava oculta
-  // (navegadores suspendem WebSockets de abas em segundo plano).
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === "visible") notifyAll(); };
-    document.addEventListener("visibilitychange", onVisible);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        // Voltou para a aba: atualiza o que pode ter mudado e reabre a conexão.
+        retryDelay.current = MIN_RETRY_MS;
+        connect();
+        notifyAll();
+      } else {
+        disconnect();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("visibilitychange", onVisibility);
       disconnect();
     };
-  }, [notifyAll, disconnect]);
+  }, [connect, disconnect, notifyAll]);
 
   const value = useMemo(() => ({ subscribe }), [subscribe]);
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
@@ -90,7 +116,7 @@ export default function RealtimeProvider({ children }: { children: ReactNode }) 
 /**
  * Chama `onChange` (com debounce) quando qualquer uma das tabelas muda, quando a
  * conexão volta depois de uma queda e quando a aba volta a ficar visível.
- * Sem o provider ou sem Realtime no servidor, simplesmente não faz nada.
+ * Sem o provider ou sem tempo real no servidor, simplesmente não faz nada.
  */
 export function useRealtimeTables(
   tables: readonly string[],

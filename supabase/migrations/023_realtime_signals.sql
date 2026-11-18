@@ -1,33 +1,23 @@
 -- Sinais de tempo real ("algo mudou na tabela X").
 --
--- Cada comando que altera uma tabela observada publica, no topico publico
--- dk:changes do Supabase Realtime, apenas { table, op }. Nenhuma linha, nenhum
--- dado pessoal vai no sinal: o navegador, ao receber, busca os dados de novo
--- pelos caminhos de sempre, com a sessao do usuario e as regras de RLS.
--- Por isso as tabelas NAO entram na publicacao supabase_realtime e nenhum token
--- precisa chegar ao JavaScript.
+-- Cada comando que altera uma tabela observada emite um NOTIFY no canal
+-- dk_changes com apenas { table, op }. Nenhuma linha, nenhum dado pessoal vai no
+-- aviso: o servidor do site escuta o canal (LISTEN, lib/realtime-hub.ts), repassa
+-- ao navegador por Server-Sent Events e o navegador busca os dados de novo pelos
+-- caminhos de sempre, com a sessao do usuario e as regras de RLS.
 --
--- Seguro de aplicar em qualquer banco:
---   * se o Realtime nao estiver instalado (realtime.send nao existe), nada e
---     criado e a migracao apenas avisa;
---   * a funcao engole qualquer erro do Realtime, entao uma falha nunca impede a
---     gravacao que disparou o gatilho.
--- Depois de ativar o Realtime no servidor, rode esta migracao de novo.
+-- Nao depende do servico Realtime do Supabase nem de chaves: e so Postgres.
+-- pg_notify e transacional (o aviso sai no COMMIT; um ROLLBACK nao avisa ninguem)
+-- e a funcao engole qualquer erro, entao uma falha aqui nunca impede a gravacao.
 
 create or replace function public.dk_broadcast_change()
 returns trigger
 language plpgsql
-security definer
 set search_path = ''
 as $$
 begin
   begin
-    perform realtime.send(
-      jsonb_build_object('table', tg_table_name, 'op', tg_op),
-      'change',
-      'dk:changes',
-      false
-    );
+    perform pg_notify('dk_changes', jsonb_build_object('table', tg_table_name, 'op', tg_op)::text);
   exception when others then
     null;
   end;
@@ -41,11 +31,6 @@ do $$
 declare
   watched text;
 begin
-  if to_regprocedure('realtime.send(jsonb,text,text,boolean)') is null then
-    raise notice 'realtime.send nao encontrado: sinais de tempo real nao foram criados. Ative o Realtime e rode esta migracao de novo.';
-    return;
-  end if;
-
   foreach watched in array array[
     'profiles',
     'user_admin_roles',
