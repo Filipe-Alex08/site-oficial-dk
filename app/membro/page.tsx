@@ -10,6 +10,8 @@ import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
 import { BuildInsignia, GraduationInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import TrackGroup from "@/components/member/TrackGroup";
+import CountBadge from "@/components/ui/CountBadge";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getBuildIcon } from "@/lib/insignias";
 import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
 import type { MemberProfile } from "@/lib/types";
@@ -38,6 +40,30 @@ export default async function MemberPage() {
     supabase.rpc("can_view_logs"),
   ]);
   const isAdmin = Boolean(adminRoles?.length) || Boolean(canManageAssessments) || Boolean(canViewLogs);
+
+  // Badges dos cartões: só o que exige ação do próprio membro/administrador.
+  const nowIso = new Date().toISOString();
+  const roleList = (adminRoles ?? []).map((item) => item.role as string);
+  const managesMembers = roleList.includes("principal") || roleList.includes("membros");
+  const admin = createAdminClient();
+  const [{ data: openActivities }, { data: myResponses }, assignmentsResult, { data: reviewRows }] = await Promise.all([
+    supabase.from("activities").select("id").gte("starts_at", nowIso).eq("attendance_open", true).neq("status", "cancelado"),
+    supabase.from("activity_attendance").select("activity_id").eq("user_id", user.id),
+    admin
+      ? admin.from("assessment_assignments").select("id", { count: "exact", head: true }).eq("member_id", user.id).in("status", ["convidado", "em_andamento"]).or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      : Promise.resolve({ count: 0 }),
+    managesMembers
+      ? supabase.from("profiles").select("id,status,access_request_id,graduation_review_needed").or("status.eq.pendente,access_request_id.not.is.null,graduation_review_needed.eq.true")
+      : Promise.resolve({ data: [] as { id: string; status: string; access_request_id: string | null; graduation_review_needed: boolean | null }[] }),
+  ]);
+  const answered = new Set((myResponses ?? []).map((row) => row.activity_id as string));
+  const activitiesToAnswer = (openActivities ?? []).filter((activity) => !answered.has(activity.id as string)).length;
+  const assessmentsToTake = assignmentsResult.count ?? 0;
+  // Mesma regra da aba Membros do painel administrativo.
+  const isPrincipal = roleList.includes("principal");
+  const membersToReview = (reviewRows ?? []).filter((row) =>
+    row.status === "pendente" || (Boolean(row.access_request_id) && row.id !== user.id) || (isPrincipal && Boolean(row.graduation_review_needed)),
+  ).length;
 
   return (
     <>
@@ -88,10 +114,10 @@ export default async function MemberPage() {
             </EditMemberProfile>
           </article>
           <div className="member-options">
-            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarCheck /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p></Link>
+            <Link className="card" href="/membro/atividades"><span className="card-icon"><CalendarCheck /></span><h3>Atividades e presença</h3><p>Confirme sua participação e veja quem vai.</p><CountBadge count={activitiesToAnswer} label="atividades sem resposta" /></Link>
             <Link className="card" href="/membro/documentos"><span className="card-icon"><FileText /></span><h3>Documentos</h3><p>Materiais liberados para o seu perfil.</p></Link>
-            <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações</h3><p>Suas indicações, provas e resultados.</p></Link>
-            {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Mídias, calendário, membros e mais.</p></Link>}
+            <Link className="card" href="/membro/simulados"><span className="card-icon"><ClipboardCheck /></span><h3>Avaliações</h3><p>Suas indicações, provas e resultados.</p><CountBadge count={assessmentsToTake} label="avaliações para fazer" /></Link>
+            {isAdmin && <Link className="card admin-access" href="/admin"><span className="card-icon"><Settings /></span><h3>Painel administrativo</h3><p>Mídias, calendário, membros e mais.</p><CountBadge count={membersToReview} label="membros aguardando ação" /></Link>}
           </div>
         </div>
       </section>

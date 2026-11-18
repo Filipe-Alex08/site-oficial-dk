@@ -552,6 +552,23 @@ textarea { min-height: 120px; resize: vertical; }
   border-radius: var(--r-lg);
   transition: border-color 0.2s, transform 0.2s, background 0.2s;
 }
+.card { position: relative; }
+.count-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--danger);
+  color: #1a0b0b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.card > .count-badge { position: absolute; top: 14px; right: 14px; }
 a.card:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateY(-2px); }
 .card-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 auto; margin-bottom: 16px; color: var(--accent-bright); background: rgba(var(--accent-rgb), 0.1); border-radius: var(--r-md); }
 .card-icon svg { width: 22px; height: 22px; stroke-width: 1.7; }

@@ -699,6 +699,12 @@
   text-align: center
 }
 
+.assessment-admin-tabs button small.is-alert {
+  background: var(--danger);
+  color: #1a0b0b;
+  font-weight: 800
+}
+
 .assessment-admin-tabs button:hover,.assessment-admin-tabs button.active {
   border-color: var(--border-strong);
   background: var(--surface-2);

@@ -7,9 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import DocumentManager from "@/components/admin/DocumentManager";
 import AttendanceManager from "@/components/admin/AttendanceManager";
-import AssessmentAdmin from "@/components/admin/AssessmentAdmin";
+import AssessmentAdmin, { assessmentAdminQueryKey, fetchAssessmentAdminData } from "@/components/admin/AssessmentAdmin";
 import LogsViewer from "@/components/admin/LogsViewer";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
+import CountBadge from "@/components/ui/CountBadge";
 import Select from "@/components/ui/Select";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
@@ -134,6 +135,20 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   }, [supabase, canMedia, canCalendar, canMembers, principal]);
 
   const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
+
+  // Badges das abas: só contam o que exige ação e some quando a ação é feita.
+  // Membros: cadastro pendente, dados a conferir ou (ADM Principal) graduação a revisar.
+  const membersNeedingAction = useMemo(() => members.filter((member) =>
+    member.status === "pendente" || (Boolean(member.access_request_id) && member.id !== currentUserId) || (principal && member.graduation_review_needed),
+  ).length, [members, principal, currentUserId]);
+  // Mesma chave de cache da aba Avaliações: corrigir uma resposta lá atualiza o badge aqui.
+  const assessmentBadgeQuery = useQuery({
+    queryKey: assessmentAdminQueryKey,
+    queryFn: fetchAssessmentAdminData,
+    enabled: canManageAssessments,
+    refetchInterval: 60_000,
+  });
+  const pendingReviews = assessmentBadgeQuery.data?.reviews.length ?? 0;
 
   // Permissão "Ver logs": só o ADM Principal enxerga e altera, via API (a tabela é só do servidor).
   const logViewersQuery = useQuery({
@@ -420,10 +435,10 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
           {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
           {canCalendar && <AdminNav icon={<ShieldCheck />} label="Presenças" active={section === "presencas"} onClick={() => setSection("presencas")} />}
-          {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} />}
+          {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} badge={membersNeedingAction} badgeLabel="membros aguardando ação" />}
           {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
           {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
-          {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} />}
+          {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} badge={pendingReviews} badgeLabel="respostas a corrigir" />}
           {canViewLogs && <AdminNav icon={<ScrollText />} label="Logs" active={section === "logs"} onClick={() => setSection("logs")} />}
         </nav>
       </aside>
@@ -552,8 +567,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   );
 }
 
-function AdminNav({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
-  return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span></button>;
+function AdminNav({ icon, label, active, onClick, badge = 0, badgeLabel = "pendências" }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; badge?: number; badgeLabel?: string }) {
+  return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span><CountBadge count={badge} label={badgeLabel} /></button>;
 }
 
 function AdminTitle({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {

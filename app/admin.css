@@ -43,6 +43,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .admin-sidebar nav button svg { width: 19px; height: 19px; flex: 0 0 auto; }
+.admin-sidebar nav button .count-badge { margin-left: auto; }
 .admin-sidebar nav button:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
 .admin-sidebar nav button.active { background: rgba(var(--accent-rgb), 0.14); color: var(--text); }
 .admin-sidebar nav button.active svg { color: var(--accent-bright); }
@@ -168,6 +169,8 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
   .admin-sidebar nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .admin-sidebar nav::-webkit-scrollbar { display: none; }
   .admin-sidebar nav button { flex: 0 0 auto; padding: 0 14px; white-space: nowrap; }
+  /* A nav rola na horizontal e corta o que sai da caixa: o badge fica dentro do botão. */
+  .admin-sidebar nav button .count-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 0; font-size: 0.68rem; }
   .admin-content { padding: 24px 16px 72px; }
 }
 

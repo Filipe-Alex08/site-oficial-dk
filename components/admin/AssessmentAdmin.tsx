@@ -146,6 +146,12 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return result;
 }
 
+/** Compartilhada com o AdminDashboard (badge de correções) pela mesma chave de cache. */
+export const assessmentAdminQueryKey = ["assessment-admin"] as const;
+export function fetchAssessmentAdminData() {
+  return requestJson<AssessmentAdminData>("/api/admin/assessments", { cache: "no-store" });
+}
+
 function formatDate(value?: string | null) {
   return value ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(value)) : "Sem prazo";
 }
@@ -175,8 +181,8 @@ export default function AssessmentAdmin() {
   }, []);
 
   const assessmentQuery = useQuery({
-    queryKey: ["assessment-admin"],
-    queryFn: () => requestJson<AssessmentAdminData>("/api/admin/assessments", { cache: "no-store" }),
+    queryKey: assessmentAdminQueryKey,
+    queryFn: fetchAssessmentAdminData,
     refetchInterval: tab === "indicacoes" ? 10_000 : false,
   });
   const data = assessmentQuery.data ?? null;
@@ -433,7 +439,7 @@ export default function AssessmentAdmin() {
       <AssessmentTab label="Questões" icon={<FileQuestion />} active={tab === "questoes"} onClick={() => setTab("questoes")} count={data.questions.filter((question) => question.active).length} />
       <AssessmentTab label="Avaliações" icon={<BookOpenCheck />} active={tab === "avaliacoes"} onClick={() => setTab("avaliacoes")} count={publishedAssessments.length} />
       <AssessmentTab label="Indicações" icon={<Send />} active={tab === "indicacoes"} onClick={() => setTab("indicacoes")} count={data.assignments.length} />
-      <AssessmentTab label="Correções" icon={<Edit3 />} active={tab === "correcoes"} onClick={() => setTab("correcoes")} count={data.reviews.length} />
+      <AssessmentTab label="Correções" icon={<Edit3 />} active={tab === "correcoes"} onClick={() => setTab("correcoes")} count={data.reviews.length} alert />
       <AssessmentTab label="Resultados" icon={<Award />} active={tab === "resultados"} onClick={() => setTab("resultados")} count={completedAssignments.length} />
       {data.actor.canDelegate && <AssessmentTab label="Permissões" icon={<ShieldCheck />} active={tab === "permissoes"} onClick={() => setTab("permissoes")} />}
     </nav>
@@ -530,8 +536,8 @@ export default function AssessmentAdmin() {
   </div>;
 }
 
-function AssessmentTab({ label, icon, active, onClick, count }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void; count?: number }) {
-  return <button type="button" className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small>{count}</small>}</button>;
+function AssessmentTab({ label, icon, active, onClick, count, alert = false }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void; count?: number; alert?: boolean }) {
+  return <button type="button" className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small className={alert && count > 0 ? "is-alert" : undefined}>{count}</small>}</button>;
 }
 
 function Metric({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
