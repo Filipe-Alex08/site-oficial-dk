@@ -22,6 +22,7 @@ type Invite = { id: string; code: string; expires_at: string; max_uses: number; 
 type MemberAccessForm = {
   id: string;
   full_name: string;
+  nickname: string;
   member_kind: MemberKind;
   rank: DkRank;
   graduation_cavalaria: GraduationLevel;
@@ -290,6 +291,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     setMemberForm({
       id: member.id,
       full_name: member.full_name,
+      nickname: member.nickname,
       member_kind: member.member_kind,
       rank: member.rank,
       graduation_cavalaria: member.graduation_cavalaria ?? "sem_graduacao",
@@ -508,7 +510,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
         {section === "membros" && canMembers && <div>
           <AdminTitle title="Membros" />
           {members.filter((member) => member.access_request_id).map((member) => <article className="admin-form" key={member.access_request_id}>
-            <h3>Conferência de {member.full_name} (@{member.nickname})</h3>
+            <h3>Conferência de {member.nickname} <small>({member.full_name})</small></h3>
             <p>Atual: {rankLabels[member.rank]} · {trackSummary(member)}</p>
             <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {trackSummary(member, true)}</p>
             {member.id === currentUserId
@@ -519,7 +521,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
               </div>}
           </article>)}
           {memberForm && <form className="admin-form access-form" onSubmit={saveMemberAccess}>
-            <h3>Acessos de {memberForm.full_name}</h3>
+            <h3>Acessos de {memberForm.nickname} <small>({memberForm.full_name})</small></h3>
             <div className="form-grid">
               <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
               {principal ? <>
@@ -534,7 +536,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
             <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
           </form>}
           {!principal && <p className="admin-hint">Funções de administrador são gerenciadas pelo ADM Principal.</p>}
-          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.full_name}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.nickname} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}{member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
+          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}{member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
         </div>}
 
         {section === "convites" && canMembers && <div>
