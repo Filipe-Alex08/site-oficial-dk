@@ -263,7 +263,7 @@ export default function MembersSection() {
           caption="Todos os membros"
           columns={[
             {
-              key: "member", header: "Membro", hideLabel: true,
+              key: "member", header: "Membro", hideLabel: true, className: "is-lead",
               render: (member) => <div className="member-cell">
                 <Avatar name={member.nickname} path={member.avatar_path} size={40} />
                 <div><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></div>

@@ -481,7 +481,7 @@ td { font-size: 0.92rem; }
 td strong, td small { display: block; }
 td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 .table-empty { padding: 36px 20px; color: var(--text-muted); text-align: center; }
-.table-wrap td > input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent-bright); cursor: pointer; }
+.table-wrap td input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent-bright); cursor: pointer; }
 
 .row-actions { white-space: nowrap; }
 .row-actions button {

@@ -240,8 +240,8 @@ export default function MediaSection({ active }: { active: boolean }) {
         caption="Publicações do site"
         rowClassName={(post) => selectedPostIds.has(post.id) ? "is-selected" : undefined}
         columns={[
-          { key: "select", header: "Selecionar", srOnlyHeader: true, render: (post) => <input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /> },
-          { key: "post", header: "Publicação", hideLabel: true, render: (post) => <><strong>{post.title}</strong><small>/midias/{post.slug}</small></> },
+          { key: "select", header: "Selecionar", srOnlyHeader: true, className: "is-select", render: (post) => <input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /> },
+          { key: "post", header: "Publicação", hideLabel: true, className: "is-lead", render: (post) => <><strong>{post.title}</strong><small>/midias/{post.slug}</small></> },
           { key: "category", header: "Categoria", render: (post) => post.category },
           { key: "status", header: "Situação", render: (post) => <StatusBadge status={post.published ? "aprovado" : "pendente"} label={post.published ? "Publicada" : "Rascunho"} /> },
           {

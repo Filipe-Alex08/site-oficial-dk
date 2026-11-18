@@ -39,7 +39,7 @@ export default function DataTable<T>({ columns, rows, rowKey, empty, caption, ro
             key={column.key}
             className={column.className}
             data-label={column.hideLabel || column.srOnlyHeader ? undefined : column.header}
-          >{column.render(row)}</td>)}</tr>
+          ><div className="data-cell">{column.render(row)}</div></td>)}</tr>
           {extra}
         </Fragment>;
       })}</tbody>

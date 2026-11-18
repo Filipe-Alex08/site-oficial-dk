@@ -628,5 +628,42 @@ div.kpi:hover { background: var(--surface-1); }
   .admin-panel-actions { width: 100%; }
   .bulk-bar { gap: var(--space-2); padding: 8px 10px 8px var(--space-4); }
   .bulk-bar .button { padding-inline: 10px; }
-  .data-table td > * { min-width: 0; }
+  .data-table .data-cell { min-width: 0; }
+}
+
+/* Célula de tabela: o conteúdo é um bloco só (no cartão, a célula é flex e separaria título e subtítulo). */
+.data-cell { min-width: 0; }
+.data-table td.row-actions .data-cell { display: inline-block; }
+@media (max-width: 720px) {
+  .data-table td { align-items: center; }
+  .data-table td .data-cell { flex: 1; text-align: right; }
+  .data-table td:not([data-label]) .data-cell { text-align: left; }
+  .data-table td.row-actions .data-cell { flex: 0 0 auto; }
+}
+
+/* A dica (?) escondida não pode ampliar a rolagem horizontal da página. */
+.admin-content { overflow-x: clip; }
+@media (max-width: 620px) {
+  .admin-panel { position: relative; }
+  .info-tip { position: static; }
+  .info-tip-card { top: auto; left: var(--space-4); right: var(--space-4); width: auto; max-width: none; margin-top: 30px; }
+}
+
+/* Cartão de tabela com cabeçalho enxuto: seleção à esquerda, menu à direita, título no meio. */
+@media (max-width: 720px) {
+  .data-table tr:has(td.is-lead) { position: relative; }
+  .data-table tr:has(td.is-lead) td.row-actions { position: absolute; top: var(--space-3); right: var(--space-3); padding: 0; }
+  .data-table td.is-lead { padding-top: 0; padding-right: 52px; }
+  .data-table td.is-lead .data-cell { flex: 1; text-align: left; }
+  .data-table tr:has(td.is-select) td.is-select { position: absolute; top: 18px; left: var(--space-4); padding: 0; }
+  .data-table tr:has(td.is-select) td.is-lead { padding-left: 34px; }
+}
+
+/* Gaveta: o formulário não é um cartão dentro de outro cartão, e o rodapé fica numa linha só. */
+.admin-drawer .admin-form, .admin-dialog .admin-form { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
+.admin-drawer .admin-drawer-extra + .admin-drawer-body { padding-top: var(--space-4); }
+@media (max-width: 620px) {
+  .admin-drawer .admin-dialog-foot { flex-direction: row; flex-wrap: nowrap; gap: var(--space-3); padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom)); }
+  .admin-drawer .admin-dialog-foot .button { flex: 1 1 0; width: auto; padding-inline: var(--space-3); }
+  .admin-drawer .form-section { padding: var(--space-5) 0; }
 }
