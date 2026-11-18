@@ -3,8 +3,10 @@
 import { ArrowLeft, BookOpenCheck, CalendarPlus, CheckCircle2, ChevronDown, ChevronRight, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ScrollText, Search, ShieldCheck, TicketPlus, Trash2, UserCog, Users, XCircle } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useRealtimeTables } from "@/components/RealtimeProvider";
+import { revalidatePublicMedia } from "@/lib/revalidate-client";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import AdminDialog from "@/components/admin/AdminDialog";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -84,13 +86,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     ...(canViewLogs ? ["logs" as const] : []),
   ];
 
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestedSection = searchParams.get("secao");
   const section: Section = (allowed as string[]).includes(requestedSection ?? "") ? (requestedSection as Section) : "resumo";
+  // As abas só mudam a URL: pushState atualiza useSearchParams sem pedir a página
+  // de novo ao servidor (router.push repetia getUser e as consultas de permissão).
+  function navigate(url: string) {
+    window.history.pushState(null, "", url);
+  }
   function setSection(next: Section) {
-    router.push(next === "resumo" ? pathname : `${pathname}?secao=${next}`, { scroll: false });
+    navigate(next === "resumo" ? pathname : `${pathname}?secao=${next}`);
   }
   const [posts, setPosts] = useState<Post[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -166,19 +172,26 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     ? requestedTab
     : (dashboardQuery.isPending || membersNeedingAction > 0 ? "pendentes" : "todos");
   function setMemberTab(next: MemberTab) {
-    router.push(`${pathname}?secao=membros&aba=${next}`, { scroll: false });
+    navigate(`${pathname}?secao=membros&aba=${next}`);
   }
   function goToQueue() {
-    router.push(`${pathname}?secao=membros&aba=pendentes`, { scroll: false });
+    navigate(`${pathname}?secao=membros&aba=pendentes`);
   }
   // Mesma chave de cache da aba Avaliações: corrigir uma resposta lá atualiza o badge aqui.
+  // O tempo real (abaixo) atualiza na hora; o intervalo longo é só uma rede de segurança.
   const assessmentBadgeQuery = useQuery({
     queryKey: assessmentAdminQueryKey,
     queryFn: fetchAssessmentAdminData,
     enabled: canManageAssessments,
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
   const pendingReviews = assessmentBadgeQuery.data?.reviews.length ?? 0;
+
+  // Tempo real: outra pessoa (ou outra aba) mudou algo que esta tela mostra.
+  const refetchDashboard = dashboardQuery.refetch;
+  const refetchAssessmentBadge = assessmentBadgeQuery.refetch;
+  useRealtimeTables(["profiles", "user_admin_roles", "invites", "posts", "activities"], () => { void refetchDashboard(); });
+  useRealtimeTables(["assessment_assignments", "assessment_answers"], () => { if (canManageAssessments) void refetchAssessmentBadge(); });
 
   // Permissão "Ver logs": só o ADM Principal enxerga e altera, via API (a tabela é só do servidor).
   const logViewersQuery = useQuery({
@@ -226,6 +239,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, published_at: new Date().toISOString() };
     const result = editingPost ? await supabase.from("posts").update(payload).eq("id", editingPost) : await supabase.from("posts").insert(payload);
     if (result.error) return show(friendlyError(result.error));
+    revalidatePublicMedia();
     loadPostForm(emptyPost);
     show("Publicação salva.");
     await dashboardQuery.refetch();
@@ -252,6 +266,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   async function removePost(id: string) {
     if (!supabase || !window.confirm("Excluir esta publicação?")) return;
     const { error } = await supabase.from("posts").delete().eq("id", id);
+    if (!error) revalidatePublicMedia();
     setSelectedPostIds((current) => { const next = new Set(current); next.delete(id); return next; });
     show(error ? friendlyError(error) : "Publicação excluída.");
     await dashboardQuery.refetch();
@@ -277,7 +292,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     const count = selectedPostIds.size;
     if (!window.confirm(`Excluir ${count} publicação(ões) selecionada(s)? Esta ação não pode ser desfeita.`)) return;
     const { error } = await supabase.from("posts").delete().in("id", Array.from(selectedPostIds));
-    if (!error) setSelectedPostIds(new Set());
+    if (!error) { setSelectedPostIds(new Set()); revalidatePublicMedia(); }
     show(error ? friendlyError(error) : `${count} publicação(ões) excluída(s).`);
     await dashboardQuery.refetch();
   }
@@ -295,6 +310,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível sincronizar o Instagram.");
+      revalidatePublicMedia();
       show(`${result.imported} nova(s), ${result.refreshed || 0} atualizada(s) e ${result.skipped} sem alteração.${result.failed ? ` Falhas: ${result.failed}.` : ""}`);
       await dashboardQuery.refetch();
     } catch (error) {

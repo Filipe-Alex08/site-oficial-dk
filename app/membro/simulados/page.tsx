@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { assessmentAssignmentStatusLabels, assessmentTrackOptions } from "@/lib/assessments";
 import { graduationLabels, rankLabels } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
-import type { Assessment, AssessmentAssignment, MemberProfile } from "@/lib/types";
+import { getAuth, getMember } from "@/lib/viewer";
+import type { Assessment, AssessmentAssignment } from "@/lib/types";
 import { GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 import AppPageHeader from "@/components/member/AppPageHeader";
 import Unavailable from "@/components/member/Unavailable";
+import LiveRefresh from "@/components/LiveRefresh";
 
 export const metadata: Metadata = { title: "Avaliações e simulados" };
 
@@ -18,17 +19,19 @@ function formatDate(value?: string | null) {
 }
 
 export default async function MemberAssessmentsPage() {
-  const supabase = await createClient();
+  const { supabase, user } = await getAuth();
   if (!supabase) return <Unavailable />;
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
-  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-  const profile = profileData as MemberProfile | null;
-  if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
-
   const admin = createAdminClient();
   if (!admin) return <Unavailable />;
-  const { data: assignmentData } = await admin.from("assessment_assignments").select("*").eq("member_id", user.id).order("created_at", { ascending: false });
+
+  // As atribuições são filtradas por user.id, então não precisam esperar o perfil.
+  // Só são usadas depois da checagem de aprovação abaixo.
+  const [{ profile }, { data: assignmentData }] = await Promise.all([
+    getMember(),
+    admin.from("assessment_assignments").select("*").eq("member_id", user.id).order("created_at", { ascending: false }),
+  ]);
+  if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
   const assignments = (assignmentData ?? []) as AssessmentAssignment[];
   const assessmentIds = [...new Set(assignments.map((assignment) => assignment.assessment_id))];
   const { data: assessmentData } = assessmentIds.length
@@ -38,6 +41,7 @@ export default async function MemberAssessmentsPage() {
 
   return (
     <>
+      <LiveRefresh tables={["assessment_assignments"]} />
       <AppPageHeader title="Avaliações" crumbs={[{ label: "Painel", href: "/membro" }]} />
       <section className="section assessment-list-section">
         <div className="container">

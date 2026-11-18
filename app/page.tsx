@@ -1,5 +1,6 @@
 import { pageMetadata, jsonLd, siteUrl, siteDescription } from "@/lib/seo";
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
+import CalendarSkeleton from "@/components/CalendarSkeleton";
 import { socialLinks } from "@/lib/content";
 
 export const metadata = pageMetadata("Swordplay em Belo Horizonte | DK Death Knights", "Treine Swordplay e boffering com o DK em Belo Horizonte. Conheça os jogos, acompanhe o calendário e saiba como participar, mesmo sem experiência.", "/");
@@ -113,7 +115,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CalendarSection />
+      {/* O calendário consulta o banco e a sessão; o resto da home não espera por ele. */}
+      <Suspense fallback={<CalendarSkeleton />}>
+        <CalendarSection />
+      </Suspense>
     </>
   );
 }

@@ -184,7 +184,9 @@ export default function AssessmentAdmin() {
   const assessmentQuery = useQuery({
     queryKey: assessmentAdminQueryKey,
     queryFn: fetchAssessmentAdminData,
-    refetchInterval: tab === "indicacoes" ? 10_000 : false,
+    // O tempo real (AdminDashboard) atualiza esta mesma consulta na hora; o intervalo
+    // é só uma rede de segurança para quando o Realtime não está disponível.
+    refetchInterval: tab === "indicacoes" ? 30_000 : false,
   });
   const data = assessmentQuery.data ?? null;
   const loading = assessmentQuery.isPending || assessmentQuery.isFetching;

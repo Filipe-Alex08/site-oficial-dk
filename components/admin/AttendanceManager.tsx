@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CircleHelp, Edit3, RefreshCw, Save, Search, XCircle } from "lucide-react";
 import AdminTitle from "@/components/admin/AdminTitle";
+import { useRealtimeTables } from "@/components/RealtimeProvider";
 import Select from "@/components/ui/Select";
 import type { Activity, AttendanceResponse } from "@/lib/types";
 
@@ -50,6 +51,11 @@ export default function AttendanceManager() {
       ]);
     },
     onError: (error: Error) => setNotice(error.message),
+  });
+  // Alguém respondeu presença ou uma atividade mudou: recarrega a lista e o histórico aberto.
+  useRealtimeTables(["activity_attendance", "activities", "profiles"], () => {
+    void client.invalidateQueries({ queryKey: ["admin-attendance-members"] });
+    void client.invalidateQueries({ queryKey: ["admin-attendance"] });
   });
   const members = (membersQuery.data?.members ?? []).filter((member) => member.nickname.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))).sort((a, b) => a.nickname.localeCompare(b.nickname, "pt-BR") || a.id.localeCompare(b.id));
   const pageSize = 10;

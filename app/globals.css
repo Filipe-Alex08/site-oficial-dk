@@ -622,6 +622,16 @@ a.card:hover { border-color: var(--border-strong); background: var(--surface-2);
 .badge.cancelado, .badge.recusado, .badge.suspenso, .badge.inativo { color: var(--danger); background: var(--danger-bg); border-color: rgba(240, 138, 138, 0.3); }
 .badge.finalizado { color: var(--info); background: var(--info-bg); border-color: rgba(138, 184, 240, 0.3); }
 
+/* Esqueletos de carregamento (loading.tsx e fallbacks de Suspense). */
+.skeleton { display: block; background: linear-gradient(90deg, var(--surface-1) 25%, var(--surface-2) 50%, var(--surface-1) 75%); background-size: 200% 100%; border-radius: var(--r-md); animation: skeleton-shimmer 1.3s ease-in-out infinite; }
+.skeleton-title { height: 34px; width: min(320px, 70%); }
+.skeleton-line { height: 14px; width: 100%; margin-top: 12px; }
+.skeleton-line.short { width: 60%; }
+.skeleton-card { height: 150px; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-top: 28px; }
+@keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
 .inline-spinner { display: inline-block; width: 18px; height: 18px; vertical-align: middle; flex: 0 0 auto; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: query-spin 0.7s linear infinite; }
 @keyframes query-spin { to { transform: rotate(360deg); } }
 .query-activity-feedback { position: fixed; z-index: 150; top: calc(var(--header-h) + 14px); left: 50%; transform: translateX(-50%); width: min(440px, calc(100vw - 28px)); display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--surface-2); border: 1px solid var(--border-strong); border-left: 4px solid var(--accent-bright); border-radius: var(--r-md); box-shadow: var(--shadow); animation: query-feedback-in 0.2s ease-out; }

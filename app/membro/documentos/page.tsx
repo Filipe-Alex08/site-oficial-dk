@@ -4,23 +4,20 @@ import { redirect } from "next/navigation";
 import AppPageHeader from "@/components/member/AppPageHeader";
 import DocumentAccessBadge from "@/components/member/DocumentAccessBadge";
 import Unavailable from "@/components/member/Unavailable";
-import { createClient } from "@/lib/supabase/server";
-import type { InternalDocument, MemberProfile } from "@/lib/types";
+import { getAuth, getMember } from "@/lib/viewer";
+import type { InternalDocument } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Documentos internos" };
 
 export default async function MemberDocumentsPage() {
-  const supabase = await createClient();
+  const { supabase, user } = await getAuth();
   if (!supabase) return <Unavailable />;
-
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
 
-  const [{ data: profileData }, { data: documentData }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+  const [{ profile }, { data: documentData }] = await Promise.all([
+    getMember(),
     supabase.from("documents").select("*").eq("active", true).order("created_at", { ascending: false }),
   ]);
-  const profile = profileData as MemberProfile | null;
   if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
   const documents = (documentData ?? []) as InternalDocument[];
 

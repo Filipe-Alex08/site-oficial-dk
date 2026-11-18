@@ -3,14 +3,31 @@ import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import type { Post } from "@/lib/types";
-import { createClient } from "@/lib/supabase/server";
+import LiveRefresh from "@/components/LiveRefresh";
+import { createPublicClient } from "@/lib/supabase/public";
 import { cache } from "react";
 import { pageMetadata, jsonLd, siteUrl, siteName, socialImage } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
+// Gerada sob demanda na primeira visita e revalidada em segundo plano; o painel
+// admin força a atualização via /api/admin/revalidate.
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const supabase = createPublicClient();
+  if (!supabase) return [];
+  try {
+    const { data } = await supabase.from("posts").select("slug").eq("published", true).order("published_at", { ascending: false }).limit(100);
+    return (data ?? []).map((post) => ({ slug: post.slug as string }));
+  } catch {
+    // Sem banco no build: as páginas passam a ser geradas na primeira visita.
+    return [];
+  }
+}
+
 const loadPost = cache(async (slug: string) => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   if (!supabase) return undefined;
 
   const { data } = await supabase
@@ -44,6 +61,7 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <article>
+      <LiveRefresh tables={["posts", "media_items"]} debounceMs={2000} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ "@context": "https://schema.org", "@graph": [
         { "@type": "Article", headline: post.title, description: post.excerpt || post.content.slice(0, 160), datePublished: post.published_at, image: new URL(post.cover_url || socialImage.url, siteUrl).href, mainEntityOfPage: `${siteUrl}/midias/${encodeURIComponent(post.slug)}`, inLanguage: "pt-BR", author: { "@type": "Organization", name: siteName, url: siteUrl }, publisher: { "@type": "Organization", name: siteName, url: siteUrl, logo: { "@type": "ImageObject", url: `${siteUrl}/images/dk-emblem.webp` } } },
         { "@type": "BreadcrumbList", itemListElement: [ { "@type": "ListItem", position: 1, name: "Início", item: siteUrl }, { "@type": "ListItem", position: 2, name: "Mídias", item: `${siteUrl}/midias` }, { "@type": "ListItem", position: 3, name: post.title, item: `${siteUrl}/midias/${encodeURIComponent(post.slug)}` } ] },

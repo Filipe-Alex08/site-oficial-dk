@@ -4,6 +4,8 @@ import { Film, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeTables } from "@/components/RealtimeProvider";
+import { revalidatePublicMedia } from "@/lib/revalidate-client";
 import InfoTip from "@/components/ui/InfoTip";
 import Select from "@/components/ui/Select";
 import type { MediaItem, Post } from "@/lib/types";
@@ -40,6 +42,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
     },
     onSuccess: async () => {
       setMessage("Mídia adicionada à publicação."); setUrl(""); setCaption("");
+      revalidatePublicMedia();
       await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] });
     },
     onError: (error: Error) => setMessage(error.message),
@@ -50,9 +53,10 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
       const { error } = await supabase.from("media_items").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: async () => { setMessage("Mídia removida."); await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); },
+    onSuccess: async () => { setMessage("Mídia removida."); revalidatePublicMedia(); await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); },
     onError: (error: Error) => setMessage(error.message),
   });
+  useRealtimeTables(["media_items", "posts"], () => { void queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); });
 
   function add(event: FormEvent) {
     event.preventDefault();

@@ -7,10 +7,11 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogIn, LogOut, Menu, Shield, UserPlus, UserRound, X } from "lucide-react";
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import type { ClientAccount } from "@/lib/account-switch";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import { useRealtimeTables } from "@/components/RealtimeProvider";
 
 const activityLinks = [
   ["Swordplay e Boffering", "/atividades/swordplay"],
@@ -49,6 +50,7 @@ export default function Header() {
     setActivitiesOpen(false);
     setAccountOpen(false);
   }
+  const reloadAccount = useRef<(() => void) | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
   const activitiesRef = useRef<HTMLDivElement>(null);
 
@@ -59,84 +61,61 @@ export default function Header() {
   }, [account?.profile, pathname]);
 
   useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
+    if (!isSupabaseConfigured()) return;
 
     let active = true;
-    const loadAccount = async (user: { id: string; email?: string } | null) => {
-      if (!user) {
-        if (active) {
-          setAccount(null);
-          setLoading(false);
-        }
-        return;
-      }
-
-      const [{ data: profileData }, { data: roleData }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-        supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
-        supabase.rpc("can_manage_assessments"),
-        supabase.rpc("can_view_logs"),
-      ]);
-      if (!active) return;
-
-      const profile = profileData as MemberProfile | null;
-      const profileAvatarUrl = profile?.avatar_path
-        ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
-        : null;
-      setAccount({
-        email: user.email || "",
-        profile,
-        roles: ((roleData || []).map((item) => item.role).filter((role): role is AdminRole =>
-          adminRoleOptions.some((option) => option.value === role),
-        )),
-        canManageAssessments: Boolean(canManageAssessments),
-        canViewLogs: Boolean(canViewLogs),
-        avatarUrl: profileAvatarUrl,
-      });
-      setLoading(false);
-    };
 
     // Quem está logado vem do servidor: a sessão vive num cookie que este
     // componente não lê. Não há mais evento de login para escutar — entrar e
     // sair agora navegam ou recarregam a página.
-    // Contas salvas neste navegador (sem credenciais): falha aqui só esconde a
-    // seção "Trocar de conta", nunca o resto do menu.
-    const loadSavedAccounts = async () => {
-      try {
-        const response = await apiFetch("/api/auth/accounts");
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!active) return;
-        setSavedAccounts(Array.isArray(data.accounts) ? data.accounts : []);
-        if (typeof data.max === "number") setMaxSaved(data.max);
-      } catch {
-        // Mantém a lista anterior.
-      }
-    };
-
+    // Uma única chamada traz conta, perfil, papéis, permissões e as contas salvas
+    // neste navegador (sem credenciais). Se falhar, o cabeçalho fica no estado de
+    // visitante, mas para de exibir "Conta" como se ainda estivesse carregando.
     const loadCurrentAccount = async () => {
       try {
         const response = await apiFetch("/api/auth/me");
         if (!response.ok) throw new Error(`/api/auth/me respondeu ${response.status}`);
-        const { user } = await response.json();
-        if (user) void loadSavedAccounts();
-        void loadAccount(user ?? null);
+        const data = await response.json();
+        if (!active) return;
+
+        if (!data.user) {
+          setAccount(null);
+          setLoading(false);
+          return;
+        }
+
+        setAccount({
+          email: data.user.email || "",
+          profile: (data.profile ?? null) as MemberProfile | null,
+          roles: ((Array.isArray(data.roles) ? data.roles : []) as string[]).filter((role): role is AdminRole =>
+            adminRoleOptions.some((option) => option.value === role),
+          ),
+          canManageAssessments: Boolean(data.canManageAssessments),
+          canViewLogs: Boolean(data.canViewLogs),
+          avatarUrl: typeof data.avatarUrl === "string" ? data.avatarUrl : null,
+        });
+        setSavedAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+        if (typeof data.max === "number") setMaxSaved(data.max);
+        setLoading(false);
       } catch {
-        // Sem resposta o cabeçalho fica no estado de visitante, mas para de
-        // exibir "Conta" como se ainda estivesse carregando.
         if (active) setLoading(false);
       }
     };
 
+    reloadAccount.current = () => void loadCurrentAccount();
     void loadCurrentAccount();
     window.addEventListener("dk-profile-updated", loadCurrentAccount);
 
     return () => {
       active = false;
+      reloadAccount.current = null;
       window.removeEventListener("dk-profile-updated", loadCurrentAccount);
     };
   }, []);
+
+  // Patente, graduação ou cargo mudaram (talvez por outro administrador): o menu
+  // da conta acompanha sem precisar recarregar a página. Só para quem está logado.
+  useRealtimeTables(["profiles", "user_admin_roles"], () => reloadAccount.current?.(), { debounceMs: 1500, enabled: Boolean(account) });
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";

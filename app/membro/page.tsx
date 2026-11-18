@@ -14,36 +14,27 @@ import CountBadge from "@/components/ui/CountBadge";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBuildIcon } from "@/lib/insignias";
 import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
-import type { MemberProfile } from "@/lib/types";
-import { createClient } from "@/lib/supabase/server";
+import LiveRefresh from "@/components/LiveRefresh";
+import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Painel do Membro" };
 
 export default async function MemberPage() {
-  const supabase = await createClient();
+  // Perfil, papéis e permissões saem juntos (e compartilhados com o resto da requisição).
+  const { supabase, user, profile, roles: roleList, canManageAssessments, canViewLogs } = await getViewer();
 
   if (!supabase) return <Unavailable />;
-
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/area-do-membro/login");
-
-  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  const profile = profileData as MemberProfile | null;
   if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
   const profileAvatarUrl = profile.avatar_path
     ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
 
-  const [{ data: adminRoles }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
-    supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
-    supabase.rpc("can_manage_assessments"),
-    supabase.rpc("can_view_logs"),
-  ]);
-  const isAdmin = Boolean(adminRoles?.length) || Boolean(canManageAssessments) || Boolean(canViewLogs);
+  const isAdmin = roleList.length > 0 || canManageAssessments || canViewLogs;
 
   // Badges dos cartões: só o que exige ação do próprio membro/administrador.
+  // Nenhuma dessas consultas depende das outras: todas partem ao mesmo tempo.
   const nowIso = new Date().toISOString();
-  const roleList = (adminRoles ?? []).map((item) => item.role as string);
   const managesMembers = roleList.includes("principal") || roleList.includes("membros");
   const admin = createAdminClient();
   const [{ data: openActivities }, { data: myResponses }, assignmentsResult, { data: reviewRows }] = await Promise.all([
@@ -67,6 +58,7 @@ export default async function MemberPage() {
 
   return (
     <>
+      <LiveRefresh tables={["activities", "activity_attendance", "assessment_assignments", "profiles", "user_admin_roles"]} />
       <AppPageHeader
         title={`Salve, ${profile.nickname}!`}
         action={<form action="/auth/signout" method="post"><button className="button button-ghost" type="submit"><LogOut size={18} /> Sair</button></form>}
@@ -85,7 +77,7 @@ export default async function MemberPage() {
               {getBuildIcon(profile.secondary_build) && <BuildInsignia build={profile.secondary_build} variant="badge" caption="Secundária" />}
             </div>
             {profile.graduation_review_needed && <p className="form-help">Sua graduação está em revisão: um administrador vai definir o nível em cada trilha.</p>}
-            <EditMemberProfile profile={profile} canEditAccessDirectly={Boolean(adminRoles?.length)}>
+            <EditMemberProfile profile={profile} canEditAccessDirectly={roleList.length > 0}>
               <dl>
                 <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
                 <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>

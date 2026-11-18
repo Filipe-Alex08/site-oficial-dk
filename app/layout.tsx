@@ -10,6 +10,7 @@ import "./insignias.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QueryProvider from "@/components/QueryProvider";
+import RealtimeProvider from "@/components/RealtimeProvider";
 import { InsigniaColorFilters } from "@/components/member/Insignia";
 import { siteUrl, siteDescription } from "@/lib/seo";
 
@@ -42,9 +43,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <InsigniaColorFilters />
         <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
         <QueryProvider>
-          <Header />
-          <main id="conteudo" tabIndex={-1}>{children}</main>
-          <Footer />
+          <RealtimeProvider>
+            <Header />
+            <main id="conteudo" tabIndex={-1}>{children}</main>
+            <Footer />
+          </RealtimeProvider>
         </QueryProvider>
       </body>
     </html>

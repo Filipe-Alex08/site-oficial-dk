@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeTables } from "@/components/RealtimeProvider";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 
@@ -80,18 +81,24 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
     enabled: Boolean(supabase),
     queryFn: async () => {
       if (!supabase) throw new Error("Serviço indisponível no momento.");
-      const [attendanceResults, rosterResult] = await Promise.all([
-        Promise.all(activities.map(async (activity) => {
-          const { data: rows, error } = await supabase.rpc("get_activity_attendance", { requested_activity_id: activity.id });
-          if (error) throw error;
-          return [activity.id, (rows ?? []) as AttendanceEntry[]] as const;
-        })),
+      // Uma única chamada para todas as atividades (antes era uma por atividade).
+      const [attendanceResult, rosterResult] = await Promise.all([
+        activities.length
+          ? supabase.rpc("get_activities_attendance", { requested_activity_ids: activities.map((activity) => activity.id) })
+          : Promise.resolve({ data: [], error: null }),
         supabase.rpc("get_member_roster"),
       ]);
+      if (attendanceResult.error) throw attendanceResult.error;
       if (rosterResult.error) throw rosterResult.error;
-      return { entries: Object.fromEntries(attendanceResults) as Record<string, AttendanceEntry[]>, roster: (rosterResult.data ?? []) as RosterEntry[] };
+      const entries: Record<string, AttendanceEntry[]> = Object.fromEntries(activities.map((activity) => [activity.id, []]));
+      for (const { activity_id, ...entry } of (attendanceResult.data ?? []) as Array<AttendanceEntry & { activity_id: string }>) {
+        (entries[activity_id] ??= []).push(entry as AttendanceEntry);
+      }
+      return { entries, roster: (rosterResult.data ?? []) as RosterEntry[] };
     },
   });
+  // Outro membro respondeu (ou mudou de patente/graduação): atualiza a lista na hora.
+  useRealtimeTables(["activity_attendance", "profiles"], () => { void queryClient.invalidateQueries({ queryKey: ["attendance"] }); });
   const entries = data?.entries ?? {};
   const roster = data?.roster ?? [];
   const responseMutation = useMutation({
