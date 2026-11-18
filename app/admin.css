@@ -53,7 +53,7 @@
 }
 .admin-sidebar nav button svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .admin-sidebar nav button .count-badge { margin-left: auto; }
-.admin-sidebar nav button:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
+.admin-sidebar nav button:hover { background: var(--hover-veil); color: var(--text); }
 .admin-sidebar nav button.active { background: rgba(var(--accent-rgb), 0.12); color: var(--text); }
 .admin-sidebar nav button.active::before {
   content: "";
@@ -162,7 +162,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.admin-subtabs button:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+.admin-subtabs button:hover { color: var(--text); background: var(--hover-veil); }
 .admin-subtabs button.active,
 .admin-subtabs button[aria-selected="true"] {
   color: var(--text);
@@ -218,7 +218,7 @@
 .metric-card .metric-text > span { display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.88rem; }
 button.metric-card { cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.15s; }
 button.metric-card:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateY(-2px); }
-.metric-card.is-highlight { border-color: rgba(232, 194, 106, 0.45); background: var(--warn-bg); }
+.metric-card.is-highlight { border-color: var(--warn-border); background: var(--warn-bg); }
 .metric-card.is-highlight .metric-icon { color: var(--warn); background: var(--warn-bg); }
 
 .attention-panel { margin-top: 24px; }
@@ -503,8 +503,8 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 }
 .row-actions button:last-child { margin-right: 0; }
 .row-actions button:hover:not(:disabled) { color: var(--text); border-color: var(--border-strong); background: var(--surface-3); }
-.row-actions button.is-danger:hover:not(:disabled) { color: var(--danger); border-color: rgba(240, 138, 138, 0.4); background: var(--danger-bg); }
-.row-actions button.is-ok:hover:not(:disabled) { color: var(--ok); border-color: rgba(122, 209, 154, 0.4); background: var(--ok-bg); }
+.row-actions button.is-danger:hover:not(:disabled) { color: var(--danger); border-color: var(--danger-border); background: var(--danger-bg); }
+.row-actions button.is-ok:hover:not(:disabled) { color: var(--ok); border-color: var(--ok-border); background: var(--ok-bg); }
 .row-actions button:disabled { opacity: 0.45; }
 .row-actions svg { width: 17px; height: 17px; }
 
@@ -676,7 +676,7 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
   border-radius: var(--r-md);
   cursor: pointer;
 }
-.gallery-admin-grid article button:hover { color: var(--danger); border-color: rgba(240, 138, 138, 0.4); }
+.gallery-admin-grid article button:hover { color: var(--danger); border-color: var(--danger-border); }
 .gallery-admin-grid article button svg { width: 16px; }
 
 .spin { animation: admin-spin 1s linear infinite; }
@@ -746,7 +746,7 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
   cursor: pointer;
 }
 .document-admin-list a:hover, .document-admin-list button:hover { color: var(--accent-bright); border-color: var(--accent); }
-.document-admin-list button.is-danger:hover { color: var(--danger); border-color: rgba(240, 138, 138, 0.4); }
+.document-admin-list button.is-danger:hover { color: var(--danger); border-color: var(--danger-border); }
 .document-admin-list a svg, .document-admin-list button svg { width: 16px; height: 16px; }
 .document-edit-access svg { width: 16px !important; height: 16px; }
 
@@ -761,7 +761,7 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 .document-rule-card > header small { margin-top: 2px; color: var(--text-muted); font-size: 0.78rem; }
 .document-rule-icon { width: 36px; height: 36px; display: grid; place-items: center; background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: var(--r-md); color: var(--silver); }
 .document-rule-remove { width: 34px; height: 34px; margin-left: auto; display: grid; place-items: center; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-muted); cursor: pointer; }
-.document-rule-remove:hover { color: var(--danger); border-color: rgba(240, 138, 138, 0.4); }
+.document-rule-remove:hover { color: var(--danger); border-color: var(--danger-border); }
 .document-rule-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
 .document-rule-fields.graduation { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .document-rule-fields .field { min-width: 0; margin: 0; }

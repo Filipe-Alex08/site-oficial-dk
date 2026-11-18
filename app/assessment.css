@@ -1658,7 +1658,7 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
-.assessment-admin-module .assessment-admin-tabs button:hover { background: rgba(255, 255, 255, 0.05); border-color: transparent; color: var(--text); }
+.assessment-admin-module .assessment-admin-tabs button:hover { background: var(--hover-veil); border-color: transparent; color: var(--text); }
 .assessment-admin-module .assessment-admin-tabs button.active { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
 .assessment-admin-module .assessment-admin-tabs button small { border-radius: 999px; background: var(--surface-3); color: var(--text-muted); }
 .assessment-admin-module .assessment-admin-tabs button small.is-alert { background: var(--danger); color: #1a0b0b; }

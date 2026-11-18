@@ -58,6 +58,30 @@
   --success: var(--ok);
   --warning: var(--warn);
   --radius: var(--r-md);
+
+  /* Tokens derivados (aditivos): bordas de estado, véus e escalas do painel */
+  --ok-border: rgba(122, 209, 154, 0.4);
+  --warn-border: rgba(232, 194, 106, 0.45);
+  --danger-border: rgba(240, 138, 138, 0.4);
+  --info-border: rgba(138, 184, 240, 0.4);
+  --hover-veil: rgba(255, 255, 255, 0.05);
+  --accent-veil: rgba(var(--accent-rgb), 0.12);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.85rem;
+  --fs-md: 0.95rem;
+  --fs-lg: 1.15rem;
+  --fs-xl: 1.6rem;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 0.15s;
+  --dur-2: 0.25s;
 }
 
 /* Destaques pessoais seguem a graduação do membro aprovado */
