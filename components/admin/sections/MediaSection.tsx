@@ -23,6 +23,8 @@ import { friendlyError } from "@/lib/friendly-error";
 import { revalidatePublicMedia } from "@/lib/revalidate-client";
 import type { Post } from "@/lib/types";
 
+const postCategories = ["Treinos", "Eventos", "Encontros", "Comunicados"];
+
 type Quota = { used: number; limit: number; start: string | null; end: string | null };
 
 function toDateInput(value: Date) {
@@ -113,7 +115,11 @@ export default function MediaSection({ active }: { active: boolean }) {
       loadPostForm(emptyPost);
       return;
     }
-    const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, published_at: new Date().toISOString() };
+    // A data de publicação só é definida ao criar a publicação ou ao publicá-la pela primeira vez.
+    // Editar um post existente (inclusive os importados do Instagram) não mexe nela.
+    const existing = editingPost ? posts.find((post) => post.id === editingPost) : undefined;
+    const keepDate = Boolean(existing) && (existing?.published || !postForm.published);
+    const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, ...(keepDate ? {} : { published_at: new Date().toISOString() }) };
     const result = editingPost ? await supabase.from("posts").update(payload).eq("id", editingPost) : await supabase.from("posts").insert(payload);
     if (result.error) return toast.error(friendlyError(result.error));
     revalidatePublicMedia();
@@ -180,6 +186,8 @@ export default function MediaSection({ active }: { active: boolean }) {
     }
   }
 
+  // Categorias fixas, mais a do post em edição (ex.: "Instagram", criada pela importação) para o campo não ficar vazio.
+  const categoryOptions = [...new Set([...postCategories, postForm.category].filter(Boolean))].map((value) => ({ value, label: value }));
   const drawerTitle = editingPostTemplate ? `Editar template «${editingPostTemplate.name}»` : editingPost ? "Editar publicação" : "Nova publicação";
 
   return <div>
@@ -304,7 +312,7 @@ export default function MediaSection({ active }: { active: boolean }) {
         <section className="form-section">
           <FormSectionHead title="Publicação" hint="Onde a publicação entra e quando fica visível." />
           <div className="form-section-body">
-            <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
+            <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={categoryOptions} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
             {!editingPostTemplate && <label className="switch-field"><span><strong>Publicar agora</strong></span><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /></label>}
             <details className="form-more" key={`${editingPost ?? editingPostTemplate?.id ?? "nova"}-${postFormVersion}`} open={postExtrasOpen}>
               <summary><span>Capa e links<small>opcional</small></span><ChevronDown aria-hidden="true" /></summary>

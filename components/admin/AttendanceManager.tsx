@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, CircleHelp, Edit3, RefreshCw, Save, UserRound, XCircle } from "lucide-react";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -34,6 +34,7 @@ export default function AttendanceManager() {
   const [memberId, setMemberId] = useState("");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Correction | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const membersQuery = useQuery({ queryKey: ["admin-attendance-members"], gcTime: 0, queryFn: ({ signal }) => readJson<{ members: Member[] }>("/api/admin/attendance", signal) });
   const history = useQuery({ queryKey: ["admin-attendance", memberId], gcTime: 0, enabled: Boolean(memberId), queryFn: ({ signal }) => readJson<History>(`/api/admin/attendance?memberId=${memberId}`, signal) });
   const mutation = useMutation({
@@ -72,6 +73,8 @@ export default function AttendanceManager() {
   function pick(id: string) {
     setMemberId(id);
     setEditing(null);
+    // Em tela estreita o histórico fica abaixo da lista: leva o olhar até ele.
+    if (window.matchMedia("(max-width: 1100px)").matches) window.setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function startEdit(activity: ActivityRow) {
@@ -95,7 +98,7 @@ export default function AttendanceManager() {
         </li>)}</ul>}
       </Panel>
 
-      <div className="attendance-detail">
+      <div className="attendance-detail" ref={detailRef}>
         {!memberId && <div className="attendance-empty-detail"><UserRound aria-hidden="true" /><strong>Nenhum membro selecionado</strong><span>Escolha alguém na lista para ver e corrigir as respostas.</span></div>}
         {memberId && <>
           <Panel
