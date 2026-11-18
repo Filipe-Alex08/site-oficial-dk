@@ -265,6 +265,57 @@ button.metric-card:hover { border-color: var(--border-strong); background: var(-
 .admin-panel .form-actions { padding-top: 18px; border-top: 1px solid var(--border); }
 .form-help { color: var(--text-muted); font-size: 0.88rem; }
 
+/* Templates de publicações e atividades */
+.template-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.template-bar-pick { flex: 1 1 260px; max-width: 360px; }
+.template-bar-pick > label { display: flex; align-items: center; gap: 6px; }
+.template-bar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.template-bar-note { flex-basis: 100%; color: var(--danger); font-size: 0.86rem; }
+.template-mode-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 22px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 0.9rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+}
+.template-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.template-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.template-list-info { display: grid; min-width: 0; }
+.template-list-info strong, .template-list-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.template-list-info small { color: var(--text-subtle); }
+.template-rename { display: flex; flex: 1; align-items: center; gap: 10px; }
+.template-rename input { flex: 1; min-width: 0; }
+@media (max-width: 640px) {
+  .template-bar-pick { max-width: none; }
+  .template-bar-actions { width: 100%; }
+  .template-bar-actions .button { flex: 1 1 auto; }
+}
+
 /* Formulários: seções, campos e interruptores */
 .admin-content .field > label,
 .admin-dialog .field > label { color: var(--text-muted); font-size: 0.84rem; font-weight: 600; }

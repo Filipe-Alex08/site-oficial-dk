@@ -16,6 +16,9 @@ import AttendanceManager from "@/components/admin/AttendanceManager";
 import AssessmentAdmin, { assessmentAdminQueryKey, fetchAssessmentAdminData } from "@/components/admin/AssessmentAdmin";
 import LogsViewer from "@/components/admin/LogsViewer";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
+import TemplateBar from "@/components/admin/TemplateBar";
+import { useContentTemplates } from "@/components/admin/useContentTemplates";
+import { activityFormHasContent, activityFormToTemplate, emptyActivity, emptyPost, postFormHasContent, postFormToTemplate, slugify, templateToActivityForm, templateToPostForm, toDateTimeInput, type ActivityFormState, type PostFormState } from "@/lib/content-templates";
 import CountBadge from "@/components/ui/CountBadge";
 import Select from "@/components/ui/Select";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
@@ -52,19 +55,6 @@ const statusLabels: Record<string, string> = {
   confirmado: "Confirmado", a_definir: "A definir", adiado: "Adiado", cancelado: "Cancelado", finalizado: "Finalizado",
 };
 const statusLabel = (status: string) => statusLabels[status] ?? status;
-
-const emptyPost = { title: "", slug: "", excerpt: "", content: "", category: "Treinos", cover_url: "", youtube_url: "", tiktok_url: "", published: false };
-const emptyActivity = { title: "", starts_at: "", ends_at: "", location: "", type: "Treino", status: "confirmado" as ActivityStatus, description: "", attendance_open: true };
-
-function slugify(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-
-function toDateTimeInput(value?: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
 
 function toDateInput(value: Date) {
   const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
@@ -107,8 +97,15 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [memberRoles, setMemberRoles] = useState<Record<string, AdminRole[]>>({});
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [postForm, setPostForm] = useState(emptyPost);
-  const [activityForm, setActivityForm] = useState(emptyActivity);
+  const [postForm, setPostForm] = useState<PostFormState>(emptyPost);
+  const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivity);
+  // "Modo template": o formulário edita um template em vez de criar/editar uma publicação ou atividade.
+  const [editingPostTemplate, setEditingPostTemplate] = useState<{ id: string; name: string } | null>(null);
+  const [editingActivityTemplate, setEditingActivityTemplate] = useState<{ id: string; name: string } | null>(null);
+  const [postExtrasOpen, setPostExtrasOpen] = useState(false);
+  const [postFormVersion, setPostFormVersion] = useState(0);
+  const postTemplates = useContentTemplates("post", canMedia);
+  const activityTemplates = useContentTemplates("activity", canCalendar);
   const [memberForm, setMemberForm] = useState<MemberAccessForm | null>(null);
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
@@ -217,14 +214,40 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   async function savePost(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
+    if (editingPostTemplate) {
+      try {
+        await postTemplates.update(editingPostTemplate.id, { data: postFormToTemplate(postForm) });
+      } catch (error) {
+        return show(`Falha ao salvar o template: ${(error as Error).message}`);
+      }
+      show(`Template «${editingPostTemplate.name}» atualizado.`);
+      return leavePostTemplateMode();
+    }
     const payload = { ...postForm, slug: postForm.slug || slugify(postForm.title), cover_url: postForm.cover_url || null, youtube_url: postForm.youtube_url || null, tiktok_url: postForm.tiktok_url || null, published_at: new Date().toISOString() };
     const result = editingPost ? await supabase.from("posts").update(payload).eq("id", editingPost) : await supabase.from("posts").insert(payload);
     if (result.error) return show(friendlyError(result.error));
-    setPostForm(emptyPost);
-    setEditingPost(null);
+    loadPostForm(emptyPost);
     show("Publicação salva.");
     await dashboardQuery.refetch();
   }
+
+  // Carrega o formulário de publicação e remonta o <details> de capa/links, que abre se houver conteúdo.
+  function loadPostForm(form: PostFormState, target: { post?: string; template?: { id: string; name: string } } = {}) {
+    setPostForm(form);
+    setEditingPost(target.post ?? null);
+    setEditingPostTemplate(target.template ?? null);
+    setPostExtrasOpen(Boolean(form.cover_url || form.youtube_url || form.tiktok_url));
+    setPostFormVersion((version) => version + 1);
+  }
+
+  function loadActivityForm(form: ActivityFormState, target: { activity?: string; template?: { id: string; name: string } } = {}) {
+    setActivityForm(form);
+    setEditingActivity(target.activity ?? null);
+    setEditingActivityTemplate(target.template ?? null);
+  }
+
+  const leavePostTemplateMode = () => loadPostForm(emptyPost);
+  const leaveActivityTemplateMode = () => loadActivityForm(emptyActivity);
 
   async function removePost(id: string) {
     if (!supabase || !window.confirm("Excluir esta publicação?")) return;
@@ -307,6 +330,15 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   async function saveActivity(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
+    if (editingActivityTemplate) {
+      try {
+        await activityTemplates.update(editingActivityTemplate.id, { data: activityFormToTemplate(activityForm) });
+      } catch (error) {
+        return show(`Falha ao salvar o template: ${(error as Error).message}`);
+      }
+      show(`Template «${editingActivityTemplate.name}» atualizado.`);
+      return leaveActivityTemplateMode();
+    }
     const payload = {
       ...activityForm,
       starts_at: new Date(activityForm.starts_at).toISOString(),
@@ -314,8 +346,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     };
     const result = editingActivity ? await supabase.from("activities").update(payload).eq("id", editingActivity) : await supabase.from("activities").insert(payload);
     if (result.error) return show(friendlyError(result.error));
-    setActivityForm(emptyActivity);
-    setEditingActivity(null);
+    loadActivityForm(emptyActivity);
     show("Atividade salva.");
     await dashboardQuery.refetch();
   }
@@ -481,7 +512,6 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   }
 
   // Lê os dados salvos, não o formulário: senão o bloco opcional fecharia ao apagar o último campo.
-  const editingPostData = editingPost ? posts.find((post) => post.id === editingPost) : undefined;
 
   const attention: Array<{ key: string; title: string; hint: string; onClick: () => void }> = [];
   if (canMembers && membersNeedingAction > 0) {
@@ -594,36 +624,52 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           </div>
 
           <section className="admin-panel">
-            <div className="admin-panel-head"><h3>{editingPost ? "Editar publicação" : "Nova publicação"}</h3></div>
+            <div className="admin-panel-head"><h3>{editingPostTemplate ? `Editar template «${editingPostTemplate.name}»` : editingPost ? "Editar publicação" : "Nova publicação"}</h3></div>
             <div className="admin-panel-body">
+              {editingPostTemplate
+                ? <p className="template-mode-note" role="status">Você está editando um template: nada aqui cria ou altera uma publicação. Os campos podem ficar em branco.</p>
+                : <TemplateBar
+                  kind="post"
+                  store={postTemplates}
+                  currentData={postFormToTemplate(postForm)}
+                  hasContent={postFormHasContent(postForm)}
+                  show={show}
+                  onApply={(template) => {
+                    // Em uma publicação já existente, o endereço e a situação não mudam por causa do template.
+                    const next = templateToPostForm(template.data);
+                    loadPostForm(editingPost ? { ...next, slug: postForm.slug, published: postForm.published } : next, editingPost ? { post: editingPost } : {});
+                    show("Template aplicado.");
+                  }}
+                  onEdit={(template) => { loadPostForm(templateToPostForm(template.data), { template: { id: template.id, name: template.name } }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                />}
               <form className="admin-form" onSubmit={savePost}>
                 <section className="form-section">
                   <FormSectionHead title="Texto" hint="O que aparece na página da publicação." />
                   <div className="form-section-body">
                     <div className="field">
                       <label htmlFor="post-title">Título</label>
-                      <input id="post-title" value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required />                    </div>
-                    <div className="field"><label htmlFor="post-excerpt">Resumo</label><textarea id="post-excerpt" className="is-short" value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
-                    <div className="field"><label htmlFor="post-content">Conteúdo</label><textarea id="post-content" value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
+                      <input id="post-title" value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required={!editingPostTemplate} />                    </div>
+                    <div className="field"><label htmlFor="post-excerpt">Resumo</label><textarea id="post-excerpt" className="is-short" value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={!editingPostTemplate && posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
+                    <div className="field"><label htmlFor="post-content">Conteúdo</label><textarea id="post-content" value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required={!editingPostTemplate} /></div>
                   </div>
                 </section>
                 <section className="form-section">
                   <FormSectionHead title="Publicação" hint="Onde a publicação entra e quando fica visível." />
                   <div className="form-section-body">
                     <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
-                    <label className="switch-field"><span><strong>Publicar agora</strong></span><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /></label>
-                    <details className="form-more" key={editingPost ?? "nova"} open={Boolean(editingPostData?.cover_url || editingPostData?.youtube_url || editingPostData?.tiktok_url)}>
+                    {!editingPostTemplate && <label className="switch-field"><span><strong>Publicar agora</strong></span><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /></label>}
+                    <details className="form-more" key={`${editingPost ?? editingPostTemplate?.id ?? "nova"}-${postFormVersion}`} open={postExtrasOpen}>
                       <summary><span>Capa e links<small>opcional</small></span><ChevronDown aria-hidden="true" /></summary>
                       <div className="form-more-body">
                         <div className="field"><label htmlFor="post-cover">Imagem de capa<span className="opt">URL</span></label><input id="post-cover" type="url" inputMode="url" placeholder="https://" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
                         <div className="field"><label htmlFor="post-youtube">YouTube<span className="opt">URL</span></label><input id="post-youtube" type="url" inputMode="url" placeholder="https://" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
                         <div className="field"><label htmlFor="post-tiktok">TikTok<span className="opt">URL</span></label><input id="post-tiktok" type="url" inputMode="url" placeholder="https://" value={postForm.tiktok_url} onChange={(event) => setPostForm({ ...postForm, tiktok_url: event.target.value })} /></div>
-                        <div className="field"><label htmlFor="post-slug">Endereço personalizado</label><input id="post-slug" value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} /><p className="field-hint">Gerado a partir do título. Só altere se precisar.</p></div>
+                        {!editingPostTemplate && <div className="field"><label htmlFor="post-slug">Endereço personalizado</label><input id="post-slug" value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} /><p className="field-hint">Gerado a partir do título. Só altere se precisar.</p></div>}
                       </div>
                     </details>
                   </div>
                 </section>
-                <div className="form-actions"><button className="button button-primary" type="submit">{editingPost ? "Salvar alterações" : "Criar publicação"}</button>{editingPost && <button className="button button-ghost" type="button" onClick={() => { setEditingPost(null); setPostForm(emptyPost); }}>Cancelar</button>}</div>
+                <div className="form-actions"><button className="button button-primary" type="submit">{editingPostTemplate ? "Salvar template" : editingPost ? "Salvar alterações" : "Criar publicação"}</button>{(editingPost || editingPostTemplate) && <button className="button button-ghost" type="button" onClick={() => loadPostForm(emptyPost)}>Cancelar</button>}</div>
               </form>
             </div>
           </section>
@@ -638,7 +684,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
                 </button>
               </div>
             </div>
-            <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]} count={posts.length} empty="Nenhuma publicação ainda.">{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/midias/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${post.title}`} onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${post.title}`} onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+            <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]} count={posts.length} empty="Nenhuma publicação ainda.">{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/midias/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${post.title}`} onClick={() => { loadPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }, { post: post.id }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${post.title}`} onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
           </section>
           <MediaGalleryManager posts={posts} />
         </div>}
@@ -646,23 +692,39 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
         {section === "calendario" && canCalendar && <div>
           <AdminTitle eyebrow="Conteúdo" title="Calendário" description="Treinos, eventos e encontros que aparecem no site e na lista de presença." />
           <section className="admin-panel">
-            <div className="admin-panel-head"><h3>{editingActivity ? "Editar atividade" : "Nova atividade"}</h3></div>
+            <div className="admin-panel-head"><h3>{editingActivityTemplate ? `Editar template «${editingActivityTemplate.name}»` : editingActivity ? "Editar atividade" : "Nova atividade"}</h3></div>
             <div className="admin-panel-body">
+              {editingActivityTemplate
+                ? <p className="template-mode-note" role="status">Você está editando um template: nada aqui cria ou altera uma atividade. Só o horário de início e a duração (início até término) são guardados; a data é ignorada.</p>
+                : <TemplateBar
+                  kind="activity"
+                  store={activityTemplates}
+                  currentData={activityFormToTemplate(activityForm)}
+                  hasContent={activityFormHasContent(activityForm)}
+                  show={show}
+                  onApply={(template) => {
+                    // A data já escolhida é mantida; o template só define horário e duração.
+                    loadActivityForm(templateToActivityForm(template.data, activityForm), editingActivity ? { activity: editingActivity } : {});
+                    show("Template aplicado. Confira a data da atividade.");
+                    window.setTimeout(() => document.getElementById("activity-start")?.focus(), 0);
+                  }}
+                  onEdit={(template) => { loadActivityForm(templateToActivityForm(template.data, { starts_at: "" }), { template: { id: template.id, name: template.name } }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                />}
               <form className="admin-form" onSubmit={saveActivity}>
                 <section className="form-section">
                   <FormSectionHead title="Atividade" hint="Nome, tipo e situação atual." />
                   <div className="form-section-body is-two">
-                    <div className="field is-full"><label htmlFor="activity-title">Nome</label><input id="activity-title" value={activityForm.title} onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })} required /></div>
-                    <div className="field"><label htmlFor="activity-type">Tipo</label><input id="activity-type" value={activityForm.type} placeholder="Treino, encontro, evento…" onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required /></div>
+                    <div className="field is-full"><label htmlFor="activity-title">Nome</label><input id="activity-title" value={activityForm.title} onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })} required={!editingActivityTemplate} /></div>
+                    <div className="field"><label htmlFor="activity-type">Tipo</label><input id="activity-type" value={activityForm.type} placeholder="Treino, encontro, evento…" onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required={!editingActivityTemplate} /></div>
                     <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => setActivityForm({ ...activityForm, status: value as ActivityStatus })} /></div>
                   </div>
                 </section>
                 <section className="form-section">
                   <FormSectionHead title="Quando e onde" hint="Data, horário e local do encontro." />
                   <div className="form-section-body is-two">
-                    <div className="field"><label htmlFor="activity-start">Início</label><input id="activity-start" type="datetime-local" value={activityForm.starts_at} onChange={(event) => setActivityForm({ ...activityForm, starts_at: event.target.value })} required /></div>
+                    <div className="field"><label htmlFor="activity-start">Início</label><input id="activity-start" type="datetime-local" value={activityForm.starts_at} onChange={(event) => setActivityForm({ ...activityForm, starts_at: event.target.value })} required={!editingActivityTemplate} /></div>
                     <div className="field"><label htmlFor="activity-end">Término<span className="opt">opcional</span></label><input id="activity-end" type="datetime-local" value={activityForm.ends_at} onChange={(event) => setActivityForm({ ...activityForm, ends_at: event.target.value })} /></div>
-                    <div className="field is-full"><label htmlFor="activity-location">Local</label><input id="activity-location" value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required /></div>
+                    <div className="field is-full"><label htmlFor="activity-location">Local</label><input id="activity-location" value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required={!editingActivityTemplate} /></div>
                   </div>
                 </section>
                 <section className="form-section">
@@ -672,11 +734,11 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
                     <label className="switch-field"><span><strong>Permitir confirmação de presença</strong></span><input type="checkbox" checked={activityForm.attendance_open} onChange={(event) => setActivityForm({ ...activityForm, attendance_open: event.target.checked })} /></label>
                   </div>
                 </section>
-                <div className="form-actions"><button className="button button-primary" type="submit">{editingActivity ? "Salvar alterações" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
+                <div className="form-actions"><button className="button button-primary" type="submit">{editingActivityTemplate ? "Salvar template" : editingActivity ? "Salvar alterações" : "Adicionar ao calendário"}</button>{(editingActivity || editingActivityTemplate) && <button className="button button-ghost" type="button" onClick={() => loadActivityForm(emptyActivity)}>Cancelar</button>}</div>
               </form>
             </div>
           </section>
-          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]} count={activities.length} empty="Nenhuma atividade cadastrada.">{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${item.title}`} onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${item.title}`} onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]} count={activities.length} empty="Nenhuma atividade cadastrada.">{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${item.title}`} onClick={() => { loadActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }, { activity: item.id }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${item.title}`} onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "membros" && canMembers && <div>

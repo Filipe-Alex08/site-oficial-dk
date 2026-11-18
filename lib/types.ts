@@ -251,3 +251,42 @@ export type MemberProfile = {
   zodiac_sign?: string | null;
   status: "pendente" | "aprovado" | "recusado" | "suspenso" | "desativado";
 };
+
+export type ContentTemplateKind = "post" | "activity";
+
+/** Campos de uma publicação que um template guarda. Sem slug (sai do título) e sem "publicada". */
+export type PostTemplateData = {
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  cover_url: string;
+  youtube_url: string;
+  tiktok_url: string;
+};
+
+/** Template de atividade não guarda data: só o horário de início ("HH:MM") e a duração. */
+export type ActivityTemplateData = {
+  title: string;
+  type: string;
+  status: ActivityStatus;
+  location: string;
+  description: string;
+  attendance_open: boolean;
+  start_time: string;
+  duration_minutes: number | null;
+};
+
+export type ContentTemplateDataMap = {
+  post: PostTemplateData;
+  activity: ActivityTemplateData;
+};
+
+export type ContentTemplate<K extends ContentTemplateKind = ContentTemplateKind> = {
+  id: string;
+  kind: K;
+  name: string;
+  data: ContentTemplateDataMap[K];
+  created_at: string;
+  updated_at: string;
+};

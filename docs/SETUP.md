@@ -292,6 +292,12 @@ Aplique `supabase/migrations/011_member_access_requests.sql` após as migraçõe
 
 Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros, na aba **Aguardando ação**. Antes de aprovar, o administrador pode usar **Ajustar** para corrigir a patente e a graduação de cada trilha pedidas; o que foi pedido e o que foi gravado ficam registrados na auditoria (aba Logs), com a indicação de que houve ajuste. Ninguém analisa a própria solicitação. Administradores com um papel em `user_admin_roles` podem alterar diretamente esses três campos do próprio perfil. A autorização é conferida no banco, independentemente da interface. Ser gestor de avaliações sem papel de ADM não concede essa exceção.
 
+### Templates de publicações e atividades
+
+Execute `supabase/migrations/021_content_templates.sql` para ativar os templates. Ela cria a tabela `content_templates` (um tipo `post` e um `activity`, com os campos em `data`), com RLS: quem tem o papel **ADM de Mídias** lê e altera os templates de publicação, e quem tem **ADM de Atividades** os de atividade; o ADM Principal acessa os dois. Os templates são compartilhados entre quem tem o papel.
+
+No painel, em **Mídias** e **Calendário**, a barra acima do formulário permite escolher um template, **Salvar como template** (ou atualizar o template aplicado) e **Gerenciar** (renomear, editar campos e excluir). Template de publicação nunca publica nada e não guarda o endereço. Template de atividade não guarda a data: só o horário de início e a duração, e a data já escolhida no formulário é mantida ao aplicar.
+
 ### Aniversários dos membros
 
 Execute também `supabase/migrations/008_member_birthdays.sql` no SQL Editor. Essa migração permite consultar apelido, dia e mês dos aniversariantes somente com uma sessão de membro aprovado. O ano de nascimento não é exposto no calendário. Enquanto essa função não estiver disponível, o servidor pode consultar os dados usando `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY`), após validar a sessão e o status aprovado do membro. Apenas apelido, dia e mês são enviados ao calendário. Falhas de consulta exibem um aviso de indisponibilidade.
