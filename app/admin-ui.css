@@ -163,7 +163,7 @@
   animation: drawer-in 0.24s var(--ease-out);
 }
 .admin-drawer.is-wide { width: min(780px, 100%); }
-.admin-drawer > form { display: contents; }
+.admin-drawer-form { display: contents; }
 .admin-drawer-head {
   display: flex;
   align-items: flex-start;
@@ -438,4 +438,57 @@ body:has(.admin-shell) .site-footer { display: none; }
 @media (max-width: 620px) {
   .upcoming-list button, .recent-list li, .stat-list > div { padding-inline: var(--space-4); }
   .upcoming-list .badge { display: none; }
+}
+
+/* =========================================================
+   Mídias e Calendário: importação recolhível, barra de lote,
+   agenda por mês
+   ========================================================= */
+.import-strip { margin-bottom: var(--space-5); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.import-strip > summary { display: flex; align-items: center; gap: var(--space-4); padding: 12px var(--space-5); list-style: none; cursor: pointer; }
+.import-strip > summary::-webkit-details-marker { display: none; }
+.import-strip-title { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 650; }
+.import-strip-title svg { color: var(--accent-bright); }
+.import-strip-meta { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; color: var(--text-muted); font-size: var(--fs-sm); }
+.import-strip-bar { display: inline-block; width: 72px; height: 6px; overflow: hidden; background: var(--surface-3); border-radius: 999px; }
+.import-strip-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-bright)); }
+.import-strip-chevron { width: 17px; height: 17px; color: var(--text-subtle); transition: transform var(--dur-1); }
+.import-strip[open] .import-strip-chevron { transform: rotate(180deg); }
+.import-strip-body { padding: 0 var(--space-5) var(--space-5); }
+
+.data-table tr.is-selected td { background: var(--accent-veil); }
+.bulk-bar {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px 10px var(--space-5);
+  transform: translateX(-50%);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  animation: bulk-in 0.2s var(--ease-out);
+}
+@keyframes bulk-in { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@media (max-width: 900px) { .bulk-bar { bottom: calc(80px + env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 24px); } }
+
+.agenda-month { text-transform: capitalize; }
+.agenda-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.agenda-list > li { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-2) var(--space-5); }
+.agenda-list > li + li { border-top: 1px solid var(--border); }
+.agenda-main { display: flex; flex: 1; align-items: center; gap: var(--space-4); min-width: 0; padding: var(--space-2) 0; color: var(--text); background: none; border: 0; text-align: left; cursor: pointer; }
+.agenda-main:hover .agenda-text strong { text-decoration: underline; text-underline-offset: 3px; }
+.agenda-text { display: grid; min-width: 0; }
+.agenda-text strong, .agenda-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-text small { color: var(--text-muted); font-size: var(--fs-sm); }
+.agenda-tags { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-3); }
+.agenda-list-state { color: var(--text-subtle); font-size: var(--fs-xs); }
+.agenda-list-state.is-open { color: var(--ok); }
+@media (max-width: 760px) {
+  .agenda-list > li { flex-wrap: wrap; padding-inline: var(--space-4); }
+  .agenda-tags { order: 3; flex-basis: 100%; padding-left: 64px; }
 }

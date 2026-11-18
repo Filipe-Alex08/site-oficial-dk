@@ -219,7 +219,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           {section === "presencas" && canCalendar && <AttendanceManager />}
           {section === "resumo" && <OverviewSection />}
           {canMedia && keep("midias", <MediaSection active={section === "midias"} />)}
-          {canCalendar && keep("calendario", <CalendarSection />)}
+          {canCalendar && keep("calendario", <CalendarSection active={section === "calendario"} />)}
           {canMembers && keep("membros", <MembersSection />)}
           {canMembers && keep("convites", <InvitesSection />)}
           {section === "documentos" && canMembers && <DocumentManager />}

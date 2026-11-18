@@ -4,10 +4,14 @@ import { useEffect, useRef, type RefObject } from "react";
 
 const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), [tabindex="0"]';
 
+/** Modais abertos, do mais antigo ao mais novo: só o do topo reage a Esc e Tab. */
+const openModals: symbol[] = [];
+
 /**
  * Comportamento comum de janelas modais do painel (diálogo, gaveta, confirmação):
  * trava a rolagem do corpo, leva o foco para dentro, prende o Tab, fecha com Esc
  * (a menos que o Select aberto já tenha tratado o evento) e devolve o foco ao fechar.
+ * Modais empilhados (um diálogo aberto de dentro de uma gaveta) se comportam em ordem.
  */
 export function useDialogBehavior(containerRef: RefObject<HTMLElement | null>, onClose: () => void, initialFocus = "input:not(:disabled), button.admin-dialog-close") {
   // Ref: o efeito roda só na abertura; um callback novo a cada render não pode roubar o foco.
@@ -15,6 +19,8 @@ export function useDialogBehavior(containerRef: RefObject<HTMLElement | null>, o
   useEffect(() => { closeRef.current = onClose; });
 
   useEffect(() => {
+    const id = Symbol("modal");
+    openModals.push(id);
     const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -22,6 +28,7 @@ export function useDialogBehavior(containerRef: RefObject<HTMLElement | null>, o
     (root?.querySelector<HTMLElement>("[data-autofocus]") ?? root?.querySelector<HTMLElement>(initialFocus))?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
+      if (openModals[openModals.length - 1] !== id) return;
       if (event.key === "Escape") {
         if (event.defaultPrevented) return;
         event.preventDefault();
@@ -39,6 +46,8 @@ export function useDialogBehavior(containerRef: RefObject<HTMLElement | null>, o
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
+      const index = openModals.indexOf(id);
+      if (index >= 0) openModals.splice(index, 1);
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus?.();
     };
