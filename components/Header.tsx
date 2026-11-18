@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogIn, LogOut, Menu, Shield, UserRound, X } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
+import { ChevronDown, LogIn, LogOut, Menu, Shield, UserPlus, UserRound, X } from "lucide-react";
+import { apiFetch, jsonApiFetch } from "@/lib/api-client";
+import type { ClientAccount } from "@/lib/account-switch";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
@@ -36,6 +37,10 @@ export default function Header() {
   const [account, setAccount] = useState<HeaderAccount | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [signingOut, setSigningOut] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<ClientAccount[]>([]);
+  const [maxSaved, setMaxSaved] = useState(5);
+  const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const [lastPath, setLastPath] = useState(pathname);
   // Ao navegar, fecha menus abertos (ajuste de estado durante a renderização).
   if (lastPath !== pathname) {
@@ -95,11 +100,27 @@ export default function Header() {
     // Quem está logado vem do servidor: a sessão vive num cookie que este
     // componente não lê. Não há mais evento de login para escutar — entrar e
     // sair agora navegam ou recarregam a página.
+    // Contas salvas neste navegador (sem credenciais): falha aqui só esconde a
+    // seção "Trocar de conta", nunca o resto do menu.
+    const loadSavedAccounts = async () => {
+      try {
+        const response = await apiFetch("/api/auth/accounts");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active) return;
+        setSavedAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+        if (typeof data.max === "number") setMaxSaved(data.max);
+      } catch {
+        // Mantém a lista anterior.
+      }
+    };
+
     const loadCurrentAccount = async () => {
       try {
         const response = await apiFetch("/api/auth/me");
         if (!response.ok) throw new Error(`/api/auth/me respondeu ${response.status}`);
         const { user } = await response.json();
+        if (user) void loadSavedAccounts();
         void loadAccount(user ?? null);
       } catch {
         // Sem resposta o cabeçalho fica no estado de visitante, mas para de
@@ -159,6 +180,26 @@ export default function Header() {
   const displayName = account?.profile?.nickname || account?.profile?.full_name || account?.email || "Usuário";
   const initials = displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
+  async function switchAccount(id: string) {
+    setSwitchingId(id);
+    setSwitchError(null);
+    try {
+      const response = await jsonApiFetch("/api/auth/accounts/switch", { id });
+      if (response.ok) {
+        // Recarrega a página inteira: nada da conta anterior (cache de dados,
+        // estado de telas) pode sobrar na nova.
+        window.location.reload();
+        return;
+      }
+      const data = await response.json().catch(() => null);
+      setSwitchError(data?.error ?? "Não foi possível trocar de conta.");
+      if (response.status !== 500) setSavedAccounts((list) => list.filter((item) => item.id !== id));
+    } catch {
+      setSwitchError("Não foi possível trocar de conta agora.");
+    }
+    setSwitchingId(null);
+  }
+
   async function signOut() {
     setSigningOut(true);
     try {
@@ -166,6 +207,7 @@ export default function Header() {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } finally {
       setAccount(null);
+      setSavedAccounts([]);
       setAccountOpen(false);
       setSigningOut(false);
       router.refresh();
@@ -227,6 +269,26 @@ export default function Header() {
                     {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
                     {!account.profile && <small className="account-status">Cadastro incompleto</small>}
                   </div>
+                  {approved && (
+                    <div className="account-switcher">
+                      <span className="account-links-heading"><UserRound size={14} /> Trocar de conta</span>
+                      {savedAccounts.map((saved) => (
+                        <button key={saved.id} className="account-switch-item" type="button" onClick={() => switchAccount(saved.id)} disabled={switchingId !== null}>
+                          <span className="header-avatar">
+                            {saved.avatarUrl ? <Image src={saved.avatarUrl} alt="" width={36} height={36} unoptimized /> : (saved.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || <UserRound size={19} />)}
+                          </span>
+                          <span className="account-switch-text">
+                            <strong>{switchingId === saved.id ? "Trocando…" : saved.name}</strong>
+                            <small>{saved.email}</small>
+                          </span>
+                        </button>
+                      ))}
+                      {switchError && <p className="form-message error" role="alert">{switchError}</p>}
+                      {savedAccounts.length < maxSaved && (
+                        <Link className="account-switch-add" href="/area-do-membro/login?adicionar=1" onClick={() => setAccountOpen(false)}><UserPlus size={16} /> Adicionar outra conta</Link>
+                      )}
+                    </div>
+                  )}
                   {approved ? <div className="account-links">
                     <Link href="/membro" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Área do membro</Link>
                     <Link href="/membro/atividades" onClick={() => setAccountOpen(false)}>Atividades e presenças</Link>

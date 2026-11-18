@@ -125,7 +125,7 @@ const googleOnly = (createdAt = new Date().toISOString()) => ({
 });
 
 function callback({ user = approvedByPassword, profile = null, profileError = null, exchangeError = null, deleteError = null,
-  profileThrows = false, supabase = true, admin = true } = {}) {
+  profileThrows = false, supabase = true, admin = true, previous = null } = {}) {
   const events = [];
   const errors = [];
   const client = {
@@ -150,6 +150,11 @@ function callback({ user = approvedByPassword, profile = null, profileError = nu
   };
   const route = load("app/auth/callback/route.ts", {
     "@/lib/auth-callback": logic,
+    "@/lib/account-switch": {
+      snapshotCurrent: async () => previous,
+      stashPrevious: async (_previous, newUserId) => { events.push(`stash:${newUserId}`); },
+      restoreSnapshot: async (_client, snapshot) => { if (snapshot) events.push(`restore:${snapshot.entry.id}`); },
+    },
     "@/lib/supabase/server": { createClient: async () => supabase ? client : null },
     "@/lib/supabase/admin": { createAdminClient: () => admin ? adminClient : null },
   }, { Response, console: { error: (...args) => errors.push(args) } });
@@ -197,7 +202,7 @@ test("a failed code exchange does not query, sign out or delete anything", async
 test("an approved member is redirected to the member area and keeps the session", async () => {
   const f = callback({ profile: { status: "aprovado" } });
   assert.deepEqual(await f.get(), { status: 307, location: "/membro" });
-  assert.deepEqual(f.events, ["exchange:abc", "profiles.id:member-id"]);
+  assert.deepEqual(f.events, ["exchange:abc", "profiles.id:member-id", "stash:member-id"]);
 });
 
 test("an approved member follows a safe next path and an unsafe one falls back to the member area", async () => {
@@ -308,4 +313,31 @@ test("a resposta e guardada em cache entre chamadas seguidas", async () => {
   await mod.isGoogleLoginAvailable();
   await mod.isGoogleLoginAvailable();
   assert.equal(calls, 1);
+});
+
+// Conta que já estava logada quando se adiciona outra pelo Google.
+const alreadyActive = { entry: { id: "ativa-id" }, accessToken: "a", refreshToken: "r" };
+
+test("an approved Google login stashes the account that was already active", async () => {
+  const f = callback({ profile: { status: "aprovado" }, previous: alreadyActive });
+  assert.equal((await f.get()).location, "/membro");
+  assert.deepEqual(f.events.filter((event) => /^(stash|restore|signOut)/.test(event)), ["stash:member-id"]);
+});
+
+test("a refused Google login gives the previously active account back after signing out", async () => {
+  const f = callback({ profile: { status: "pendente" }, previous: alreadyActive });
+  assert.equal((await f.get()).location, toLogin("pendente"));
+  assert.deepEqual(f.events.filter((event) => /^(stash|restore|signOut)/.test(event)), ["signOut", "restore:ativa-id"]);
+});
+
+test("a failed Google login also gives the previously active account back", async () => {
+  const f = callback({ profileThrows: true, profile: { status: "aprovado" }, previous: alreadyActive });
+  assert.equal((await f.get()).location, toLogin("google"));
+  assert.deepEqual(f.events.filter((event) => /^(stash|restore|signOut)/.test(event)), ["signOut", "restore:ativa-id"]);
+});
+
+test("a refused login of the very same account has nothing to give back", async () => {
+  const f = callback({ profile: { status: "pendente" }, previous: { ...alreadyActive, entry: { id: "member-id" } } });
+  assert.equal((await f.get()).location, toLogin("pendente"));
+  assert.ok(!f.events.some((event) => event.startsWith("restore")));
 });

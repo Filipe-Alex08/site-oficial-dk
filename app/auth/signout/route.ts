@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
+// Sai só da conta ativa; o cofre de contas salvas (dk-contas) é preservado de propósito.
 export async function POST() {
   const supabase = await createClient();
   if (supabase) await supabase.auth.signOut({ scope: "local" });

@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 // Sair da conta. Encerra a sessão no Supabase e apaga os cookies. Responde JSON
 // porque quem chama é o botão do cabeçalho, por fetch — o formulário de
 // app/auth/signout continua existindo para quem navega sem JavaScript.
+//
+// Sai SÓ da conta ativa. O cofre de contas salvas (cookie dk-contas, veja
+// lib/account-vault.ts) fica como está de propósito: o navegador permanece
+// deslogado e quem escolhe em qual conta entrar é a pessoa, na tela de login.
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return forbidden();
 

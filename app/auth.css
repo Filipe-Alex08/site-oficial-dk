@@ -1197,3 +1197,95 @@
     flex: 1
   }
 }
+
+/* Contas já usadas neste navegador (troca rápida na tela de login). */
+.saved-accounts {
+  width: min(100%,480px);
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px
+}
+
+.saved-accounts-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase
+}
+
+.saved-accounts ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none
+}
+
+.saved-accounts li {
+  display: flex;
+  gap: 6px
+}
+
+.saved-account {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 12px;
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-align: left;
+  cursor: pointer
+}
+
+.saved-account:hover:not(:disabled) {
+  border-color: var(--accent-bright)
+}
+
+.saved-account:disabled,.saved-account-forget:disabled {
+  opacity: .6;
+  cursor: wait
+}
+
+.saved-account-text {
+  display: grid;
+  min-width: 0;
+  gap: 1px
+}
+
+.saved-account-text strong,.saved-account-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.saved-account-text small {
+  color: var(--muted);
+  font-size: .8rem
+}
+
+.saved-account-forget {
+  flex: 0 0 auto;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer
+}
+
+.saved-account-forget:hover:not(:disabled) {
+  color: var(--danger)
+}
+
+.saved-accounts + .login-form {
+  margin-top: 0
+}

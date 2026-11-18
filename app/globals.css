@@ -401,6 +401,18 @@ textarea { min-height: 120px; resize: vertical; }
 .account-summary span, .account-summary small { overflow-wrap: anywhere; color: var(--text-muted); font-size: 0.82rem; line-height: 1.45; }
 .account-summary small { margin-top: 4px; }
 .account-summary .account-status { color: var(--warn); }
+.account-switcher { display: grid; gap: 2px; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
+.account-switcher .account-links-heading { margin-top: 8px; padding-top: 0; border-top: 0; }
+.account-switcher .form-message { margin: 4px 8px; padding: 8px 10px; font-size: 0.82rem; }
+.account-switch-item { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 12px; color: var(--text-muted); background: transparent; border: 0; border-radius: var(--r-sm); text-align: left; cursor: pointer; }
+.account-switch-item:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+.account-switch-item:disabled { opacity: 0.6; cursor: wait; }
+.account-switch-text { display: grid; min-width: 0; gap: 1px; }
+.account-switch-text strong { overflow: hidden; color: var(--text); font-size: 0.92rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-switch-text small { overflow: hidden; font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-switch-add { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 8px 12px; color: var(--text-muted); border-radius: var(--r-sm); font-size: 0.92rem; }
+.account-switch-add:hover { background: var(--surface-3); color: var(--text); }
+.account-switch-add svg { flex: 0 0 auto; color: var(--accent-bright); }
 .account-links { display: grid; gap: 2px; padding: 8px 0; }
 .account-links a { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 8px 12px; color: var(--text-muted); border-radius: var(--r-sm); font-size: 0.92rem; }
 .account-links a:hover { background: var(--surface-3); color: var(--text); }

@@ -1,4 +1,5 @@
 import { LOGIN_PATH, callbackFailureCode, decideGoogleLogin, safeNextPath, type LoginErrorCode } from "@/lib/auth-callback";
+import { restoreSnapshot, snapshotCurrent, stashPrevious, type ActiveSnapshot } from "@/lib/account-switch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,6 +14,14 @@ function backToLogin(error: LoginErrorCode) {
   return relativeRedirect(`${LOGIN_PATH}?erro=${error}`);
 }
 
+// Login recusado: o signOut acima limpou o cookie, então a conta que já estava
+// ativa volta para ele. Se a conta recusada era a própria conta ativa, o signOut
+// global já encerrou a sessão dela e não há o que devolver.
+async function giveBack(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, previous: ActiveSnapshot | null, deniedUserId?: string) {
+  if (!previous || previous.entry.id === deniedUserId) return;
+  await restoreSnapshot(supabase, previous);
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -24,6 +33,10 @@ export async function GET(request: Request) {
     console.error("Login com Google indisponível: Supabase ou chave administrativa não configurados.");
     return backToLogin("google");
   }
+
+  // Quem já estava logado (ao "adicionar outra conta"): a troca do código abaixo
+  // sobrescreve o cookie de sessão, então a conta anterior é guardada antes.
+  const previous = await snapshotCurrent(supabase);
 
   try {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -44,9 +57,13 @@ export async function GET(request: Request) {
       },
     );
 
-    if (decision.action === "allow") return relativeRedirect(safeNextPath(searchParams.get("next")));
+    if (decision.action === "allow") {
+      await stashPrevious(previous, user.id);
+      return relativeRedirect(safeNextPath(searchParams.get("next")));
+    }
 
     await supabase.auth.signOut();
+    await giveBack(supabase, previous, user.id);
     if (decision.deleteUser) {
       const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
       if (deleteError) console.error("Falha ao apagar a conta criada pelo login com Google", deleteError);
@@ -55,6 +72,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Falha ao concluir o login com Google", error);
     await supabase.auth.signOut().catch(() => undefined);
+    await giveBack(supabase, previous).catch(() => undefined);
     return backToLogin("google");
   }
 }
