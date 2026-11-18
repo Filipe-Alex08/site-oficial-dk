@@ -26,6 +26,8 @@ export default function Footer() {
           <Link href="/atividades/swordplay">Atividades</Link>
           <Link href="/midias">Mídias</Link>
           <Link href="/eventos">Eventos</Link>
+          <Link href="/privacidade">Privacidade</Link>
+          <Link href="/termos">Termos</Link>
         </nav>
 
         <div className="social-links">

@@ -6,7 +6,7 @@ import { siteUrl } from "@/lib/seo";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const paths = ["", "/sobre", "/atividades/swordplay", "/atividades/tipos", "/atividades/jogos", "/atividades/graduacoes", "/eventos", "/midias"];
+  const paths = ["", "/sobre", "/atividades/swordplay", "/atividades/tipos", "/atividades/jogos", "/atividades/graduacoes", "/eventos", "/midias", "/privacidade", "/termos"];
   const gamePaths = games.map((game) => `/atividades/jogos/${game.slug}`);
   const entries: MetadataRoute.Sitemap = [...paths, ...gamePaths].map((path) => ({ url: `${siteUrl}${path}` }));
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
