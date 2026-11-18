@@ -7,10 +7,15 @@ import { useRouter } from "next/navigation";
 import { Edit3, Save, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getZodiacSign } from "@/lib/zodiac";
+import { jsonApiFetch } from "@/lib/api-client";
+import { PASSWORD_MAX, PASSWORD_MIN, validatePasswordChange } from "@/lib/account-password";
 import Select from "@/components/ui/Select";
 import { graduationLabels, graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
 import TrackGroup from "@/components/member/TrackGroup";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
+
+const SUCCESS_MESSAGES = new Set(["Perfil atualizado.", "Perfil e senha atualizados."]);
+const EMPTY_PASSWORD = { current: "", next: "", confirm: "" };
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
@@ -38,10 +43,11 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     }
   }, [editing]);
   useEffect(() => {
-    if (message !== "Perfil atualizado.") return;
+    if (!SUCCESS_MESSAGES.has(message)) return;
     const timeout = window.setTimeout(() => setMessage(""), 4000);
     return () => window.clearTimeout(timeout);
   }, [message]);
+  const [password, setPassword] = useState(EMPTY_PASSWORD);
   const [form, setForm] = useState({
     rank: profile.requested_rank ?? profile.rank,
     graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
@@ -61,8 +67,33 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     const supabase = createClient();
     if (!supabase) return setMessage("Serviço indisponível no momento. Tente novamente.");
 
+    // Senha é opcional: só entra em jogo se algum dos três campos foi preenchido.
+    const changingPassword = Boolean(password.current || password.next || password.confirm);
+    if (changingPassword) {
+      const invalid = validatePasswordChange(password.current, password.next)
+        ?? (password.next !== password.confirm ? "A confirmação não é igual à nova senha." : null);
+      if (invalid) return setMessage(invalid);
+    }
+
     setSaving(true);
     setMessage("");
+    if (changingPassword) {
+      // Primeiro a senha: se a senha atual estiver errada, nada do perfil é salvo pela metade.
+      try {
+        const response = await jsonApiFetch("/api/account/password", { current_password: password.current, new_password: password.next });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          setMessage(data?.error ?? "Não foi possível trocar a senha.");
+          setSaving(false);
+          return;
+        }
+      } catch {
+        setMessage("Não foi possível trocar a senha agora. Tente novamente.");
+        setSaving(false);
+        return;
+      }
+      setPassword(EMPTY_PASSWORD);
+    }
     // Patente e graduação passam por aprovação de um administrador, inclusive
     // quando quem edita é o próprio administrador.
     const accessDetailsChanged = form.rank !== profile.rank
@@ -93,11 +124,12 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     });
 
     if (error) {
-      setMessage(error.code === "23505"
+      const prefix = changingPassword ? "Senha alterada, mas o restante do perfil não foi salvo. " : "";
+      setMessage(prefix + (error.code === "23505"
         ? "Esse apelido já está sendo usado por outro membro."
         : error.code === "22023"
           ? "Confira o apelido e o número da camisa."
-          : "Não foi possível salvar as alterações. Tente novamente.");
+          : "Não foi possível salvar as alterações. Tente novamente."));
       setSaving(false);
       return;
     }
@@ -117,9 +149,8 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     });
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
-    setMessage(accessDetailsChanged
-      ? "Perfil atualizado. Patente e graduação aguardam aprovação de um administrador."
-      : "Perfil atualizado.");
+    const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
+    setMessage(accessDetailsChanged ? done + " Patente e graduação aguardam aprovação de um administrador." : done);
     setEditing(false);
     setSaving(false);
   }
@@ -138,6 +169,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       primary_build: profile.primary_build || "",
       secondary_build: profile.secondary_build || "",
     });
+    setPassword(EMPTY_PASSWORD);
     setMessage("");
     setEditing(false);
   }
@@ -179,6 +211,13 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
               </div>
             </TrackGroup>
           ))}
+          <TrackGroup title="Alterar senha (opcional)">
+            <div className="profile-edit-fields">
+              <div className="field"><label htmlFor="member-current-password">Senha atual</label><input id="member-current-password" type="password" autoComplete="current-password" value={password.current} onChange={(event) => setPassword((current) => ({ ...current, current: event.target.value }))} /></div>
+              <div className="field"><label htmlFor="member-new-password">Nova senha</label><input id="member-new-password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.next} onChange={(event) => setPassword((current) => ({ ...current, next: event.target.value }))} /></div>
+              <div className="field"><label htmlFor="member-confirm-password">Confirmar nova senha</label><input id="member-confirm-password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.confirm} onChange={(event) => setPassword((current) => ({ ...current, confirm: event.target.value }))} /></div>
+            </div>
+          </TrackGroup>
           <p className="profile-edit-help">{canEditAccessDirectly ? "Suas alterações de patente e graduação valem na hora." : "Alterações de patente e graduação passam por aprovação; seus acessos atuais continuam até lá."}</p>
           <div className="profile-edit-actions">
             <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
@@ -187,7 +226,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
         </form>
         </>
       )}
-      {message && <p className={`profile-edit-message ${message === "Perfil atualizado." ? "success" : "error"}`} role="status">{message}</p>}
+      {message && <p className={`profile-edit-message ${SUCCESS_MESSAGES.has(message) ? "success" : "error"}`} role="status">{message}</p>}
     </div>
   );
 }
