@@ -1,17 +1,21 @@
 "use client";
 
-import { ArrowLeft, BookOpenCheck, CalendarPlus, FileText, ImagePlus, LayoutDashboard, ScrollText, ShieldCheck, TicketPlus, UserCog } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarPlus, ChevronRight, FileText, ImagePlus, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ScrollText, Search, ShieldCheck, TicketPlus, UserCog } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
-import { AdminDataProvider, type AdminData, type AdminSection, type Invite, type MemberTab } from "@/components/admin/AdminDataContext";
+import { AdminDataProvider, type AdminData, type AdminNavItem, type AdminSection, type Invite, type MemberTab } from "@/components/admin/AdminDataContext";
+import AdminBottomBar from "@/components/admin/AdminBottomBar";
 import AssessmentAdmin, { assessmentAdminQueryKey, fetchAssessmentAdminData } from "@/components/admin/AssessmentAdmin";
 import AttendanceManager from "@/components/admin/AttendanceManager";
+import CommandPalette from "@/components/admin/CommandPalette";
 import DocumentManager from "@/components/admin/DocumentManager";
 import LogsViewer from "@/components/admin/LogsViewer";
 import { useToast } from "@/components/admin/ToastProvider";
+import { useStoredFlag } from "@/components/admin/useStoredFlag";
 import CalendarSection from "@/components/admin/sections/CalendarSection";
 import InvitesSection from "@/components/admin/sections/InvitesSection";
 import MediaSection from "@/components/admin/sections/MediaSection";
@@ -127,6 +131,48 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   if (!visited.has(section)) setVisited(new Set(visited).add(section));
   const keep = (name: AdminSection, content: ReactNode) => visited.has(name) ? <div hidden={section !== name}>{content}</div> : null;
 
+  // Modelo único de navegação: barra lateral, barra inferior e paleta de comandos leem a mesma lista.
+  const nav: AdminNavItem[] = [
+    { id: "resumo", label: "Resumo", icon: <LayoutDashboard />, group: "Visão geral" },
+    ...(canMedia ? [{ id: "midias" as const, label: "Mídias", icon: <ImagePlus />, group: "Conteúdo" }] : []),
+    ...(canCalendar ? [{ id: "calendario" as const, label: "Calendário", icon: <CalendarPlus />, group: "Conteúdo" }] : []),
+    ...(canMembers ? [{ id: "documentos" as const, label: "Documentos", icon: <FileText />, group: "Conteúdo" }] : []),
+    ...(canMembers ? [{ id: "membros" as const, label: "Membros", icon: <UserCog />, group: "Pessoas", badge: membersNeedingAction, badgeLabel: "membros aguardando ação" }] : []),
+    ...(canMembers ? [{ id: "convites" as const, label: "Convites", icon: <TicketPlus />, group: "Pessoas" }] : []),
+    ...(canCalendar ? [{ id: "presencas" as const, label: "Presenças", icon: <ShieldCheck />, group: "Pessoas" }] : []),
+    ...(canManageAssessments ? [{ id: "simulados" as const, label: "Avaliações", icon: <BookOpenCheck />, group: "Gestão", badge: pendingReviews, badgeLabel: "respostas a corrigir" }] : []),
+    ...(canViewLogs ? [{ id: "logs" as const, label: "Logs", icon: <ScrollText />, group: "Gestão" }] : []),
+  ];
+  const navGroups = nav.reduce<Array<{ label: string; items: AdminNavItem[] }>>((all, item) => {
+    const group = all.find((entry) => entry.label === item.group);
+    if (group) group.items.push(item); else all.push({ label: item.group, items: [item] });
+    return all;
+  }, []);
+  const currentLabel = nav.find((item) => item.id === section)?.label ?? "Resumo";
+
+  const [collapsed, setCollapsed] = useStoredFlag("dk-admin-sidebar-collapsed");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Ao trocar de seção o foco vai para o título dela: leitores de tela anunciam a mudança e o teclado continua dali.
+  const previousSection = useRef(section);
+  useEffect(() => {
+    if (previousSection.current === section) return;
+    previousSection.current = section;
+    const heading = Array.from(document.querySelectorAll<HTMLElement>(".admin-content h2")).find((element) => element.offsetParent !== null);
+    heading?.setAttribute("tabindex", "-1");
+    heading?.focus({ preventScroll: true });
+  }, [section]);
+
   const data: AdminData = {
     supabase, currentUserId, principal, canMedia, canCalendar, canMembers, canManageAssessments, canViewLogs,
     posts, activities, members, memberRoles, invites, setInvites,
@@ -137,39 +183,38 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
 
   return (
     <AdminDataProvider value={data}>
-      <section className="admin-shell">
+      <section className="admin-shell" data-collapsed={collapsed ? "true" : "false"}>
         <aside className="admin-sidebar">
           <div className="admin-sidebar-head">
-            <h1>Administração</h1>
+            <Image className="admin-brand-mark" src="/images/dk-emblem.webp" alt="" width={34} height={34} />
+            <div className="admin-brand-text"><strong>DK</strong><span>Comando</span></div>
+            <button className="admin-collapse" type="button" onClick={() => setCollapsed(!collapsed)} aria-pressed={collapsed} aria-label={collapsed ? "Expandir barra lateral" : "Recolher barra lateral"} title={collapsed ? "Expandir" : "Recolher"}>
+              {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+            </button>
           </div>
           <nav aria-label="Seções do painel">
-            <div className="admin-nav-group">
-              <span className="admin-nav-label">Visão geral</span>
-              <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
-            </div>
-            <div className="admin-nav-group">
-              <span className="admin-nav-label">Conteúdo</span>
-              {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
-              {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
-              {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
-            </div>
-            {(canMembers || canCalendar) && <div className="admin-nav-group">
-              <span className="admin-nav-label">Pessoas</span>
-              {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} badge={membersNeedingAction} badgeLabel="membros aguardando ação" />}
-              {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
-              {canCalendar && <AdminNav icon={<ShieldCheck />} label="Presenças" active={section === "presencas"} onClick={() => setSection("presencas")} />}
-            </div>}
-            {(canManageAssessments || canViewLogs) && <div className="admin-nav-group">
-              <span className="admin-nav-label">Gestão</span>
-              {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} badge={pendingReviews} badgeLabel="respostas a corrigir" />}
-              {canViewLogs && <AdminNav icon={<ScrollText />} label="Logs" active={section === "logs"} onClick={() => setSection("logs")} />}
-            </div>}
+            {navGroups.map((group) => <div className="admin-nav-group" key={group.label}>
+              <span className="admin-nav-label">{group.label}</span>
+              {group.items.map((item) => <AdminNav key={item.id} item={item} active={section === item.id} onClick={() => setSection(item.id)} />)}
+            </div>)}
           </nav>
           <Link className="admin-sidebar-back" href="/membro" title="Voltar ao painel do membro" aria-label="Voltar ao painel do membro"><ArrowLeft /><span>Painel do membro</span></Link>
         </aside>
 
         <div className="admin-content">
-          {dashboardQuery.isFetching && !dashboardQuery.isError && <div className="admin-sync" role="status"><span className="inline-spinner" aria-hidden="true" /> {dashboardQuery.isPending ? "Carregando…" : "Atualizando…"}</div>}
+          <div className="admin-topbar">
+            <nav className="admin-crumbs" aria-label="Você está em">
+              <span>Administração</span><ChevronRight aria-hidden="true" /><span aria-current="page">{currentLabel}</span>
+            </nav>
+            <span className="admin-live" role="status">
+              {dashboardQuery.isFetching && !dashboardQuery.isError
+                ? <><span className="inline-spinner" aria-hidden="true" /> {dashboardQuery.isPending ? "Carregando…" : "Atualizando…"}</>
+                : <><span className={`admin-live-dot${dashboardQuery.isError ? " is-off" : ""}`} aria-hidden="true" /> {dashboardQuery.isError ? "Sem conexão" : "Ao vivo"}</>}
+            </span>
+            <button className="admin-palette-trigger" type="button" onClick={() => setPaletteOpen(true)} aria-label="Buscar ou ir para (Ctrl+K)">
+              <Search aria-hidden="true" /><span>Buscar…</span><kbd>Ctrl K</kbd>
+            </button>
+          </div>
 
           {section === "presencas" && canCalendar && <AttendanceManager />}
           {section === "resumo" && <OverviewSection />}
@@ -181,11 +226,20 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           {section === "simulados" && canManageAssessments && <AssessmentAdmin />}
           {section === "logs" && canViewLogs && <LogsViewer />}
         </div>
+
+        <AdminBottomBar nav={nav} section={section} onSelect={setSection} />
+        {paletteOpen && <CommandPalette
+          nav={nav}
+          members={canMembers ? members : []}
+          onClose={() => setPaletteOpen(false)}
+          onGoToSection={(item) => { setPaletteOpen(false); setSection(item.id); }}
+          onGoToMember={(member) => { setPaletteOpen(false); navigate(`${pathname}?secao=membros&aba=todos&busca=${encodeURIComponent(member.nickname)}`); }}
+        />}
       </section>
     </AdminDataProvider>
   );
 }
 
-function AdminNav({ icon, label, active, onClick, badge = 0, badgeLabel = "pendências" }: { icon: ReactNode; label: string; active: boolean; onClick: () => void; badge?: number; badgeLabel?: string }) {
-  return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={onClick}>{icon}<span>{label}</span><CountBadge count={badge} label={badgeLabel} /></button>;
+function AdminNav({ item, active, onClick }: { item: AdminNavItem; active: boolean; onClick: () => void }) {
+  return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} title={item.label} onClick={onClick}>{item.icon}<span>{item.label}</span><CountBadge count={item.badge ?? 0} label={item.badgeLabel ?? "pendências"} /></button>;
 }

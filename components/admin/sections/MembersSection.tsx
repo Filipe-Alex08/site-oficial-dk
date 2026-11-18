@@ -49,7 +49,14 @@ export default function MembersSection() {
   const searchParams = useSearchParams();
   const [memberForm, setMemberForm] = useState<MemberAccessForm | null>(null);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
-  const [memberSearch, setMemberSearch] = useState("");
+  // A paleta de comandos leva a este filtro pela URL (?busca=): vale na abertura e a cada mudança.
+  const urlSearch = searchParams.get("busca") ?? "";
+  const [lastUrlSearch, setLastUrlSearch] = useState(urlSearch);
+  const [memberSearch, setMemberSearch] = useState(urlSearch);
+  if (urlSearch !== lastUrlSearch) {
+    setLastUrlSearch(urlSearch);
+    setMemberSearch(urlSearch);
+  }
   const [memberStatus, setMemberStatus] = useState<MemberStatusFilter>("todos");
 
   // Inclui a própria solicitação do admin: aparece só como aviso e não entra no selo.

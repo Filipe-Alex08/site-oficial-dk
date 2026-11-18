@@ -189,21 +189,177 @@
   .admin-drawer, .admin-drawer-backdrop, .row-menu { animation: none; }
 }
 
-/* ---------- Indicador de sincronização (provisório até a barra superior) ---------- */
-.admin-sync {
-  position: fixed;
-  z-index: 60;
-  top: calc(var(--header-h) + 10px);
-  right: 20px;
+/* =========================================================
+   Shell do painel: barra lateral, barra superior, barra
+   inferior (celular), folha "Mais" e paleta de comandos
+   ========================================================= */
+
+/* O painel é um app de tela cheia: o rodapé do site não faz sentido aqui. */
+body:has(.admin-shell) .site-footer { display: none; }
+
+/* Marca */
+.admin-brand-mark { flex: 0 0 auto; border-radius: 50%; }
+.admin-brand-text { display: grid; min-width: 0; line-height: 1.1; }
+.admin-brand-text strong { font-family: var(--font-display), Georgia, serif; font-size: 1.05rem; letter-spacing: 0.18em; }
+.admin-brand-text span { margin-top: 3px; color: var(--accent-bright); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+.admin-collapse {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-left: auto;
+  color: var(--text-subtle);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: color var(--dur-1), background var(--dur-1), border-color var(--dur-1);
+}
+.admin-collapse svg { width: 18px; height: 18px; }
+.admin-collapse:hover { color: var(--text); background: var(--hover-veil); border-color: var(--border); }
+
+/* Barra lateral recolhida: só ícones */
+.admin-shell[data-collapsed="true"] .admin-sidebar-head { flex-direction: column; gap: 10px; padding: 0; }
+.admin-shell[data-collapsed="true"] .admin-collapse { margin-left: 0; }
+.admin-shell[data-collapsed="true"] .admin-brand-text,
+.admin-shell[data-collapsed="true"] .admin-nav-label,
+.admin-shell[data-collapsed="true"] .admin-sidebar nav button > span:not(.count-badge),
+.admin-shell[data-collapsed="true"] .admin-sidebar-back span { display: none; }
+.admin-shell[data-collapsed="true"] .admin-sidebar nav button,
+.admin-shell[data-collapsed="true"] .admin-sidebar-back { justify-content: center; padding: 0; }
+.admin-shell[data-collapsed="true"] .admin-sidebar nav button .count-badge { position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; margin: 0; padding: 0 4px; font-size: 0.62rem; }
+.admin-shell[data-collapsed="true"] .admin-nav-group + .admin-nav-group { padding-top: 10px; border-top: 1px solid var(--border); }
+
+/* Barra superior */
+.admin-topbar {
+  position: sticky;
+  z-index: 20;
+  top: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: -12px 0 var(--space-5);
+  padding: 10px 0;
+  background: linear-gradient(180deg, var(--bg) 70%, transparent);
+}
+.admin-crumbs { display: flex; align-items: center; gap: 6px; margin-right: auto; color: var(--text-subtle); font-size: var(--fs-sm); }
+.admin-crumbs svg { width: 14px; height: 14px; }
+.admin-crumbs [aria-current="page"] { color: var(--text); font-weight: 600; }
+.admin-live { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: var(--fs-xs); }
+.admin-live .inline-spinner { width: 12px; height: 12px; border-width: 2px; }
+.admin-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
+.admin-live-dot.is-off { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+.admin-palette-trigger {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 6px 12px;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 10px 0 12px;
   color: var(--text-muted);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: var(--fs-xs);
-  pointer-events: none;
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: color var(--dur-1), border-color var(--dur-1);
 }
-.admin-sync .inline-spinner { width: 12px; height: 12px; border-width: 2px; }
+.admin-palette-trigger:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.32); }
+.admin-palette-trigger svg { width: 16px; height: 16px; }
+.admin-palette-trigger span { min-width: 56px; text-align: left; }
+.admin-palette-trigger kbd,
+.palette-input kbd { padding: 2px 6px; color: var(--text-subtle); border: 1px solid var(--border-strong); border-radius: 4px; font: inherit; font-size: 0.7rem; }
+
+/* Títulos de seção em Cinzel e entrada suave */
+.app-area .admin-title h2 { font-family: var(--font-display), Georgia, serif; font-size: 1.7rem; font-weight: 600; letter-spacing: 0.01em; }
+.admin-content h2:focus { outline: none; }
+.admin-content > div:not([hidden]):not(.admin-topbar),
+.admin-content > section { animation: admin-section-in 0.22s var(--ease-out); }
+@keyframes admin-section-in { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+
+/* Barra inferior (celular) */
+.admin-bottombar { display: none; }
+@media (max-width: 900px) {
+  .admin-bottombar {
+    position: fixed;
+    z-index: 45;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface-1);
+    border-top: 1px solid var(--border-strong);
+  }
+  .admin-bottombar button {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 6px 2px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--r-md);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .admin-bottombar button svg { width: 21px; height: 21px; }
+  .admin-bottombar button.active { color: var(--text); background: var(--accent-veil); }
+  .admin-bottombar button.active svg { color: var(--accent-bright); }
+  .admin-bottombar .count-badge { position: absolute; top: 3px; left: calc(50% + 6px); }
+  body:has(.admin-shell) .toast-stack { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .admin-palette-trigger span, .admin-palette-trigger kbd { display: none; }
+  .admin-palette-trigger { padding: 0 11px; }
+  .admin-crumbs span:first-child, .admin-crumbs svg { display: none; }
+}
+
+/* Folha "Mais" */
+.sheet-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: rgba(0, 0, 0, 0.62); animation: drawer-fade 0.18s ease-out; }
+.sheet {
+  width: 100%;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: var(--shadow);
+  animation: sheet-in 0.24s var(--ease-out);
+}
+.sheet > header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.sheet > header h3 { font-size: 1.05rem; }
+.sheet-group + .sheet-group { margin-top: var(--space-4); }
+.sheet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.sheet-grid button { position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); font-weight: 600; text-align: left; cursor: pointer; }
+.sheet-grid button svg { width: 19px; height: 19px; flex: 0 0 auto; color: var(--accent-bright); }
+.sheet-grid button.active { background: var(--accent-veil); border-color: var(--accent-bright); }
+.sheet-grid .count-badge { margin-left: auto; }
+@keyframes sheet-in { from { translate: 0 28px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+
+/* Paleta de comandos */
+.palette-backdrop { position: fixed; z-index: 130; inset: 0; display: grid; justify-items: center; align-content: start; padding: min(14vh, 120px) 16px 16px; background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(3px); }
+.palette { width: min(560px, 100%); overflow: hidden; background: var(--surface-1); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow); animation: row-menu-in 0.14s var(--ease-out); }
+.palette-input { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4); border-bottom: 1px solid var(--border); }
+.palette-input > svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--text-subtle); }
+.palette-input input, .palette-input input:focus { min-height: 54px; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.palette-list { max-height: min(52vh, 380px); margin: 0; padding: 6px; overflow-y: auto; list-style: none; }
+.palette-list li button { width: 100%; display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: 0 var(--space-3); color: var(--text); background: transparent; border: 0; border-radius: var(--r-md); text-align: left; cursor: pointer; }
+.palette-list li button.is-active { background: var(--surface-3); }
+.palette-icon { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; color: var(--accent-bright); background: var(--accent-veil); border-radius: var(--r-md); }
+.palette-icon svg { width: 18px; height: 18px; }
+.palette-text { display: grid; min-width: 0; }
+.palette-text strong { overflow: hidden; font-size: 0.95rem; text-overflow: ellipsis; white-space: nowrap; }
+.palette-text small { overflow: hidden; color: var(--text-muted); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.palette-enter { width: 16px; height: 16px; margin-left: auto; color: var(--text-subtle); }
+.palette-empty { padding: var(--space-5); color: var(--text-muted); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell, .sheet, .sheet-backdrop, .palette, .admin-content > div, .admin-content > section { animation: none; transition: none; }
+}
