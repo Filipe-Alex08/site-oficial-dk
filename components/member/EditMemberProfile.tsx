@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3 } from "lucide-react";
+import { useToast } from "@/components/admin/ToastProvider";
 import { createClient } from "@/lib/supabase/client";
 import { jsonApiFetch } from "@/lib/api-client";
 import { validatePasswordChange } from "@/lib/account-password";
@@ -22,7 +23,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [password, setPassword] = useState(EMPTY_PASSWORD);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -31,12 +32,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   // O que o formulário tinha ao abrir; as alterações são contadas contra isso.
   const [initial, setInitial] = useState(form);
   const changes = countProfileChanges(initial, form, password);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(""), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [notice]);
 
   useEffect(() => {
     if (!closing) return;
@@ -64,7 +59,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     setPassword(EMPTY_PASSWORD);
     setPasswordOpen(false);
     setErrors({});
-    setNotice("");
     setClosing(false);
     setOpen(true);
   }
@@ -174,7 +168,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
     const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
-    setNotice(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
+    toast.success(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
     setSaving(false);
     closeDialog();
   }
@@ -205,7 +199,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
           onClose={closeDialog}
         />
       )}
-      {notice && <p className="profile-edit-message success" role="status">{notice}</p>}
     </div>
   );
 }

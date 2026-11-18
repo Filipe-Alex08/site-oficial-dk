@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, Bookmark, Check, ChevronLeft, ChevronRight, Clock3, LoaderCircle, LockKeyhole, Send, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { assessmentAssignmentStatusLabels, assessmentTrackOptions } from "@/lib/assessments";
 import { graduationLabels, rankLabels } from "@/lib/member-access";
 import type { AssessmentAssignmentStatus, AssessmentQuestionType, AssessmentScopeType, AssessmentTrack, DkRank, GraduationLevel } from "@/lib/types";
@@ -85,6 +86,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
   const [answers, setAnswers] = useState<Record<string, SavedAnswer>>(() => Object.fromEntries((initialPayload.answers ?? []).map((answer) => [answer.item_id, answer])));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [marked, setMarked] = useState<Set<string>>(new Set());
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -183,7 +185,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
   async function submit() {
     await saveCurrentOpen();
     await saveQueue.current;
-    if (!window.confirm(`Entregar a avaliação agora? Você respondeu ${answeredCount} de ${questions.length} questões e não poderá alterar as respostas depois.`)) return;
+    if (!(await confirm({ title: "Entregar a avaliação agora?", message: `Você respondeu ${answeredCount} de ${questions.length} questões e não poderá alterar as respostas depois.`, confirmLabel: "Entregar", cancelLabel: "Voltar" }))) return;
     await requestAction("submit");
   }
 

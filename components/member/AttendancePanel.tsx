@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import { useToast } from "@/components/admin/ToastProvider";
+import StatusBadge from "@/components/admin/ui/StatusBadge";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -72,7 +74,7 @@ function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: 
 export default function AttendancePanel({ activities, userId }: { activities: Activity[]; userId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [forms, setForms] = useState<Record<string, ResponseForm>>({});
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
   const queryClient = useQueryClient();
   const queryKey = ["attendance", userId, activities.map((activity) => activity.id)];
 
@@ -115,17 +117,12 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
       return { activity, response };
     },
     onSuccess: ({ activity, response }) => {
-      show(response === null ? "Resposta removida." : response === "vai" ? "Presença confirmada." : "Ausência registrada.");
+      toast.success(response === null ? "Resposta removida." : response === "vai" ? "Presença confirmada." : "Ausência registrada.");
       void queryClient.invalidateQueries({ queryKey });
     },
-    onError: (error: Error) => show(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
   const busy = responseMutation.isPending ? responseMutation.variables?.activity.id ?? null : null;
-
-  function show(message: string) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 3500);
-  }
 
   function formFor(activityId: string) {
     if (forms[activityId]) return forms[activityId];
@@ -156,9 +153,9 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   async function copyList(activity: Activity) {
     try {
       await navigator.clipboard.writeText(listText(activity));
-      show("Lista copiada.");
+      toast.success("Lista copiada.");
     } catch {
-      show("O navegador não permitiu copiar a lista.");
+      toast.error("O navegador não permitiu copiar a lista.");
     }
   }
 
@@ -174,8 +171,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
 
   return (
     <div className="attendance-list">
-      {notice && <div className="admin-notice">{notice}</div>}
-      {isError && <div className="admin-notice" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
+      {isError && <div className="empty-state" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
       {activities.map((activity) => {
         const activityEntries = entries[activity.id] ?? [];
         const own = activityEntries.find((entry) => entry.user_id === userId);
@@ -186,7 +182,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
         return (
           <article className="attendance-card" id={`activity-${activity.id}`} key={activity.id}>
             <header>
-              <div><span>{activity.type}</span><h2>{activity.title}</h2><p>{new Date(activity.starts_at).toLocaleDateString("pt-BR", dateOptions)} • {activityTime(activity)} • {activity.location}</p></div>
+              <div><span>{activity.type}</span>{own && <StatusBadge status={own.response === "vai" ? "aprovado" : "suspenso"} label={own.response === "vai" ? "Você vai" : "Você não vai"} />}<h2>{activity.title}</h2><p>{new Date(activity.starts_at).toLocaleDateString("pt-BR", dateOptions)} • {activityTime(activity)} • {activity.location}</p></div>
               <div className="attendance-count"><strong>{attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0)}</strong><small>confirmados</small></div>
             </header>
 
