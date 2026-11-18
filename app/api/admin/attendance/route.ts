@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   try {
     if (!memberId) {
       const [members, attendance] = await Promise.all([
-        allRows((from, to) => admin.from("profiles").select("id,full_name,nickname,status").order("id").range(from, to)),
+        allRows((from, to) => admin.from("profiles").select("id,nickname,status").order("id").range(from, to)),
         allRows((from, to) => admin.from("activity_attendance").select("user_id,response").order("user_id").order("activity_id").range(from, to)),
       ]);
       const totals = new Map<string, { presences: number; absences: number }>();

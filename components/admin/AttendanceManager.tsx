@@ -6,7 +6,7 @@ import { Edit3, RefreshCw, Save } from "lucide-react";
 import Select from "@/components/ui/Select";
 import type { Activity, AttendanceResponse } from "@/lib/types";
 
-type Member = { id: string; full_name: string; nickname: string; status: string; presences: number; absences: number };
+type Member = { id: string; nickname: string; status: string; presences: number; absences: number };
 type Entry = { activity_id: string; response: AttendanceResponse; guest_count: number; note: string | null };
 type History = { activities: Pick<Activity, "id" | "title" | "starts_at" | "status" | "attendance_open">[]; attendance: Entry[] };
 type Correction = { memberId: string; activityId: string; response: AttendanceResponse | null; guest_count: number; note: string };
@@ -50,7 +50,7 @@ export default function AttendanceManager() {
     },
     onError: (error: Error) => setNotice(error.message),
   });
-  const members = (membersQuery.data?.members ?? []).filter((member) => `${member.nickname} ${member.full_name}`.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))).sort((a, b) => a.nickname.localeCompare(b.nickname, "pt-BR") || a.full_name.localeCompare(b.full_name, "pt-BR") || a.id.localeCompare(b.id));
+  const members = (membersQuery.data?.members ?? []).filter((member) => member.nickname.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))).sort((a, b) => a.nickname.localeCompare(b.nickname, "pt-BR") || a.id.localeCompare(b.id));
   const pageSize = 10;
   const pageCount = Math.max(1, Math.ceil(members.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -64,20 +64,20 @@ export default function AttendanceManager() {
   return <section>
     <div className="admin-title"><div><h2>Presenças</h2></div></div>
     {!memberId ? <div className="admin-form">
-      <div className="field"><label htmlFor="attendance-search">Buscar membro</label><input id="attendance-search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome ou apelido" /></div>
+      <div className="field"><label htmlFor="attendance-search">Buscar membro</label><input id="attendance-search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Apelido" /></div>
       {membersQuery.isPending && <p role="status">Carregando membros…</p>}
       {membersQuery.isError && <p role="alert">{membersQuery.error.message} <button className="text-button" onClick={() => void membersQuery.refetch()}>Tentar novamente</button></p>}
       {!membersQuery.isPending && !membersQuery.isError && !members.length && <p>Nenhum membro encontrado.</p>}
       {members.length > 0 && <>
                 <div className="table-wrap attendance-member-list"><table><thead><tr><th>Membro</th><th>Situação</th><th>Presenças</th><th>Ausências</th><th>Ação</th></tr></thead><tbody>
-          {pageMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><small>{member.full_name}</small></td><td><span className={`badge ${member.status}`}>{member.status === "aprovado" ? "Aprovado" : member.status === "pendente" ? "Pendente" : member.status === "suspenso" ? "Suspenso" : member.status}</span></td><td>{member.presences}</td><td>{member.absences}</td><td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença de ${member.nickname}`} onClick={() => { setMemberId(member.id); setEditing(null); setNotice(""); }}><Edit3 size={16} aria-hidden="true" /></button></td></tr>)}
+          {pageMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong></td><td><span className={`badge ${member.status}`}>{member.status === "aprovado" ? "Aprovado" : member.status === "pendente" ? "Pendente" : member.status === "suspenso" ? "Suspenso" : member.status}</span></td><td>{member.presences}</td><td>{member.absences}</td><td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença de ${member.nickname}`} onClick={() => { setMemberId(member.id); setEditing(null); setNotice(""); }}><Edit3 size={16} aria-hidden="true" /></button></td></tr>)}
         </tbody></table></div>
         <nav className="attendance-pagination" aria-label="Páginas de membros">
           <span role="status">{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, members.length)} de {members.length} membros · Página {currentPage} de {pageCount}</span>
           <div><button className="button button-ghost" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</button><button className="button button-ghost" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>Próxima</button></div>
         </nav>
       </>}
-    </div> : <div className="admin-title attendance-selected-member"><div><h3>{selectedMember?.nickname}</h3><p>{selectedMember?.full_name}</p></div><button className="button button-ghost" disabled={mutation.isPending} onClick={() => { setMemberId(""); setEditing(null); setNotice(""); }}>Voltar aos membros</button></div>}
+    </div> : <div className="admin-title attendance-selected-member"><div><h3>{selectedMember?.nickname}</h3></div><button className="button button-ghost" disabled={mutation.isPending} onClick={() => { setMemberId(""); setEditing(null); setNotice(""); }}>Voltar aos membros</button></div>}
     {notice && <p className={`form-message ${mutation.isError ? "error" : "success"}`} role="status">{notice}</p>}
     {memberId && history.isPending && <p role="status">Carregando histórico…</p>}
     {memberId && history.isError && <p role="alert">{history.error.message} <button className="text-button" onClick={() => void history.refetch()}>Tentar novamente</button></p>}

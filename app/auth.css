@@ -79,6 +79,11 @@
   margin: 5px 0 14px
 }
 
+.profile-card>p.profile-fullname {
+  font-size: 0.9rem;
+  color: var(--text-muted)
+}
+
 .profile-card dl {
   margin: 26px 0 0;
   text-align: left
