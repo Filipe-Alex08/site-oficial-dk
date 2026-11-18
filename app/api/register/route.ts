@@ -91,7 +91,8 @@ export async function POST(request: Request) {
     }
 
     const code = String(body.invite_code).trim().toUpperCase();
-    const { data: invite } = await admin.from("invites").select("*").eq("code", code).eq("active", true).maybeSingle();
+    const { data: invite, error: inviteError } = await admin.from("invites").select("*").eq("code", code).eq("active", true).maybeSingle();
+    if (inviteError) console.error("Falha ao buscar convite", inviteError);
 
     if (!invite || (invite.expires_at && new Date(invite.expires_at) < new Date()) || invite.current_uses >= invite.max_uses) {
       return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
@@ -106,17 +107,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Não foi possível criar a conta. Verifique os dados e tente novamente." }, { status: 400 });
     }
 
-    const { data: consumedInvite, error: consumeError } = await admin.rpc("consume_registration_invite", {
-      requested_invite_id: invite.id,
-      new_user_id: authData.user.id,
-    });
-    const consumed = Array.isArray(consumedInvite) ? consumedInvite[0] : consumedInvite;
-    if (consumeError || !consumed) {
-      await admin.auth.admin.deleteUser(authData.user.id);
-      if (consumeError) console.error("Falha ao consumir convite", consumeError);
-      return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
-    }
-
+    // O perfil precisa existir antes de o convite ser consumido: invites.used_by
+    // tem chave estrangeira para profiles(id). Consumir primeiro falhava sempre.
     const profile = {
       id: authData.user.id,
       email: String(body.email).trim().toLowerCase(),
@@ -126,20 +118,31 @@ export async function POST(request: Request) {
       rank: "recruta",
       graduation_level: "sem_graduacao",
       status: "pendente",
-      invited_by: consumed.invited_by,
+      invited_by: invite.created_by ?? null,
     };
 
+    // Apagar o usuário do Auth remove o perfil junto (on delete cascade).
     const { error: profileError } = await admin.from("profiles").insert(profile);
     if (profileError) {
-      await admin.rpc("release_registration_invite", {
-        requested_invite_id: invite.id,
-        failed_user_id: authData.user.id,
-      });
       await admin.auth.admin.deleteUser(authData.user.id);
       if (profileError.code === "23505") {
         return NextResponse.json({ error: "Esse apelido já está em uso. Escolha outro." }, { status: 409 });
       }
+      console.error("Falha ao registrar o perfil", profileError);
       return NextResponse.json({ error: "Não foi possível registrar o perfil." }, { status: 400 });
+    }
+
+    // A função trava a linha do convite, então dois cadastros simultâneos não
+    // usam o mesmo convite; quem perder a corrida desfaz a própria conta.
+    const { data: consumedInvite, error: consumeError } = await admin.rpc("consume_registration_invite", {
+      requested_invite_id: invite.id,
+      new_user_id: authData.user.id,
+    });
+    const consumed = Array.isArray(consumedInvite) ? consumedInvite[0] : consumedInvite;
+    if (consumeError || !consumed) {
+      await admin.auth.admin.deleteUser(authData.user.id);
+      if (consumeError) console.error("Falha ao consumir convite", consumeError);
+      return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
     }
 
     return NextResponse.json({ success: true }, { status: 201 });

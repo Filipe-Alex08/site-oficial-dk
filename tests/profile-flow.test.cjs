@@ -25,12 +25,23 @@ const accessOptions = {
 
 function registration() {
   let inserted;
+  let consumedWith;
+  let deletedUser;
+  // invites.used_by referencia profiles(id): consumir antes de existir o perfil falha.
   const admin = {
-    rpc: async (name) => ({ data: name === "check_registration_rate_limit" ? true : { invited_by: "inviter" } }),
-    auth: { admin: { createUser: async () => ({ data: { user: { id: "new-user" } } }) } },
+    rpc: async (name, args) => {
+      if (name === "check_registration_rate_limit") return { data: true };
+      if (!inserted) return { data: null, error: { message: 'violates foreign key constraint "invites_used_by_fkey"' } };
+      consumedWith = args;
+      return { data: [{ invite_id: "invite", invited_by: "inviter" }] };
+    },
+    auth: { admin: {
+      createUser: async () => ({ data: { user: { id: "new-user" } } }),
+      deleteUser: async (id) => { deletedUser = id; inserted = undefined; return {}; },
+    } },
     from: (table) => table === "invites" ? {
       select() { return this; }, eq() { return this; },
-      maybeSingle: async () => ({ data: { id: "invite", current_uses: 0, max_uses: 1 } }),
+      maybeSingle: async () => ({ data: { id: "invite", created_by: "inviter", current_uses: 0, max_uses: 1 } }),
     } : { insert: async (profile) => { inserted = profile; return {}; } },
   };
   return {
@@ -38,6 +49,8 @@ function registration() {
       "next/server": nextServer, "@/lib/supabase/admin": { createAdminClient: () => admin },
     }),
     profile: () => inserted,
+    consumedWith: () => consumedWith,
+    deletedUser: () => deletedUser,
   };
 }
 
@@ -53,6 +66,14 @@ test("registration accepts only account details without a birth date", async () 
   assert.equal(profile().graduation_level, "sem_graduacao");
   assert.equal(profile().status, "pendente");
   assert.equal(profile().birth_date, undefined);
+});
+
+test("registration creates the profile before consuming the invite", async () => {
+  const { route, profile, consumedWith, deletedUser } = registration();
+  assert.equal((await route.POST(request(account))).status, 201);
+  assert.equal(profile().invited_by, "inviter");
+  assert.deepEqual({ ...consumedWith() }, { requested_invite_id: "invite", new_user_id: "new-user" });
+  assert.equal(deletedUser(), undefined);
 });
 
 test("registration ignores forged profile and access values", async () => {
