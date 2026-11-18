@@ -30,7 +30,7 @@ test("a regra de senha e a mesma do cadastro (8 a 128) e exige senha atual difer
 
 // ---- rota ---------------------------------------------------------------
 function setup({ sameOrigin = true, user = { id: "u1", email: "membro@dk.test" }, verifyError = null, updateError = null, body = { current_password: "antiga123", new_password: "novasenha1" } } = {}) {
-  const calls = { verifySignIn: [], verifySignOut: 0, verifySignOutScopes: [], update: [], signOut: [] };
+  const calls = { logs: [], verifySignIn: [], verifySignOut: 0, verifySignOutScopes: [], update: [], signOut: [] };
   const supabase = {
     auth: {
       getUser: async () => ({ data: { user } }),
@@ -49,6 +49,7 @@ function setup({ sameOrigin = true, user = { id: "u1", email: "membro@dk.test" }
     "@supabase/supabase-js": { createClient: () => verifier },
     "@/lib/api-guard": { forbidden: () => ({ status: 403, body: { error: "Requisição não autorizada." } }), isSameOriginRequest: () => sameOrigin, notConfigured: () => ({ status: 503 }) },
     "@/lib/account-password": { validatePasswordChange },
+    "@/lib/app-log": { logEvent: (entry) => calls.logs.push(entry) },
     "@/lib/supabase/server": { createClient: async () => supabase },
   };
   const route = load("app/api/account/password/route.ts", mocks, { NEXT_PUBLIC_SUPABASE_URL: "https://x.test", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pub" });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createStatelessClient } from "@supabase/supabase-js";
 import { forbidden, isSameOriginRequest, notConfigured } from "@/lib/api-guard";
+import { logEvent } from "@/lib/app-log";
 import { validatePasswordChange } from "@/lib/account-password";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
     if (verifyError.status === 429) {
       return NextResponse.json({ error: "Muitas tentativas. Aguarde alguns minutos e tente de novo." }, { status: 429, headers: NO_STORE });
     }
+    logEvent({ level: "aviso", category: "conta", action: "senha_atual_incorreta", message: "Troca de senha recusada: senha atual incorreta", actorId: user.id, request });
     return NextResponse.json({ error: "Senha atual incorreta." }, { status: 400, headers: NO_STORE });
   }
   // scope "local": o padrão do signOut é "global", que apagaria TODAS as sessões do
@@ -61,5 +63,6 @@ export async function POST(request: Request) {
   // Encerra as sessões dos OUTROS dispositivos; esta continua aberta.
   await supabase.auth.signOut({ scope: "others" }).catch((error) => console.error("Falha ao encerrar outras sessões", error));
 
+  logEvent({ category: "conta", action: "senha_alterada", message: "Senha alterada pelo próprio membro", actorId: user.id, request });
   return NextResponse.json({ ok: true }, { headers: NO_STORE });
 }

@@ -23,6 +23,7 @@ type HeaderAccount = {
   profile: MemberProfile | null;
   roles: AdminRole[];
   canManageAssessments: boolean;
+  canViewLogs: boolean;
   avatarUrl: string | null;
 };
 
@@ -66,10 +67,11 @@ export default function Header() {
         return;
       }
 
-      const [{ data: profileData }, { data: roleData }, { data: canManageAssessments }] = await Promise.all([
+      const [{ data: profileData }, { data: roleData }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
         supabase.rpc("can_manage_assessments"),
+        supabase.rpc("can_view_logs"),
       ]);
       if (!active) return;
 
@@ -84,6 +86,7 @@ export default function Header() {
           adminRoleOptions.some((option) => option.value === role),
         )),
         canManageAssessments: Boolean(canManageAssessments),
+        canViewLogs: Boolean(canViewLogs),
         avatarUrl: profileAvatarUrl,
       });
       setLoading(false);
@@ -229,7 +232,7 @@ export default function Header() {
                     <Link href="/membro/atividades" onClick={() => setAccountOpen(false)}>Atividades e presenças</Link>
                     <Link href="/membro/documentos" onClick={() => setAccountOpen(false)}>Documentos</Link>
                     <Link href="/membro/simulados" onClick={() => setAccountOpen(false)}>Avaliações</Link>
-                    {(account.roles.length > 0 || account.canManageAssessments) && <>
+                    {(account.roles.length > 0 || account.canManageAssessments || account.canViewLogs) && <>
                       <span className="account-links-heading"><Shield size={14} /> Administração</span>
                       <Link href="/admin" onClick={() => setAccountOpen(false)}>Painel administrativo</Link>
                     </>}

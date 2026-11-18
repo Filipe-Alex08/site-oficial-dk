@@ -32,11 +32,12 @@ export default async function MemberPage() {
     ? supabase.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
 
-  const [{ data: adminRoles }, { data: canManageAssessments }] = await Promise.all([
+  const [{ data: adminRoles }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
     supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
     supabase.rpc("can_manage_assessments"),
+    supabase.rpc("can_view_logs"),
   ]);
-  const isAdmin = Boolean(adminRoles?.length) || Boolean(canManageAssessments);
+  const isAdmin = Boolean(adminRoles?.length) || Boolean(canManageAssessments) || Boolean(canViewLogs);
 
   return (
     <>
