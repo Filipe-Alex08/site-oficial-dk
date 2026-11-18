@@ -6,6 +6,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
 import { revalidatePublicMedia } from "@/lib/revalidate-client";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
+import { useToast } from "@/components/admin/ToastProvider";
+import Panel from "@/components/admin/ui/Panel";
 import InfoTip from "@/components/ui/InfoTip";
 import Select from "@/components/ui/Select";
 import type { MediaItem, Post } from "@/lib/types";
@@ -16,7 +19,8 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
   const [type, setType] = useState<"image" | "video">("image");
   const [url, setUrl] = useState("");
   const [caption, setCaption] = useState("");
-  const [message, setMessage] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const queryClient = useQueryClient();
   const itemsQuery = useQuery({
@@ -41,11 +45,11 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
       if (error) throw error;
     },
     onSuccess: async () => {
-      setMessage("Mídia adicionada à publicação."); setUrl(""); setCaption("");
+      toast.success("Mídia adicionada à publicação."); setUrl(""); setCaption("");
       revalidatePublicMedia();
       await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] });
     },
-    onError: (error: Error) => setMessage(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -53,8 +57,8 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
       const { error } = await supabase.from("media_items").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: async () => { setMessage("Mídia removida."); revalidatePublicMedia(); await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); },
-    onError: (error: Error) => setMessage(error.message),
+    onSuccess: async () => { toast.success("Mídia removida."); revalidatePublicMedia(); await queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); },
+    onError: (error: Error) => toast.error(error.message),
   });
   useRealtimeTables(["media_items", "posts"], () => { void queryClient.invalidateQueries({ queryKey: ["admin-media-items"] }); });
 
@@ -63,19 +67,16 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
     addMutation.mutate();
   }
 
-  function remove(id: string) {
-    if (!supabase || !window.confirm("Remover este item da galeria?")) return;
+  async function remove(id: string) {
+    if (!supabase) return;
+    if (!(await confirm({ title: "Remover da galeria?", message: "O item deixa de aparecer na publicação.", confirmLabel: "Remover", danger: true }))) return;
     removeMutation.mutate(id);
   }
 
   const visible = items.filter((item) => item.post_id === selectedPostId);
 
   return (
-    <section className="admin-panel gallery-manager">
-      <div className="admin-panel-head">
-        <div className="title-tip"><h3>Fotos e vídeos da publicação</h3><InfoTip label="Mais informações sobre a galeria">Vincule imagens e vídeos por endereço (URL) à publicação selecionada.</InfoTip></div>
-      </div>
-      <div className="admin-panel-body">
+    <Panel className="gallery-manager" title={<span className="title-tip">Fotos e vídeos da publicação<InfoTip label="Mais informações sobre a galeria">Vincule imagens e vídeos por endereço (URL) à publicação selecionada.</InfoTip></span>}>
       {posts.length ? (
         <>
           <form className="admin-form compact" onSubmit={add}>
@@ -98,14 +99,13 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
               </div>
             </div>
             <div className="form-actions"><button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus size={17} /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button></div>
-            {message && <p className="form-message success">{message}</p>}
           </form>
           <div className="gallery-admin-grid">
             {visible.map((item) => (
               <article key={item.id}>
                 {item.type === "image" ? <ImageIcon /> : <Film />}
                 <div><strong>{item.caption || (item.type === "image" ? "Imagem" : "Vídeo")}</strong><small>{item.url}</small></div>
-                <button title="Excluir mídia" disabled={removeMutation.isPending} onClick={() => remove(item.id)}>{removeMutation.isPending ? <span className="inline-spinner" /> : <Trash2 />}</button>
+                <button title="Excluir mídia" disabled={removeMutation.isPending} aria-label={`Excluir ${item.caption || (item.type === "image" ? "imagem" : "vídeo")}`} onClick={() => void remove(item.id)}>{removeMutation.isPending ? <span className="inline-spinner" /> : <Trash2 />}</button>
               </article>
             ))}
             {itemsQuery.isPending && <p className="empty-state" role="status">Carregando mídias…</p>}
@@ -114,7 +114,6 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
           </div>
         </>
       ) : <p className="empty-state">Crie uma publicação antes de adicionar fotos ou vídeos.</p>}
-      </div>
-    </section>
+    </Panel>
   );
 }

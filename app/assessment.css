@@ -639,127 +639,26 @@
   margin-top: 7px
 }
 
-.assessment-admin-error {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-  padding: 13px 15px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-3);
-  color: var(--text-muted)
-}
 
-.assessment-admin-error svg {
-  width: 18px
-}
 
-.assessment-admin-error button {
-  margin-left: auto;
-  border: 0;
-  background: transparent;
-  color: #ffffff;
-  cursor: pointer
-}
 
-.assessment-admin-tabs {
-  display: flex;
-  gap: 6px;
-  overflow: auto;
-  margin-bottom: 22px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  background: var(--surface-1)
-}
 
-.assessment-admin-tabs button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: #9c9c9c;
-  font-size: .76rem;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap
-}
 
-.assessment-admin-tabs button svg {
-  width: 16px
-}
 
-.assessment-admin-tabs button small {
-  min-width: 20px;
-  padding: 2px 5px;
-  border-radius: 99px;
-  background: #2a2a2a;
-  text-align: center
-}
 
-.assessment-admin-tabs button small.is-alert {
-  background: var(--danger);
-  color: #1a0b0b;
-  font-weight: 800
-}
 
-.assessment-admin-tabs button:hover,.assessment-admin-tabs button.active {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-  color: #ffffff
-}
 
-.assessment-admin-tabs button.active svg {
-  color: var(--accent-bright)
-}
 
 .assessment-admin-panel {
   min-width: 0
 }
 
-.assessment-metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 12px
-}
 
-.assessment-metric-grid article {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 21px;
-  border: 1px solid var(--line);
-  background: var(--panel)
-}
 
-.assessment-metric-grid article>span {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-2);
-  color: var(--accent-bright)
-}
 
-.assessment-metric-grid article svg {
-  width: 19px
-}
 
-.assessment-metric-grid strong,.assessment-metric-grid small {
-  display: block
-}
 
-.assessment-metric-grid strong {
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 1.75rem
-}
 
-.assessment-metric-grid small {
-  color: var(--muted)
-}
 
 .assessment-guidance-card {
   display: flex;
@@ -1466,9 +1365,6 @@
   .assessment-assignment-grid {
     grid-template-columns: repeat(2,minmax(0,1fr))
   }
-  .assessment-metric-grid {
-    grid-template-columns: repeat(2,1fr)
-  }
   .assessment-workflow-list {
     grid-template-columns: repeat(2,1fr)
   }
@@ -1550,9 +1446,6 @@
   .assessment-module-heading .button {
     width: 100%
   }
-  .assessment-metric-grid {
-    grid-template-columns: 1fr
-  }
   .assessment-workflow-list {
     grid-template-columns: 1fr
   }
@@ -1605,9 +1498,6 @@
     grid-column: 1/-1;
     justify-content: space-between
   }
-  .assessment-admin-tabs {
-    margin-inline: -5px
-  }
   .assessment-question-map {
     grid-template-columns: repeat(10,38px)
   }
@@ -1637,64 +1527,3 @@
     border-top: 1px solid var(--line)
   }
 }
-
-/* Módulo administrativo: raios, abas e cartões alinhados ao admin.css; escopado para não afetar a prova do membro. */
-.assessment-admin-module .assessment-admin-tabs {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  gap: 4px;
-  margin-bottom: 20px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  background: var(--surface-1);
-  scrollbar-width: none;
-}
-.assessment-admin-module .assessment-admin-tabs::-webkit-scrollbar { display: none; }
-.assessment-admin-module .assessment-admin-tabs button {
-  flex: 0 0 auto;
-  border-radius: var(--r-md);
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.assessment-admin-module .assessment-admin-tabs button:hover { background: var(--hover-veil); border-color: transparent; color: var(--text); }
-.assessment-admin-module .assessment-admin-tabs button.active { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
-.assessment-admin-module .assessment-admin-tabs button small { border-radius: 999px; background: var(--surface-3); color: var(--text-muted); }
-.assessment-admin-module .assessment-admin-tabs button small.is-alert { background: var(--danger); color: #1a0b0b; }
-
-.assessment-admin-module .assessment-metric-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.assessment-admin-module .assessment-metric-grid article,
-.assessment-admin-module .assessment-builder-form,
-.assessment-admin-module .assessment-guidance-card,
-.assessment-admin-module .assessment-question-bank-list > article,
-.assessment-admin-module .assessment-template-grid article,
-.assessment-admin-module .assessment-review-list > article,
-.assessment-admin-module .assessment-permission-list article,
-.assessment-admin-module .assessment-inline-empty,
-.assessment-admin-module .assessment-admin-error {
-  border-radius: var(--r-lg);
-  border-color: var(--border);
-  background: var(--surface-1);
-}
-.assessment-admin-module .assessment-metric-grid article > span {
-  border-radius: var(--r-md);
-  border: 0;
-  background: rgba(var(--accent-rgb), 0.1);
-}
-.assessment-admin-module .assessment-metric-grid article svg { width: 21px; }
-.assessment-admin-module .assessment-checkbox-fieldset,
-.assessment-admin-module .assessment-options-editor,
-.assessment-admin-module .assessment-member-selector,
-.assessment-admin-module .assessment-selection-mode label,
-.assessment-admin-module .assessment-question-selector > label,
-.assessment-admin-module .assessment-member-selector label,
-.assessment-admin-module .assessment-review-comparison section,
-.assessment-admin-module .assessment-search input {
-  border-radius: var(--r-md);
-}
-.assessment-admin-module .assessment-permission-avatar { border-radius: 50%; }
-.assessment-admin-module .assessment-status { border-radius: 999px; }
-.assessment-admin-module .assessment-list-heading { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
-.assessment-admin-module .assessment-admin-panel > .assessment-list-heading:first-child,
-.assessment-admin-module .assessment-admin-panel > .assessment-builder-form + .assessment-list-heading { margin-top: 28px; }

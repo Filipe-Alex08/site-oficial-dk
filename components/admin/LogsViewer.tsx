@@ -2,8 +2,11 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Copy, RefreshCw } from "lucide-react";
 import AdminTitle from "@/components/admin/AdminTitle";
+import { useToast } from "@/components/admin/ToastProvider";
+import Panel from "@/components/admin/ui/Panel";
+import { FilterChips } from "@/components/admin/ui/Toolbar";
 import Select from "@/components/ui/Select";
 
 type LogItem = {
@@ -34,7 +37,7 @@ const periodOptions = [
   { value: "7d", label: "Últimos 7 dias" },
 ];
 const levelOptions = [
-  { value: "", label: "Todos os níveis" },
+  { value: "", label: "Todos" },
   { value: "info", label: "Informação" },
   { value: "aviso", label: "Aviso" },
   { value: "erro", label: "Erro" },
@@ -143,22 +146,22 @@ export default function LogsViewer() {
 
     <div id="log-panel" role="tabpanel" aria-labelledby={`log-tab-${section}`}>
       <p className="admin-hint">{sections.find((item) => item.value === section)?.hint}</p>
-      <div className="admin-panel"><div className="admin-panel-body">
+      <Panel>
         <div className="log-filters">
           <div className="field"><label htmlFor="log-period">Período</label><Select id="log-period" value={period} options={periodOptions} onChange={change(setPeriod)} /></div>
-          {!audit && <div className="field"><label htmlFor="log-level">Nível</label><Select id="log-level" value={level} options={levelOptions} onChange={change(setLevel)} /></div>}
           {!audit && <div className="field"><label htmlFor="log-source">Origem</label><Select id="log-source" value={source} options={sourceOptions} onChange={change(setSource)} /></div>}
           <div className="field"><label htmlFor="log-category">{audit ? "Registro" : "Categoria"}</label><Select id="log-category" value={category} options={audit ? auditCategoryOptions : serverCategoryOptions} onChange={change(setCategory)} /></div>
           <div className="field field-full"><label htmlFor="log-search">Buscar</label><input id="log-search" value={searchInput} maxLength={80} onChange={(event) => setSearchInput(event.target.value)} placeholder={audit ? "Ação ou identificador" : "Mensagem, ação ou caminho"} /></div>
         </div>
+        {!audit && <FilterChips label="Nível" value={level} options={levelOptions} onChange={change(setLevel)} />}
         <div className="form-actions">
           <button className="button button-ghost" type="button" disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw size={17} /> {query.isFetching ? "Atualizando…" : "Atualizar"}</button>
           <label className="check-field"><input type="checkbox" checked={auto} onChange={(event) => setAuto(event.target.checked)} /> Atualizar a cada 30 s</label>
         </div>
-      </div></div>
+      </Panel>
 
-      {query.isPending && <p role="status">Carregando logs…</p>}
-      {query.isError && <p role="alert">{query.error.message} <button className="text-button" onClick={() => void query.refetch()}>Tentar novamente</button></p>}
+      {query.isPending && <p className="table-empty" role="status">Carregando logs…</p>}
+      {query.isError && <p className="table-empty" role="alert">{query.error.message} <button className="text-button" onClick={() => void query.refetch()}>Tentar novamente</button></p>}
       {query.data && !items.length && <p className="empty-state">{audit ? "Nenhuma alteração registrada para esses filtros." : "Nenhum log encontrado para esses filtros."}</p>}
 
       {items.length > 0 && !audit && <div className="table-wrap log-table"><table>
@@ -166,7 +169,7 @@ export default function LogsViewer() {
         <tbody>{items.map((item) => {
           const expanded = openRow === item.uid;
           return <Fragment key={item.uid}>
-            <tr className={expanded ? "log-row is-open" : "log-row"}>
+            <tr className={`log-row log-level-${item.level}${expanded ? " is-open" : ""}`}>
               <td><ToggleButton expanded={expanded} onClick={() => setOpenRow(expanded ? null : item.uid)} /></td>
               <td>{formatDate(item.occurred_at)}</td>
               <td><span className={`badge ${levelBadge[item.level]}`}>{levelLabel[item.level]}</span></td>
@@ -179,7 +182,7 @@ export default function LogsViewer() {
               <dl className="log-details">
                 <dt>Categoria</dt><dd>{item.category}</dd>
                 {item.path && <><dt>Caminho</dt><dd>{item.path}</dd></>}
-                <dt>Dados</dt><dd><pre>{JSON.stringify(item.details ?? {}, null, 2)}</pre></dd>
+                <dt>Dados</dt><dd><JsonBlock value={item.details ?? {}} /></dd>
               </dl>
             </td></tr>}
           </Fragment>;
@@ -205,9 +208,9 @@ export default function LogsViewer() {
             {expanded && <tr className="log-details-row"><td colSpan={5}>
               <dl className="log-details">
                 {hasDiff ? <>
-                  {before !== undefined && before !== null && <><dt>Antes</dt><dd><pre>{JSON.stringify(before, null, 2)}</pre></dd></>}
-                  {after !== undefined && after !== null && <><dt>Depois</dt><dd><pre>{JSON.stringify(after, null, 2)}</pre></dd></>}
-                </> : <><dt>Dados</dt><dd><pre>{JSON.stringify(details, null, 2)}</pre></dd></>}
+                  {before !== undefined && before !== null && <><dt>Antes</dt><dd><JsonBlock value={before} /></dd></>}
+                  {after !== undefined && after !== null && <><dt>Depois</dt><dd><JsonBlock value={after} /></dd></>}
+                </> : <><dt>Dados</dt><dd><JsonBlock value={details} /></dd></>}
               </dl>
             </td></tr>}
           </Fragment>;
@@ -227,6 +230,25 @@ export default function LogsViewer() {
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
+function JsonBlock({ value }: { value: unknown }) {
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(value, null, 2);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  }
+  return <div className="json-block">
+    <button type="button" className="json-copy" onClick={() => void copy()} aria-label="Copiar JSON">{copied ? <><Check size={14} /> Copiado</> : <><Copy size={14} /> Copiar</>}</button>
+    <pre>{text}</pre>
+  </div>;
 }
 
 function ToggleButton({ expanded, onClick }: { expanded: boolean; onClick: () => void }) {
