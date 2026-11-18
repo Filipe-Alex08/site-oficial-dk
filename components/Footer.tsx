@@ -3,8 +3,10 @@ import Image from "next/image";
 import { Instagram, Youtube } from "lucide-react";
 import { socialLinks } from "@/lib/content";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
+import { getSiteVersion } from "@/lib/version";
 
 export default function Footer() {
+  const version = getSiteVersion();
   return (
     <footer className="site-footer">
       <div className="container footer-main">
@@ -42,7 +44,15 @@ export default function Footer() {
       </div>
 
       <div className="container footer-base">
-        <p className="copyright">© {new Date().getFullYear()} DK — Death Knights. Todos os direitos reservados.</p>
+        <div className="footer-legal">
+          <p className="copyright">© {new Date().getFullYear()} DK — Death Knights. Todos os direitos reservados.</p>
+          {version && (
+            <p className="footer-version">
+              Versão {version.label}
+              {version.date ? ` · ${version.date}` : ""}
+            </p>
+          )}
+        </div>
         <p>Humildade • Honra • Respeito</p>
       </div>
     </footer>
