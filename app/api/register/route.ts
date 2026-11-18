@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
@@ -48,11 +49,19 @@ async function readRegistrationBody(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Mesma defesa das outras rotas de autenticação: um site de terceiro não pode
+  // disparar cadastros (nem gastar o limite de tentativas) em nome do visitante.
+  if (!isSameOriginRequest(request)) return forbidden();
+
   const admin = createAdminClient();
 
   if (!admin) {
     return NextResponse.json({ error: "O banco de dados ainda não foi configurado." }, { status: 503 });
   }
+
+  // Conta do Auth criada nesta requisição e ainda sem cadastro completo. Se algo
+  // lançar exceção no meio, ela seria deixada sem perfil e o e-mail ficaria preso.
+  let pendingUserId: string | null = null;
 
   try {
     const clientIp = getClientIp(request);
@@ -109,6 +118,7 @@ export async function POST(request: Request) {
 
     // O perfil precisa existir antes de o convite ser consumido: invites.used_by
     // tem chave estrangeira para profiles(id). Consumir primeiro falhava sempre.
+    pendingUserId = authData.user.id;
     const profile = {
       id: authData.user.id,
       email: String(body.email).trim().toLowerCase(),
@@ -145,8 +155,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
     }
 
+    pendingUserId = null;
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
+    if (pendingUserId) {
+      const { error: cleanupError } = await admin.auth.admin.deleteUser(pendingUserId).catch((e: unknown) => ({ error: e }));
+      if (cleanupError) console.error("Falha ao desfazer conta incompleta", cleanupError);
+    }
     if (error instanceof Error && error.message === "payload_too_large") {
       return NextResponse.json({ error: "Os dados enviados excedem o tamanho permitido." }, { status: 413 });
     }

@@ -9,7 +9,9 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return forbidden();
 
   const supabase = await createClient();
-  if (supabase) await supabase.auth.signOut();
+  // "local": sair neste aparelho não pode derrubar a sessão dos outros (o padrão,
+  // "global", encerraria todas).
+  if (supabase) await supabase.auth.signOut({ scope: "local" });
 
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }

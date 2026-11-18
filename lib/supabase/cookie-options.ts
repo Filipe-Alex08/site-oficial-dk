@@ -2,11 +2,11 @@
 // durável, não um crachá de curta validade. Quem lê o valor continua entrando na
 // conta mesmo depois de o access token expirar.
 //
-// `httpOnly` ainda NÃO está ligado aqui, de propósito: é a última etapa da
-// migração para o proxy. Com o navegador ainda podendo ler o cookie, um XSS
-// rouba a sessão inteira. Depois de ler lib/supabase/client.ts dá para ligá-lo
-// — nada no navegador precisa mais do valor —, mas só depois de conferir à mão
-// login, upload de foto, painel administrativo e saída.
+// `httpOnly` fica ligado: nada no navegador lê o cookie. As chamadas de dados
+// passam pelo proxy em app/api/supabase (lib/supabase/client.ts) e login, conta
+// e saída ficam em app/api/auth. Se alguém voltar a usar createBrowserClient ou
+// document.cookie para a sessão, vai parar de funcionar — de propósito, porque
+// com o cookie legível um XSS rouba a sessão inteira.
 //
 // `Secure` é derivado da URL pública do site para que servidor e navegador
 // gravem o mesmo conjunto de atributos — se os dois discordarem, o navegador
@@ -18,6 +18,7 @@ const cookieRequiresTls = siteUrl
 
 export const SUPABASE_COOKIE_OPTIONS = {
   path: "/",
+  httpOnly: true,
   sameSite: "lax" as const,
   secure: cookieRequiresTls,
   maxAge: 400 * 24 * 60 * 60,

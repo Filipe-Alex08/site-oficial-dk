@@ -42,7 +42,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Senha atual incorreta." }, { status: 400, headers: NO_STORE });
   }
-  await verifier.auth.signOut().catch(() => undefined);
+  // scope "local": o padrão do signOut é "global", que apagaria TODAS as sessões do
+  // membro, inclusive a do cookie desta requisição, e o updateUser abaixo falharia.
+  await verifier.auth.signOut({ scope: "local" }).catch(() => undefined);
 
   const { error: updateError } = await supabase.auth.updateUser({ password: next as string });
   if (updateError) {

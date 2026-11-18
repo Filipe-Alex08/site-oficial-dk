@@ -2,6 +2,7 @@
 
 import { CheckCircle2, UserPlus } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { jsonApiFetch } from "@/lib/api-client";
 
 const empty = {
   invite_code: "", email: "", password: "", full_name: "", nickname: "",
@@ -22,21 +23,23 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
     setLoading(true);
     setError("");
 
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const result = await response.json();
+    // Sem o try/catch, uma queda de rede ou uma página de erro HTML (502 do
+    // proxy) deixava o botão preso em "Enviando…" para sempre.
+    try {
+      const response = await jsonApiFetch("/api/register", form);
+      const result = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      setError(result.error || "Não foi possível concluir o cadastro.");
+      if (!response.ok) {
+        setError(result?.error || "Não foi possível concluir o cadastro. Tente novamente em instantes.");
+        return;
+      }
+
+      setDone(true);
+    } catch {
+      setError("Sem conexão com o servidor. Tente novamente.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setDone(true);
-    setLoading(false);
   }
 
   if (done) {

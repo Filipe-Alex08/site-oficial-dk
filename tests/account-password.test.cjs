@@ -30,7 +30,7 @@ test("a regra de senha e a mesma do cadastro (8 a 128) e exige senha atual difer
 
 // ---- rota ---------------------------------------------------------------
 function setup({ sameOrigin = true, user = { id: "u1", email: "membro@dk.test" }, verifyError = null, updateError = null, body = { current_password: "antiga123", new_password: "novasenha1" } } = {}) {
-  const calls = { verifySignIn: [], verifySignOut: 0, update: [], signOut: [] };
+  const calls = { verifySignIn: [], verifySignOut: 0, verifySignOutScopes: [], update: [], signOut: [] };
   const supabase = {
     auth: {
       getUser: async () => ({ data: { user } }),
@@ -41,7 +41,7 @@ function setup({ sameOrigin = true, user = { id: "u1", email: "membro@dk.test" }
   const verifier = {
     auth: {
       signInWithPassword: async (creds) => { calls.verifySignIn.push(creds); return { error: verifyError }; },
-      signOut: async () => { calls.verifySignOut += 1; return { error: null }; },
+      signOut: async (opts) => { calls.verifySignOut += 1; calls.verifySignOutScopes.push(opts?.scope); return { error: null }; },
     },
   };
   const mocks = {
@@ -101,6 +101,8 @@ test("sucesso: confere com o e-mail da sessao, troca a senha e desconecta os out
   assert.equal(r.status, 200);
   assert.deepEqual(JSON.parse(JSON.stringify(t.calls.verifySignIn)), [{ email: "membro@dk.test", password: "antiga123" }]);
   assert.equal(t.calls.verifySignOut, 1);
+  // Sem "local" o padrão é global e derruba a sessão que vai trocar a senha.
+  assert.deepEqual(t.calls.verifySignOutScopes, ["local"]);
   assert.deepEqual(JSON.parse(JSON.stringify(t.calls.update)), [{ password: "novasenha1" }]);
   assert.deepEqual(JSON.parse(JSON.stringify(t.calls.signOut)), [{ scope: "others" }]);
 });
