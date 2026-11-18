@@ -823,7 +823,7 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 
 /* Responsivo */
 @media (max-width: 900px) {
-  .admin-shell { grid-template-columns: 1fr; }
+  .admin-shell { grid-template-columns: minmax(0, 1fr); }
   .admin-sidebar { display: none; }
   .admin-content { padding: 16px 16px 96px; }
   .admin-panel-grid { grid-template-columns: 1fr; }

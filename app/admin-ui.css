@@ -604,3 +604,29 @@ div.kpi:hover { background: var(--surface-1); }
 @media (prefers-reduced-motion: reduce) {
   .admin-shell *, .admin-shell *::before, .admin-shell *::after, .sheet, .palette, .admin-drawer, .bulk-bar { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* =========================================================
+   Mídias no celular: nada pode alargar a página
+   ========================================================= */
+.admin-content, .admin-content > div { min-width: 0; }
+.admin-panel, .admin-panel-grid > * { min-width: 0; }
+.gallery-admin-grid article > div { min-width: 0; }
+.gallery-admin-grid article strong, .gallery-admin-grid article small { overflow: hidden; text-overflow: ellipsis; }
+.gallery-admin-grid article strong { white-space: nowrap; }
+.admin-panel-head > div:first-child { min-width: 0; }
+.apify-quota-values { flex-wrap: wrap; }
+
+@media (max-width: 620px) {
+  .import-strip > summary { flex-wrap: wrap; gap: var(--space-2) var(--space-3); padding: 12px var(--space-4); }
+  .import-strip-title { flex: 1 1 auto; min-width: 0; }
+  .import-strip-meta { order: 3; flex-basis: 100%; margin-left: 0; }
+  .import-strip-bar { flex: 1; width: auto; max-width: 140px; }
+  .import-strip-body { padding: 0 var(--space-4) var(--space-4); }
+  .instagram-import-controls { grid-template-columns: 1fr; }
+  .gallery-admin-grid article { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .admin-panel-head { padding: 14px var(--space-4); }
+  .admin-panel-actions { width: 100%; }
+  .bulk-bar { gap: var(--space-2); padding: 8px 10px 8px var(--space-4); }
+  .bulk-bar .button { padding-inline: 10px; }
+  .data-table td > * { min-width: 0; }
+}
