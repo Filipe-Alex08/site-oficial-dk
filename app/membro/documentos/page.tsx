@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Download, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
+import Panel from "@/components/admin/ui/Panel";
 import AppPageHeader from "@/components/member/AppPageHeader";
 import DocumentAccessBadge from "@/components/member/DocumentAccessBadge";
 import Unavailable from "@/components/member/Unavailable";
@@ -27,18 +28,24 @@ export default async function MemberDocumentsPage() {
       <section className="section">
         <div className="container">
           {documents.length ? (
-            <div className="document-grid">
-              {documents.map((document) => (
-                <article className="document-card" key={document.id}>
-                  <FileText />
-                  <div className="document-card-content"><h2>{document.title}</h2>{document.description && <p>{document.description}</p>}<small>{document.file_name}</small></div>
-                  <a className="button button-primary" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer"><Download size={17} /> Abrir PDF</a>
-                  <DocumentAccessBadge rules={document.access_rules ?? []} logic={document.access_logic ?? "or"} />
-                </article>
-              ))}
-            </div>
+            <Panel title="Documentos" description={`${documents.length} ${documents.length === 1 ? "documento liberado" : "documentos liberados"} para o seu perfil`} flush>
+              <ul className="m-docs">
+                {documents.map((document) => (
+                  <li key={document.id}>
+                    <span className="m-doc-icon" aria-hidden="true"><FileText /></span>
+                    <div className="m-doc-text">
+                      <h2>{document.title}</h2>
+                      {document.description && <p>{document.description}</p>}
+                      <small>{document.file_name}</small>
+                      <DocumentAccessBadge rules={document.access_rules ?? []} logic={document.access_logic ?? "or"} />
+                    </div>
+                    <a className="button button-primary" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" aria-label={`Abrir PDF: ${document.title}`}><Download size={17} /> Abrir</a>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
           ) : (
-            <div className="empty-state"><FileText /><h2>Nenhum documento disponível</h2></div>
+            <div className="empty-state"><FileText /><h2>Nenhum documento disponível</h2><p>Os materiais liberados para o seu perfil aparecem aqui.</p></div>
           )}
         </div>
       </section>
