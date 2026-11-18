@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { forbidden, isSameOriginRequest, notConfigured, requestOrigin } from "@/lib/api-guard";
+import { isGoogleLoginAvailable } from "@/lib/google-login";
 import { createClient } from "@/lib/supabase/server";
 
 // Devolve a URL do Google para o navegador seguir. O login com Google usa PKCE:
@@ -11,6 +12,11 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   if (!supabase) return notConfigured();
+
+  // A página já desabilita o botão; aqui barra quem chamar a rota direto.
+  if (!(await isGoogleLoginAvailable())) {
+    return NextResponse.json({ error: "O login com o Google ainda não está disponível." }, { status: 503 });
+  }
 
   const origin = requestOrigin(request);
   if (!origin) {

@@ -270,3 +270,42 @@ test("a failed deletion still finishes the login with the not-registered notice"
   assert.deepEqual(f.events, ["exchange:abc", "profiles.id:google-id", "signOut", "delete:google-id"]);
   assert.equal(f.errors.length, 1);
 });
+
+// ---- botao so liga quando o servidor confirma o Google -------------------
+const availability = (env, fetchImpl) => load("lib/google-login.ts", {}, {
+  process: { env }, fetch: fetchImpl, AbortSignal, Date, Promise, JSON,
+});
+const envOk = { NEXT_PUBLIC_SUPABASE_URL: "https://api.dk.test/", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pub" };
+const settingsResponse = (body, ok = true) => async () => ({ ok, json: async () => body });
+
+test("google so e liberado quando o GoTrue informa external.google === true", () => {
+  const { googleEnabledFromSettings } = availability({}, null);
+  assert.equal(googleEnabledFromSettings({ external: { google: true } }), true);
+  assert.equal(googleEnabledFromSettings({ external: { google: false } }), false);
+  assert.equal(googleEnabledFromSettings({ external: { google: "true" } }), false);
+  assert.equal(googleEnabledFromSettings({ external: {} }), false);
+  assert.equal(googleEnabledFromSettings(null), false);
+  assert.equal(googleEnabledFromSettings("x"), false);
+});
+
+test("consulta /auth/v1/settings com a chave publica e libera quando o Google esta ligado", async () => {
+  let seen;
+  const mod = availability(envOk, async (url, init) => { seen = { url, key: init.headers.apikey }; return { ok: true, json: async () => ({ external: { google: true } }) }; });
+  assert.equal(await mod.isGoogleLoginAvailable(), true);
+  assert.deepEqual(seen, { url: "https://api.dk.test/auth/v1/settings", key: "pub" });
+});
+
+test("sem configuracao, erro de rede, HTTP ruim ou JSON estranho: botao fica desligado", async () => {
+  assert.equal(await availability({}, settingsResponse({ external: { google: true } })).isGoogleLoginAvailable(), false);
+  assert.equal(await availability(envOk, async () => { throw new Error("rede"); }).isGoogleLoginAvailable(), false);
+  assert.equal(await availability(envOk, settingsResponse({ external: { google: true } }, false)).isGoogleLoginAvailable(), false);
+  assert.equal(await availability(envOk, async () => ({ ok: true, json: async () => { throw new Error("json"); } })).isGoogleLoginAvailable(), false);
+});
+
+test("a resposta e guardada em cache entre chamadas seguidas", async () => {
+  let calls = 0;
+  const mod = availability(envOk, async () => { calls++; return { ok: true, json: async () => ({ external: { google: true } }) }; });
+  await mod.isGoogleLoginAvailable();
+  await mod.isGoogleLoginAvailable();
+  assert.equal(calls, 1);
+});

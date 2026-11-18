@@ -18,7 +18,7 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginForm() {
+export default function LoginForm({ googleAvailable = false }: { googleAvailable?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -108,9 +108,16 @@ export default function LoginForm() {
         <LogIn size={18} /> {loading ? "Entrando…" : "Entrar"}
       </button>
       <div className="login-divider" aria-hidden="true">ou</div>
-      <button className="button button-ghost" type="button" onClick={handleGoogle} disabled={loading || googleLoading}>
+      <button
+        className="button button-ghost"
+        type="button"
+        onClick={handleGoogle}
+        disabled={!googleAvailable || loading || googleLoading}
+        aria-describedby={googleAvailable ? undefined : "google-unavailable"}
+      >
         <GoogleIcon /> {googleLoading ? "Redirecionando…" : "Continuar com Google"}
       </button>
+      {!googleAvailable && <p className="form-help" id="google-unavailable">Login com Google em breve. Por enquanto, entre com e-mail e senha.</p>}
       {message && <p className={"form-message " + message.type}>{message.text}</p>}
       <p className="form-help">
         Tem um convite? <Link href="/area-do-membro/cadastro">Criar conta</Link>
