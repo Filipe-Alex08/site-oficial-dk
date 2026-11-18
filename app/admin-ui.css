@@ -584,3 +584,23 @@ div.kpi:hover { background: var(--surface-1); }
 .json-block pre { margin: 0; padding: var(--space-4); padding-right: 92px; overflow: auto; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: var(--fs-sm); background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); }
 .json-copy { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; color: var(--text-muted); font-size: var(--fs-xs); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); cursor: pointer; }
 .json-copy:hover { color: var(--text); }
+
+/* =========================================================
+   Acabamento: foco, toque e movimento
+   ========================================================= */
+.admin-shell :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.admin-shell .admin-subtabs button:focus-visible,
+.admin-shell .filter-chips button:focus-visible { outline-offset: -2px; }
+.admin-shell input:focus-visible, .admin-shell textarea:focus-visible { outline: 0; border-color: var(--accent-bright); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28); }
+
+@media (pointer: coarse), (max-width: 900px) {
+  .admin-shell .button, .admin-shell .admin-subtabs button, .admin-shell .filter-chips button,
+  .admin-shell .row-menu-trigger, .admin-shell .row-menu-item, .admin-shell .agenda-main { min-height: 44px; }
+  .admin-shell .button-small { min-height: 44px; padding-inline: 14px; }
+  .admin-shell .row-menu-trigger { min-width: 44px; }
+  .admin-shell .data-table td.row-actions button { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *, .admin-shell *::before, .admin-shell *::after, .sheet, .palette, .admin-drawer, .bulk-bar { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

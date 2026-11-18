@@ -29,6 +29,7 @@ import AdminDialog from "@/components/admin/AdminDialog";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { useToast } from "@/components/admin/ToastProvider";
+import { onTabListKeyDown } from "@/components/admin/ui/tabKeys";
 import Select from "@/components/ui/Select";
 import {
   assessmentAssignmentStatusLabels,
@@ -444,7 +445,7 @@ export default function AssessmentAdmin() {
       action={<button className="button button-ghost" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /> Atualizar</button>}
     />
 
-    <div className="admin-subtabs" role="tablist" aria-label="Seções das avaliações">
+    <div className="admin-subtabs" role="tablist" aria-label="Seções das avaliações" onKeyDown={onTabListKeyDown}>
       <AssessmentTab label="Resumo" icon={<ClipboardCheck />} active={tab === "resumo"} onClick={() => setTab("resumo")} />
       <AssessmentTab label="Questões" icon={<FileQuestion />} active={tab === "questoes"} onClick={() => setTab("questoes")} count={data.questions.filter((question) => question.active).length} />
       <AssessmentTab label="Avaliações" icon={<BookOpenCheck />} active={tab === "avaliacoes"} onClick={() => setTab("avaliacoes")} count={publishedAssessments.length} />
@@ -573,7 +574,7 @@ function SelectField({ label, value, options, onChange }: { label: string; value
 }
 
 function AssessmentTab({ label, icon, active, onClick, count, alert = false }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void; count?: number; alert?: boolean }) {
-  return <button type="button" role="tab" aria-selected={active} className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small className={alert && count > 0 ? "is-alert" : undefined}>{count}</small>}</button>;
+  return <button type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small className={alert && count > 0 ? "is-alert" : undefined}>{count}</small>}</button>;
 }
 
 function Metric({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {

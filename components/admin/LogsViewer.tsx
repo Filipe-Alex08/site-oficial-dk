@@ -6,6 +6,7 @@ import { Check, ChevronDown, ChevronRight, Copy, RefreshCw } from "lucide-react"
 import AdminTitle from "@/components/admin/AdminTitle";
 import { useToast } from "@/components/admin/ToastProvider";
 import Panel from "@/components/admin/ui/Panel";
+import { onTabListKeyDown } from "@/components/admin/ui/tabKeys";
 import { FilterChips } from "@/components/admin/ui/Toolbar";
 import Select from "@/components/ui/Select";
 
@@ -131,7 +132,7 @@ export default function LogsViewer() {
   return <section>
     <AdminTitle eyebrow="Gestão" title="Logs" description="Registros dos últimos 7 dias. Logs com mais de 7 dias são apagados automaticamente." />
 
-    <div className="admin-subtabs" role="tablist" aria-label="Tipo de log">
+    <div className="admin-subtabs" role="tablist" aria-label="Tipo de log" onKeyDown={onTabListKeyDown}>
       {sections.map((item) => <button
         key={item.value}
         id={`log-tab-${item.value}`}
@@ -139,6 +140,7 @@ export default function LogsViewer() {
         role="tab"
         aria-selected={section === item.value}
         aria-controls="log-panel"
+        tabIndex={section === item.value ? 0 : -1}
         className={section === item.value ? "active" : ""}
         onClick={() => switchSection(item.value)}
       >{item.label}</button>)}

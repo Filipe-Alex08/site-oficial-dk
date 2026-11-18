@@ -14,6 +14,7 @@ import Avatar from "@/components/admin/ui/Avatar";
 import DataTable from "@/components/admin/ui/DataTable";
 import Drawer from "@/components/admin/ui/Drawer";
 import Panel from "@/components/admin/ui/Panel";
+import { onTabListKeyDown } from "@/components/admin/ui/tabKeys";
 import RowMenu from "@/components/admin/ui/RowMenu";
 import StatusBadge from "@/components/admin/ui/StatusBadge";
 import { FilterChips, SearchField, Toolbar } from "@/components/admin/ui/Toolbar";
@@ -226,12 +227,12 @@ export default function MembersSection() {
 
   return <div>
     <AdminTitle eyebrow="Pessoas" title="Membros" description="Aprove cadastros e pedidos de alteração de dados, ou consulte e gerencie todos os membros." />
-    <div className="admin-subtabs" role="tablist" aria-label="Seções de membros">
-      <button type="button" role="tab" aria-selected={memberTab === "pendentes"} className={memberTab === "pendentes" ? "active" : ""} onClick={() => setMemberTab("pendentes")}>Aguardando ação <CountBadge count={membersNeedingAction} label="membros aguardando ação" /></button>
-      <button type="button" role="tab" aria-selected={memberTab === "todos"} className={memberTab === "todos" ? "active" : ""} onClick={() => setMemberTab("todos")}>Todos os membros</button>
+    <div className="admin-subtabs" role="tablist" aria-label="Seções de membros" onKeyDown={onTabListKeyDown}>
+      <button type="button" role="tab" id="member-tab-pendentes" aria-controls="member-panel" tabIndex={memberTab === "pendentes" ? 0 : -1} aria-selected={memberTab === "pendentes"} className={memberTab === "pendentes" ? "active" : ""} onClick={() => setMemberTab("pendentes")}>Aguardando ação <CountBadge count={membersNeedingAction} label="membros aguardando ação" /></button>
+      <button type="button" role="tab" id="member-tab-todos" aria-controls="member-panel" tabIndex={memberTab === "todos" ? 0 : -1} aria-selected={memberTab === "todos"} className={memberTab === "todos" ? "active" : ""} onClick={() => setMemberTab("todos")}>Todos os membros</button>
     </div>
 
-    {memberTab === "pendentes" && <div role="tabpanel">
+    {memberTab === "pendentes" && <div role="tabpanel" id="member-panel" aria-labelledby="member-tab-pendentes">
       {loading && !members.length
         ? <p className="admin-hint" role="status">Carregando…</p>
         : <MemberQueue
@@ -247,7 +248,7 @@ export default function MembersSection() {
         />}
     </div>}
 
-    {memberTab === "todos" && <div role="tabpanel">
+    {memberTab === "todos" && <div role="tabpanel" id="member-panel" aria-labelledby="member-tab-todos">
       <Toolbar
         filters={<>
           <SearchField value={memberSearch} onChange={setMemberSearch} placeholder="Buscar por apelido, nome ou e-mail" label="Buscar membro" />
