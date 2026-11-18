@@ -659,39 +659,6 @@
   cursor: not-allowed
 }
 
-.profile-edit-trigger {
-  position: absolute;
-  top: 13px;
-  right: 13px;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #717171;
-  opacity: .55;
-  cursor: pointer;
-  transition: color .16s ease,opacity .16s ease
-}
-
-.profile-edit-trigger:disabled {
-  opacity: .3;
-  cursor: not-allowed
-}
-
-.profile-edit-trigger:hover {
-  color: var(--text-muted);
-  opacity: 1
-}
-
-.profile-edit-trigger:focus-visible {
-  outline: 1px solid #636363;
-  outline-offset: 2px;
-  opacity: 1
-}
-
 .member-avatar-control {
   display: grid;
   justify-items: center;
@@ -770,43 +737,9 @@
   border: 0
 }
 
-.profile-edit>.button {
-  width: auto;
-  min-height: 30px;
-  gap: 6px;
-  padding: 0 7px;
-  border-color: transparent;
-  background: transparent;
-  color: #8c8c8c;
-  box-shadow: none;
-  font-size: 0.78rem;
-  letter-spacing: .1em
-}
-
-.profile-edit>.button:hover {
-  transform: none;
-  border-color: var(--border-strong);
-  background: #191919;
-  color: #d1d1d1
-}
-
-.profile-edit-fields {
-  display: grid;
-  gap: 13px;
-  text-align: left
-}
-
-.profile-edit-fields .field {
-  min-width: 0
-}
-
-.profile-edit-fields label {
-  font-size: .8rem
-}
-
-.profile-edit-fields input {
-  min-height: 42px;
-  padding: 9px 11px
+.profile-edit-open {
+  width: 100%;
+  margin-top: 20px
 }
 
 .profile-edit-help {
@@ -814,19 +747,6 @@
   text-align: left;
   font-size: 0.78rem;
   line-height: 1.45
-}
-
-.profile-edit-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px
-}
-
-.profile-edit-actions .button {
-  flex: 1;
-  min-height: 40px;
-  padding: 0 10px;
-  letter-spacing: .08em
 }
 
 .profile-edit-message {
@@ -843,16 +763,10 @@
   border-color: #4a4a4a
 }
 
-.profile-edit-message.error {
-  color: var(--text-muted);
-  background: var(--surface-3);
-  border-color: var(--border-strong)
-}
-
 /* O aviso de sucesso aparece no canto do card, sem empurrar o conteúdo. */
-.profile-edit:not(.is-editing)>.profile-edit-message {
+.profile-edit>.profile-edit-message {
   position: absolute;
-  top: 46px;
+  top: 13px;
   right: 13px;
   width: max-content;
   max-width: min(240px,calc(100vw - 100px));
@@ -966,44 +880,315 @@
   margin-bottom: 13px
 }
 
-.profile-edit-header {
+/* ---------- Modal de edição de perfil ----------
+   Reaproveita o backdrop, o cabeçalho e as animações do modal de jogos
+   (.game-modal*, em public.css); aqui ficam só as diferenças. */
+.game-modal.profile-dialog {
+  width: min(860px, 100%);
+  max-height: min(820px, calc(100dvh - 56px));
+  text-align: left
+}
+
+.profile-dialog .game-modal-header {
+  padding: 24px 28px 20px
+}
+
+.profile-dialog .game-modal-header h2 {
+  font-size: clamp(1.5rem, 3vw, 1.9rem)
+}
+
+.profile-dialog-nav {
+  display: flex;
+  gap: 8px;
+  padding: 12px 28px;
+  overflow-x: auto;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none
+}
+
+.profile-dialog-nav::-webkit-scrollbar {
+  display: none
+}
+
+.profile-dialog-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, color .18s
+}
+
+.profile-dialog-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong)
+}
+
+.profile-dialog-chip[aria-current="true"] {
+  color: var(--text);
+  background: rgba(var(--accent-rgb), .14);
+  border-color: var(--accent-bright)
+}
+
+.profile-dialog-chip svg {
+  color: var(--accent-bright)
+}
+
+.profile-dialog-form {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column
+}
+
+.profile-dialog-content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 28px 28px;
+  background: var(--surface-1);
+  scrollbar-width: thin;
+  scrollbar-color: #555 var(--surface-1)
+}
+
+.profile-dialog-section {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line)
+}
+
+.profile-dialog-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0
+}
+
+.profile-dialog-section h3 {
+  margin-bottom: 16px;
+  font-size: 1.05rem
+}
+
+.profile-dialog-grid {
+  gap: 16px
+}
+
+.profile-dialog-grid .field {
+  min-width: 0
+}
+
+.profile-dialog-label-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 24px
+}
+
+.profile-dialog-label-row .insignia-art {
+  width: 20px;
+  height: 24px
+}
+
+.profile-dialog-affix {
+  position: relative
+}
+
+.profile-dialog-affix>span {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  pointer-events: none
+}
+
+.profile-dialog-affix input {
+  padding-left: 32px
+}
+
+.profile-dialog input.profile-dialog-readonly {
+  color: var(--text-muted);
+  background: transparent;
+  border-style: dashed;
+  cursor: default
+}
+
+.profile-dialog input[aria-invalid="true"] {
+  border-color: var(--danger)
+}
+
+.profile-dialog-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: .83rem
+}
+
+.profile-dialog-section>.profile-dialog-error {
+  margin-top: 12px
+}
+
+.profile-dialog-hint {
+  color: var(--text-subtle);
+  font-size: .8rem
+}
+
+.profile-dialog-pill {
+  padding: 1px 9px;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid rgba(232, 194, 106, .3);
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.6
+}
+
+.profile-dialog-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 11px 14px;
+  color: var(--info);
+  background: var(--info-bg);
+  border: 1px solid rgba(138, 184, 240, .3);
+  border-radius: var(--r-md);
+  font-size: .85rem
+}
+
+.profile-dialog-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px
+}
+
+.profile-dialog-tracks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px
+}
+
+.profile-dialog-tracks .track-group {
+  margin-top: 0;
+  padding-top: 16px
+}
+
+.profile-dialog-tracks .track-group-title {
+  margin-bottom: 14px
+}
+
+.profile-dialog-password {
+  margin-top: 16px;
+  padding: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md)
+}
+
+.profile-dialog-password-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 26px 0 16px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border)
+  margin-top: 12px
 }
 
-.profile-edit-title {
+.profile-dialog-password-foot .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .85rem
+}
+
+.profile-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 14px 28px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line)
+}
+
+.profile-dialog-general {
+  flex: 1 0 100%;
+  margin: 0
+}
+
+.profile-dialog-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 0;
-  text-align: left;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none
+  font-size: .88rem
 }
 
-/* Leitura e edição se alternam com uma entrada suave. */
-.profile-edit-pane {
-  animation: profile-pane-in .26s ease both
+.profile-dialog-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong)
 }
 
-@keyframes profile-pane-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px)
+.profile-dialog-status.is-dirty {
+  color: var(--text)
+}
+
+.profile-dialog-status.is-dirty::before {
+  background: var(--accent-bright);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .2)
+}
+
+.profile-dialog-actions {
+  display: flex;
+  gap: 10px
+}
+
+@media (max-width: 640px) {
+  .game-modal-backdrop.profile-dialog-backdrop {
+    padding: 0
   }
-  to {
-    opacity: 1;
-    transform: none
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .profile-edit-pane {
-    animation: none
+  .game-modal.profile-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0
+  }
+
+  .profile-dialog .game-modal-header,
+  .profile-dialog-nav,
+  .profile-dialog-footer {
+    padding-left: 18px;
+    padding-right: 18px
+  }
+
+  .profile-dialog-content {
+    padding: 4px 18px 24px
+  }
+
+  .profile-dialog-grid,
+  .profile-dialog-tracks {
+    grid-template-columns: 1fr
+  }
+
+  .profile-dialog-footer {
+    flex-direction: column;
+    align-items: stretch
+  }
+
+  .profile-dialog-actions .button {
+    flex: 1
   }
 }

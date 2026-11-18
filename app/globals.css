@@ -233,7 +233,7 @@ textarea { min-height: 120px; resize: vertical; }
 .site-select.is-open .site-select-trigger > svg { transform: rotate(180deg); }
 .site-select-menu {
   position: absolute;
-  z-index: 100;
+  z-index: 120;
   top: calc(100% + 6px);
   left: 0;
   right: 0;

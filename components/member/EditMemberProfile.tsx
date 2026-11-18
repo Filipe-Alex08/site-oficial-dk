@@ -1,98 +1,110 @@
 "use client";
 
-import { buildOptions } from "@/lib/insignias";
-
-import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Edit3, Save, X } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { getZodiacSign } from "@/lib/zodiac";
 import { jsonApiFetch } from "@/lib/api-client";
-import { PASSWORD_MAX, PASSWORD_MIN, validatePasswordChange } from "@/lib/account-password";
-import Select from "@/components/ui/Select";
-import { graduationLabels, graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
-import TrackGroup from "@/components/member/TrackGroup";
-import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
-
-const SUCCESS_MESSAGES = new Set(["Perfil atualizado.", "Perfil e senha atualizados."]);
-const EMPTY_PASSWORD = { current: "", next: "", confirm: "" };
+import { validatePasswordChange } from "@/lib/account-password";
+import ProfileEditDialog, {
+  EMPTY_PASSWORD, countProfileChanges, profileFormFrom, type ProfileFormErrors,
+} from "@/components/member/ProfileEditDialog";
+import type { MemberProfile } from "@/lib/types";
 
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
 /**
- * Perfil do membro com edição no próprio lugar: `children` é a visão somente
- * leitura (renderizada no servidor) e some enquanto o formulário está aberto.
+ * Perfil do membro: `children` é a visão somente leitura (renderizada no
+ * servidor) e fica sempre no card; a edição acontece num modal.
  */
 export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children: ReactNode }) {
   const router = useRouter();
-  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-  const firstRender = useRef(true);
-  useEffect(() => {
-    // A troca entre leitura e edição muda a altura do card; sem isso, ao sair
-    // de um formulário longo a página ficaria rolada para o meio do nada.
-    if (firstRender.current) { firstRender.current = false; return; }
-    const card = rootRef.current?.closest(".profile-card") ?? rootRef.current;
-    if (!card) return;
-    const headerHeight = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 68;
-    if (card.getBoundingClientRect().top < headerHeight) {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      card.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-    }
-  }, [editing]);
-  useEffect(() => {
-    if (!SUCCESS_MESSAGES.has(message)) return;
-    const timeout = window.setTimeout(() => setMessage(""), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [message]);
+  const [notice, setNotice] = useState("");
+  const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [password, setPassword] = useState(EMPTY_PASSWORD);
-  const [form, setForm] = useState({
-    rank: profile.requested_rank ?? profile.rank,
-    graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
-    graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
-    full_name: profile.full_name,
-    nickname: profile.nickname,
-    birth_date: profile.birth_date || "",
-    house_cavalaria: houseFor(profile, "cavalaria"),
-    house_arquearia: houseFor(profile, "arquearia"),
-    shirt_number: profile.shirt_number?.toString() || "",
-    primary_build: profile.primary_build || "",
-    secondary_build: profile.secondary_build || "",
-  });
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [form, setForm] = useState(() => profileFormFrom(profile));
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // O que o formulário tinha ao abrir; as alterações são contadas contra isso.
+  const [initial, setInitial] = useState(form);
+  const changes = countProfileChanges(initial, form, password);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!closing) return;
+    const timeout = window.setTimeout(() => { setOpen(false); setClosing(false); }, 200);
+    return () => window.clearTimeout(timeout);
+  }, [closing]);
+
+  // Ao fechar, o foco volta para o botão que abriu o modal.
+  useEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    return () => trigger?.focus({ preventScroll: true });
+  }, [open]);
+
+  const closeDialog = useCallback(() => setClosing(true), []);
+  const clearError = useCallback((key: keyof ProfileFormErrors) => {
+    setErrors((current) => (current[key] ? { ...current, [key]: undefined } : current));
+  }, []);
+
+  function openDialog() {
+    // Parte sempre do perfil mais recente, descartando o que ficou de uma edição anterior.
+    const fresh = profileFormFrom(profile);
+    setForm(fresh);
+    setInitial(fresh);
+    setPassword(EMPTY_PASSWORD);
+    setPasswordOpen(false);
+    setErrors({});
+    setNotice("");
+    setClosing(false);
+    setOpen(true);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
+    setErrors({});
     const supabase = createClient();
-    if (!supabase) return setMessage("Serviço indisponível no momento. Tente novamente.");
+    if (!supabase) return setErrors({ general: "Serviço indisponível no momento. Tente novamente." });
 
     // Senha é opcional: só entra em jogo se algum dos três campos foi preenchido.
     const changingPassword = Boolean(password.current || password.next || password.confirm);
     if (changingPassword) {
       const invalid = validatePasswordChange(password.current, password.next)
         ?? (password.next !== password.confirm ? "A confirmação não é igual à nova senha." : null);
-      if (invalid) return setMessage(invalid);
+      if (invalid) {
+        setPasswordOpen(true);
+        return setErrors({ password: invalid });
+      }
     }
 
     setSaving(true);
-    setMessage("");
     if (changingPassword) {
       // Primeiro a senha: se a senha atual estiver errada, nada do perfil é salvo pela metade.
       try {
         const response = await jsonApiFetch("/api/account/password", { current_password: password.current, new_password: password.next });
         const data = await response.json().catch(() => null);
         if (!response.ok) {
-          setMessage(data?.error ?? "Não foi possível trocar a senha.");
+          setErrors({ password: data?.error ?? "Não foi possível trocar a senha." });
           setSaving(false);
           return;
         }
       } catch {
-        setMessage("Não foi possível trocar a senha agora. Tente novamente.");
+        setErrors({ password: "Não foi possível trocar a senha agora. Tente novamente." });
         setSaving(false);
         return;
       }
       setPassword(EMPTY_PASSWORD);
+      setPasswordOpen(false);
     }
     // Patente e graduação passam por aprovação de um administrador, inclusive
     // quando quem edita é o próprio administrador.
@@ -124,109 +136,66 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     });
 
     if (error) {
-      const prefix = changingPassword ? "Senha alterada, mas o restante do perfil não foi salvo. " : "";
-      setMessage(prefix + (error.code === "23505"
-        ? "Esse apelido já está sendo usado por outro membro."
-        : error.code === "22023"
+      const prefix = changingPassword ? "Senha alterada, mas o restante do perfil não foi salvo." : "";
+      if (error.code === "23505") {
+        setErrors({ nickname: "Esse apelido já está sendo usado por outro membro.", general: prefix || undefined });
+      } else {
+        const reason = error.code === "22023"
           ? "Confira o apelido e o número da camisa."
-          : "Não foi possível salvar as alterações. Tente novamente."));
+          : "Não foi possível salvar as alterações. Tente novamente.";
+        setErrors({ general: prefix ? `${prefix} ${reason}` : reason });
+      }
       setSaving(false);
       return;
     }
 
-    setForm({
-      rank: form.rank,
-      graduation_cavalaria: form.graduation_cavalaria,
-      graduation_arquearia: form.graduation_arquearia,
+    const saved = {
+      ...form,
       full_name: updated.full_name,
       nickname: updated.nickname,
-      birth_date: updated.birth_date || "",
       house_cavalaria: updated.house_cavalaria || "",
       house_arquearia: updated.house_arquearia || "",
       shirt_number: updated.shirt_number?.toString() || "",
       primary_build: updated.primary_build || "",
       secondary_build: updated.secondary_build || "",
-    });
+    };
+    setForm(saved);
+    setInitial(saved);
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
     const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
-    setMessage(accessDetailsChanged ? done + " Patente e graduação aguardam aprovação de um administrador." : done);
-    setEditing(false);
+    setNotice(accessDetailsChanged ? done + " Patente e graduação aguardam aprovação de um administrador." : done);
     setSaving(false);
+    closeDialog();
   }
-
-  function cancel() {
-    setForm({
-      rank: profile.requested_rank ?? profile.rank,
-      graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
-      graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
-      full_name: profile.full_name,
-      nickname: profile.nickname,
-      birth_date: profile.birth_date || "",
-      house_cavalaria: houseFor(profile, "cavalaria"),
-      house_arquearia: houseFor(profile, "arquearia"),
-      shirt_number: profile.shirt_number?.toString() || "",
-      primary_build: profile.primary_build || "",
-      secondary_build: profile.secondary_build || "",
-    });
-    setPassword(EMPTY_PASSWORD);
-    setMessage("");
-    setEditing(false);
-  }
-
-  const tierOf = (level: GraduationLevel) => (level === "sem_graduacao" ? undefined : level);
 
   return (
-    <div ref={rootRef} className={`profile-edit ${editing ? "is-editing" : ""}`}>
+    <div className="profile-edit">
       {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
-      {!editing ? (
-        <>
-          <button className="profile-edit-trigger" type="button" aria-label="Editar perfil" title="Editar perfil" onClick={() => { cancel(); setEditing(true); }}><Edit3 size={14} /></button>
-          <div className="profile-edit-pane">{children}</div>
-        </>
-      ) : (
-        <>
-        {/* Mesmo canto e mesmo estilo do lápis: o botão só troca de ícone. */}
-        <button className="profile-edit-trigger" type="button" aria-label="Sair do modo de edição" title="Sair do modo de edição" onClick={cancel} disabled={saving}><X size={14} /></button>
-        <form className="profile-edit-pane" onSubmit={submit}>
-          <div className="profile-edit-header">
-            <h3 className="profile-edit-title">Editar perfil</h3>
-          </div>
-          <div className="profile-edit-fields">
-            <div className="field"><label htmlFor="member-full-name">Nome completo</label><input id="member-full-name" value={form.full_name} minLength={2} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-nickname">Apelido</label><input id="member-nickname" value={form.nickname} minLength={2} maxLength={60} required onChange={(event) => setForm((current) => ({ ...current, nickname: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-birth-date">Data de nascimento</label><input id="member-birth-date" type="date" value={form.birth_date} onChange={(event) => setForm((current) => ({ ...current, birth_date: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-zodiac-sign">Signo do Zodíaco</label><input id="member-zodiac-sign" value={getZodiacSign(form.birth_date)} readOnly aria-readonly="true" placeholder="Preenchido automaticamente" /></div>
-            <div className="field"><label htmlFor="member-shirt-number">Número da camisa</label><input id="member-shirt-number" type="number" min="0" step="1" value={form.shirt_number} onChange={(event) => setForm((current) => ({ ...current, shirt_number: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-primary-build">Build principal</label><input id="member-primary-build" list="member-build-options" value={form.primary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, primary_build: event.target.value }))} /></div>
-            <div className="field"><label htmlFor="member-secondary-build">Build secundária</label><input id="member-secondary-build" list="member-build-options" value={form.secondary_build} maxLength={120} onChange={(event) => setForm((current) => ({ ...current, secondary_build: event.target.value }))} /></div>
-            <datalist id="member-build-options">{buildOptions.map((build) => <option key={build} value={build} />)}</datalist>
-            <div className="field"><label htmlFor="profile-rank">Patente</label><Select id="profile-rank" value={form.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ ...rank, group: group.category })))} onChange={(value) => setForm((current) => ({ ...current, rank: value as DkRank }))} /></div>
-          </div>
-          {graduationTracks.map((track) => (
-            <TrackGroup key={track.value} title={track.label} tier={tierOf(form[track.field])}>
-              <div className="profile-edit-fields">
-                <div className="field"><label htmlFor={`profile-${track.field}`}>Graduação</label><Select id={`profile-${track.field}`} value={form[track.field]} options={graduationOptions} onChange={(value) => setForm((current) => ({ ...current, [track.field]: value as GraduationLevel }))} /></div>
-                <div className="field"><label htmlFor={`member-${track.houseField}`}>Casa</label><input id={`member-${track.houseField}`} value={form[track.houseField]} maxLength={80} onChange={(event) => setForm((current) => ({ ...current, [track.houseField]: event.target.value }))} /></div>
-              </div>
-            </TrackGroup>
-          ))}
-          <TrackGroup title="Alterar senha (opcional)">
-            <div className="profile-edit-fields">
-              <div className="field"><label htmlFor="member-current-password">Senha atual</label><input id="member-current-password" type="password" autoComplete="current-password" value={password.current} onChange={(event) => setPassword((current) => ({ ...current, current: event.target.value }))} /></div>
-              <div className="field"><label htmlFor="member-new-password">Nova senha</label><input id="member-new-password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.next} onChange={(event) => setPassword((current) => ({ ...current, next: event.target.value }))} /></div>
-              <div className="field"><label htmlFor="member-confirm-password">Confirmar nova senha</label><input id="member-confirm-password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.confirm} onChange={(event) => setPassword((current) => ({ ...current, confirm: event.target.value }))} /></div>
-            </div>
-          </TrackGroup>
-          <p className="profile-edit-help">{canEditAccessDirectly ? "Suas alterações de patente e graduação valem na hora." : "Alterações de patente e graduação passam por aprovação; seus acessos atuais continuam até lá."}</p>
-          <div className="profile-edit-actions">
-            <button className="button button-primary button-small" type="submit" disabled={saving}><Save size={16} /> {saving ? "Salvando…" : "Salvar"}</button>
-            <button className="button button-ghost button-small" type="button" onClick={cancel} disabled={saving}><X size={16} /> Cancelar</button>
-          </div>
-        </form>
-        </>
+      {children}
+      <button ref={triggerRef} className="button button-ghost button-small profile-edit-open" type="button" aria-haspopup="dialog" onClick={openDialog}>
+        <Edit3 size={16} aria-hidden="true" /> Editar perfil
+      </button>
+      {open && (
+        <ProfileEditDialog
+          profile={profile}
+          canEditAccessDirectly={canEditAccessDirectly}
+          form={form}
+          setForm={setForm}
+          password={password}
+          setPassword={setPassword}
+          passwordOpen={passwordOpen}
+          setPasswordOpen={setPasswordOpen}
+          errors={errors}
+          clearError={clearError}
+          changes={changes}
+          saving={saving}
+          closing={closing}
+          onSubmit={submit}
+          onClose={closeDialog}
+        />
       )}
-      {message && <p className={`profile-edit-message ${SUCCESS_MESSAGES.has(message) ? "success" : "error"}`} role="status">{message}</p>}
+      {notice && <p className="profile-edit-message success" role="status">{notice}</p>}
     </div>
   );
 }
