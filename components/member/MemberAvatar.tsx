@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 
 import { useRouter } from "next/navigation";
 import { ImagePlus, Trash2, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import AvatarCropper from "./AvatarCropper";
 
 export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }: { avatarUrl: string | null; avatarPath: string | null; nickname: string; userId: string }) {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
   const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 });
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -31,7 +33,7 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
     };
   }, [menuOpen]);
 
-  async function changePhoto(file: File | undefined) {
+  function pickPhoto(file: File | undefined) {
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setMessage("Escolha uma imagem JPG, PNG ou WebP.");
@@ -41,6 +43,13 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
       setMessage("A foto deve ter no máximo 5 MB.");
       return;
     }
+    setMessage("");
+    setMenuOpen(false);
+    setPendingFile(file);
+  }
+
+  async function changePhoto(file: Blob) {
+    setPendingFile(null);
 
     const supabase = createClient();
     if (!supabase) {
@@ -57,11 +66,10 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
     setMenuOpen(false);
     setMessage("");
 
-    const extension = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
-    const nextPath = `${userId}/${crypto.randomUUID()}.${extension}`;
+    const nextPath = `${userId}/${crypto.randomUUID()}.jpg`;
     const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(nextPath, file, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: "image/jpeg",
       upsert: false,
     });
     if (uploadError) {
@@ -140,8 +148,9 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
       <input ref={inputRef} className="member-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Escolher nova foto de perfil" onChange={(event) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        void changePhoto(file);
+        pickPhoto(file);
       }} />
+      {pendingFile && <AvatarCropper file={pendingFile} onCancel={() => setPendingFile(null)} onConfirm={(blob) => void changePhoto(blob)} />}
       {uploading && <small className="member-avatar-message">Enviando foto…</small>}
       {message && <small className={`member-avatar-message ${message === "Foto atualizada." || message === "Foto removida." ? "success" : "error"}`} role="status">{message}</small>}
     </div>

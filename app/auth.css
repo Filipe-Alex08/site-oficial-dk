@@ -790,6 +790,148 @@ a.card:hover .card-cta svg {
   display: none
 }
 
+.avatar-cropper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, .78)
+}
+
+.avatar-cropper {
+  width: min(100%, 360px);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  text-align: center
+}
+
+.avatar-cropper h2 {
+  margin: 0;
+  font-size: 1.05rem
+}
+
+.avatar-cropper p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .8rem
+}
+
+.avatar-cropper-stage {
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  background: #000;
+  cursor: grab;
+  touch-action: none;
+  user-select: none
+}
+
+.avatar-cropper-stage:active {
+  cursor: grabbing
+}
+
+.avatar-cropper-stage:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px
+}
+
+.avatar-cropper-stage img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  transform-origin: center;
+  pointer-events: none
+}
+
+.avatar-cropper-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, .62), inset 0 0 0 2px rgba(255, 255, 255, .85);
+  pointer-events: none
+}
+
+.avatar-cropper-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: .8rem
+}
+
+.avatar-cropper-zoom {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.avatar-cropper-zoom input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent-bright)
+}
+
+.avatar-cropper-zoom button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer
+}
+
+.avatar-cropper-zoom button:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: #fff
+}
+
+.avatar-cropper-zoom button:disabled {
+  opacity: .4;
+  cursor: not-allowed
+}
+
+.avatar-cropper-actions {
+  width: 100%;
+  display: flex;
+  gap: 10px
+}
+
+.avatar-cropper-actions button {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .85rem;
+  cursor: pointer
+}
+
+.avatar-cropper-actions .avatar-cropper-save {
+  border-color: var(--accent-bright);
+  background: var(--accent-bright);
+  color: #0b0b0b;
+  font-weight: 600
+}
+
+.avatar-cropper-actions button:disabled {
+  opacity: .5;
+  cursor: not-allowed
+}
+
 .member-avatar-message {
   max-width: 220px;
   color: var(--muted);
