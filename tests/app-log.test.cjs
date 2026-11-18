@@ -106,7 +106,7 @@ function loadLogsRoute({ allowed = true, rows = [] } = {}) {
   const builder = {
     select() { return this; }, gte(...a) { calls.push(["gte", ...a]); return this; }, order() { return this; },
     range(...a) { calls.push(["range", ...a]); return this; }, eq(...a) { calls.push(["eq", ...a]); return this; },
-    or(...a) { calls.push(["or", ...a]); return this; }, in() { return this; },
+    or(...a) { calls.push(["or", ...a]); return this; }, in(...a) { calls.push(["in", ...a]); return this; },
     then(resolve) { return resolve({ data: rows, error: null }); },
   };
   const admin = { from: () => builder };
@@ -158,4 +158,31 @@ test("a migration limita a visao e o cron a 7 dias e nao apaga as auditorias", (
   assert.match(sql, /cron\.schedule\('purge-app-logs-7d'/);
   assert.ok(!/delete from public\.(admin_audit_log|assessment_audit_log)/.test(sql));
   assert.match(sql, /revoke all on public\.log_viewer_permissions from anon, authenticated/);
+});
+
+test("secao servidor nunca traz auditoria e secao auditoria so traz auditoria", async () => {
+  const server = loadLogsRoute();
+  assert.equal((await get(server.route)).status, 200);
+  assert.deepEqual(JSON.parse(JSON.stringify(server.calls.find((c) => c[0] === "in"))), ["in", "source", ["evento", "servidor"]]);
+  assert.ok(!server.calls.some((c) => c[0] === "eq" && c[2] === "auditoria"));
+
+  const audit = loadLogsRoute();
+  assert.equal((await get(audit.route, "?secao=auditoria")).status, 200);
+  assert.ok(audit.calls.some((c) => c[0] === "eq" && c[1] === "source" && c[2] === "auditoria"));
+  assert.ok(!audit.calls.some((c) => c[0] === "in"));
+});
+
+test("origem so aceita evento ou servidor; auditoria nao e uma origem da secao servidor", async () => {
+  const { route, calls } = loadLogsRoute();
+  assert.equal((await get(route, "?origem=auditoria")).status, 400);
+  assert.equal((await get(route, "?secao=outra")).status, 400);
+  assert.equal((await get(route, "?origem=evento")).status, 200);
+  assert.ok(calls.some((c) => c[0] === "eq" && c[1] === "source" && c[2] === "evento"));
+});
+
+test("na secao auditoria a origem pedida e ignorada (nao vaza eventos do servidor)", async () => {
+  const { route, calls } = loadLogsRoute();
+  await get(route, "?secao=auditoria&origem=servidor");
+  const sources = calls.filter((c) => c[0] === "eq" && c[1] === "source").map((c) => c[2]);
+  assert.deepEqual(sources, ["auditoria"]);
 });

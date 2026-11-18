@@ -1150,3 +1150,8 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 @media (max-width: 640px) {
   .log-details { grid-template-columns: 1fr; }
 }
+
+.log-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; border-bottom: 1px solid var(--line); }
+.log-tabs button { min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 3px solid transparent; color: inherit; font: inherit; font-weight: 600; opacity: 0.75; cursor: pointer; }
+.log-tabs button:hover { opacity: 1; }
+.log-tabs button.active { opacity: 1; border-bottom-color: var(--accent-bright); }

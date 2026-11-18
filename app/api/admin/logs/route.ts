@@ -6,7 +6,9 @@ const PAGE_SIZE = 50;
 const NO_STORE = { "Cache-Control": "no-store" };
 const PERIODS: Record<string, number> = { "24h": 1, "3d": 3, "7d": 7 };
 const LEVELS = ["info", "aviso", "erro"];
-const SOURCES = ["evento", "servidor", "auditoria"];
+// "servidor" = eventos do site + saída do servidor; "auditoria" = trilhas de auditoria do banco.
+const SECTIONS = ["servidor", "auditoria"];
+const SERVER_SOURCES = ["evento", "servidor"];
 
 type FeedRow = {
   uid: string;
@@ -35,13 +37,15 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const days = PERIODS[params.get("periodo") ?? "7d"] ?? 7;
   const level = params.get("nivel") ?? "";
+  const section = params.get("secao") ?? "servidor";
   const source = params.get("origem") ?? "";
   const category = (params.get("categoria") ?? "").trim().slice(0, 60);
   const search = safeSearch(params.get("busca") ?? "");
   const page = Math.max(0, Math.min(Number.parseInt(params.get("pagina") ?? "0", 10) || 0, 1000));
 
   if (level && !LEVELS.includes(level)) return NextResponse.json({ error: "Nível inválido." }, { status: 400 });
-  if (source && !SOURCES.includes(source)) return NextResponse.json({ error: "Origem inválida." }, { status: 400 });
+  if (!SECTIONS.includes(section)) return NextResponse.json({ error: "Seção inválida." }, { status: 400 });
+  if (source && !SERVER_SOURCES.includes(source)) return NextResponse.json({ error: "Origem inválida." }, { status: 400 });
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   let query = admin
@@ -53,8 +57,10 @@ export async function GET(request: Request) {
     // Pede uma linha a mais para saber se existe próxima página.
     .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
+  // As duas seções nunca se misturam: a auditoria tem fonte própria.
+  if (section === "auditoria") query = query.eq("source", "auditoria");
+  else query = source ? query.eq("source", source) : query.in("source", SERVER_SOURCES);
   if (level) query = query.eq("level", level);
-  if (source) query = query.eq("source", source);
   if (category) query = query.eq("category", category);
   if (search) query = query.or(`message.ilike.%${search}%,action.ilike.%${search}%,path.ilike.%${search}%`);
 
