@@ -5,6 +5,7 @@ import { CalendarCheck, ClipboardCheck, FileText, LogOut, Settings } from "lucid
 import AppPageHeader from "@/components/member/AppPageHeader";
 import Unavailable from "@/components/member/Unavailable";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
+import { getZodiacSign } from "@/lib/zodiac";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import MemberAvatar from "@/components/member/MemberAvatar";
 import { BuildInsignia, GraduationInsignia, GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
@@ -64,7 +65,7 @@ export default async function MemberPage() {
                 <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
                 <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
                 <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
-                <div><dt>Signo</dt><dd>{profile.zodiac_sign || "—"}</dd></div>
+                <div><dt>Signo</dt><dd>{getZodiacSign(profile.birth_date ?? "") || "—"}</dd></div>
               </dl>
               {graduationTracks.map((track) => {
                 const level = profile[track.field] ?? "sem_graduacao";
