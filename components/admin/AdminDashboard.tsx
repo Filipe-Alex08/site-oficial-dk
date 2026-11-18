@@ -786,7 +786,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
             footer={<><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button><button className="button button-primary" type="submit">Salvar acessos</button></>}
           >
             <section className="form-section">
-              <FormSectionHead title="Vínculo" hint="Define o que a pessoa vê na área do membro." />
+              <FormSectionHead title="Vínculo" />
               <div className="form-section-body">
                 <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
               </div>
