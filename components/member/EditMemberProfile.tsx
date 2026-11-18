@@ -108,9 +108,15 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     }
     // Patente e graduação passam por aprovação de um administrador, inclusive
     // quando quem edita é o próprio administrador.
+    const commanderChanged = {
+      commander_cavalaria: form.commander_cavalaria !== (profile.commander_cavalaria ?? false),
+      commander_arquearia: form.commander_arquearia !== (profile.commander_arquearia ?? false),
+    };
     const accessDetailsChanged = form.rank !== profile.rank
       || form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao")
-      || form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao");
+      || form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao")
+      || commanderChanged.commander_cavalaria
+      || commanderChanged.commander_arquearia;
     const updated: EditableProfile = {
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim(),
@@ -125,6 +131,10 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
       requested_rank: form.rank,
       requested_graduation_cavalaria: form.graduation_cavalaria,
       requested_graduation_arquearia: form.graduation_arquearia,
+      // Só vão quando mudam: sem o parâmetro a função mantém o comando como está, e um
+      // banco ainda sem a migração 024 continua aceitando o resto do perfil.
+      ...(commanderChanged.commander_cavalaria ? { requested_commander_cavalaria: form.commander_cavalaria } : {}),
+      ...(commanderChanged.commander_arquearia ? { requested_commander_arquearia: form.commander_arquearia } : {}),
       requested_full_name: updated.full_name,
       requested_nickname: updated.nickname,
       requested_birth_date: updated.birth_date,
@@ -164,14 +174,14 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
     const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
-    setNotice(accessDetailsChanged ? done + " Patente e graduação aguardam aprovação de um administrador." : done);
+    setNotice(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
     setSaving(false);
     closeDialog();
   }
 
   return (
     <div className="profile-edit">
-      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente e graduação aguardando aprovação.</p>}
+      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente, graduação ou comando aguardando aprovação.</p>}
       {children}
       <button ref={triggerRef} className="button button-ghost button-small profile-edit-open" type="button" aria-haspopup="dialog" onClick={openDialog}>
         <Edit3 size={16} aria-hidden="true" /> Editar perfil

@@ -37,6 +37,28 @@
 .archery-ouro img {
   filter: url(#insignia-archery-gold);
 }
+/* Comandante: estandarte da DK com o crânio sobre a medalha da trilha, qualquer nível.
+   Cavalaria leva espadas cruzadas e Arquearia, flechas (public/images/insignias/comando). */
+.insignia-art.is-commander {
+  position: relative;
+}
+.insignia-art.is-commander::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  width: max(14px, 46%);
+  aspect-ratio: 6 / 7;
+  background: center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px #000b);
+  pointer-events: none;
+}
+.insignia-art.is-commander.commander-cavalaria::after {
+  background-image: url("/images/insignias/comando/cavalaria.svg");
+}
+.insignia-art.is-commander.commander-arquearia::after {
+  background-image: url("/images/insignias/comando/arquearia.svg");
+}
 .insignia-label {
   min-width: 0;
   overflow-wrap: anywhere;

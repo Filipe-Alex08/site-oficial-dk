@@ -16,6 +16,8 @@ export type ProfileFormState = {
   rank: DkRank;
   graduation_cavalaria: GraduationLevel;
   graduation_arquearia: GraduationLevel;
+  commander_cavalaria: boolean;
+  commander_arquearia: boolean;
   full_name: string;
   nickname: string;
   birth_date: string;
@@ -36,6 +38,8 @@ export function profileFormFrom(profile: MemberProfile): ProfileFormState {
     rank: profile.requested_rank ?? profile.rank,
     graduation_cavalaria: profile.requested_graduation_cavalaria ?? profile.graduation_cavalaria ?? "sem_graduacao",
     graduation_arquearia: profile.requested_graduation_arquearia ?? profile.graduation_arquearia ?? "sem_graduacao",
+    commander_cavalaria: profile.requested_commander_cavalaria ?? profile.commander_cavalaria ?? false,
+    commander_arquearia: profile.requested_commander_arquearia ?? profile.commander_arquearia ?? false,
     full_name: profile.full_name,
     nickname: profile.nickname,
     birth_date: profile.birth_date || "",
@@ -94,6 +98,9 @@ export default function ProfileEditDialog({
 
   const showConfirm = confirmDiscard && changes > 0 && !saving;
   const update = <K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) => setForm((current) => ({ ...current, [key]: value }));
+  // Sem graduação na trilha não existe comandante: a marca cai junto.
+  const updateLevel = (track: (typeof graduationTracks)[number], level: GraduationLevel) =>
+    setForm((current) => ({ ...current, [track.field]: level, ...(level === "sem_graduacao" ? { [track.commanderField]: false } : {}) }));
   const updatePassword = (key: keyof PasswordState, value: string) => {
     clearError("password");
     setPassword((current) => ({ ...current, [key]: value }));
@@ -175,6 +182,8 @@ export default function ProfileEditDialog({
     rank: !canEditAccessDirectly && form.rank !== profile.rank,
     graduation_cavalaria: !canEditAccessDirectly && form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao"),
     graduation_arquearia: !canEditAccessDirectly && form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao"),
+    commander_cavalaria: !canEditAccessDirectly && form.commander_cavalaria !== (profile.commander_cavalaria ?? false),
+    commander_arquearia: !canEditAccessDirectly && form.commander_arquearia !== (profile.commander_arquearia ?? false),
   };
   const zodiac = getZodiacSign(form.birth_date);
   const passwordType = reveal ? "text" : "password";
@@ -206,7 +215,7 @@ export default function ProfileEditDialog({
         <form className="profile-dialog-form" onSubmit={onSubmit}>
           <div className="profile-dialog-content" ref={contentRef} onScroll={syncActiveSection}>
             {profile.access_request_id && (
-              <p className="profile-dialog-note" role="status"><Info size={16} aria-hidden="true" /> Alteração de patente e graduação aguardando aprovação.</p>
+              <p className="profile-dialog-note" role="status"><Info size={16} aria-hidden="true" /> Alteração de patente, graduação ou comando aguardando aprovação.</p>
             )}
 
             <section className="profile-dialog-section" data-section="identidade" aria-labelledby="profile-section-identidade">
@@ -283,19 +292,35 @@ export default function ProfileEditDialog({
               <div className="profile-dialog-tracks">
                 {graduationTracks.map((track) => {
                   const level = form[track.field];
+                  const hasLevel = level !== "sem_graduacao";
                   return (
                     <TrackGroup
                       key={track.value}
                       title={track.label}
-                      icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" /> : undefined}
-                      tier={level === "sem_graduacao" ? undefined : level}
+                      icon={hasLevel ? <GraduationInsignia level={level} track={track.value} variant="icon" commander={form[track.commanderField]} /> : undefined}
+                      tier={hasLevel ? level : undefined}
                     >
                       <div className="field">
                         <div className="profile-dialog-label-row">
                           <label htmlFor={`profile-${track.field}`}>Graduação</label>
                           {approvalNeeded[track.field] && <span className="profile-dialog-pill">Requer aprovação</span>}
                         </div>
-                        <Select id={`profile-${track.field}`} value={level} options={graduationOptions} onChange={(value) => update(track.field, value as GraduationLevel)} />
+                        <Select id={`profile-${track.field}`} value={level} options={graduationOptions} onChange={(value) => updateLevel(track, value as GraduationLevel)} />
+                      </div>
+                      <div className="field">
+                        <div className="profile-dialog-label-row">
+                          <label className="check-field" htmlFor={`profile-${track.commanderField}`}>
+                            <input
+                              id={`profile-${track.commanderField}`}
+                              type="checkbox"
+                              checked={hasLevel && form[track.commanderField]}
+                              disabled={!hasLevel}
+                              onChange={(event) => update(track.commanderField, event.target.checked)}
+                            /> Sou comandante de {track.label}
+                          </label>
+                          {approvalNeeded[track.commanderField] && <span className="profile-dialog-pill">Requer aprovação</span>}
+                        </div>
+                        {!hasLevel && <small className="form-help">Escolha uma graduação para marcar comandante.</small>}
                       </div>
                       <div className="field">
                         <label htmlFor={`member-${track.houseField}`}>Casa</label>

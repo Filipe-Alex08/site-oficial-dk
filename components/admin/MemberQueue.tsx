@@ -4,17 +4,25 @@ import { ArrowRight, Check, CheckCircle2, Edit3, SlidersHorizontal, X } from "lu
 import { useState } from "react";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import Select from "@/components/ui/Select";
-import { graduationLabels, graduationOptions, graduationTracks, rankGroups, rankLabels } from "@/lib/member-access";
+import { graduationLabels, graduationOptions, graduationTracks, isCommander, rankGroups, rankLabels } from "@/lib/member-access";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 export type RequestAdjustments = Partial<{
   rank: DkRank;
   graduation_cavalaria: GraduationLevel;
   graduation_arquearia: GraduationLevel;
+  commander_cavalaria: boolean;
+  commander_arquearia: boolean;
 }>;
 
 /** Valores que o pedido deixaria em vigor; o que o pedido não trouxe continua como está. */
-type RequestValues = { rank: DkRank; graduation_cavalaria: GraduationLevel; graduation_arquearia: GraduationLevel };
+type RequestValues = {
+  rank: DkRank;
+  graduation_cavalaria: GraduationLevel;
+  graduation_arquearia: GraduationLevel;
+  commander_cavalaria: boolean;
+  commander_arquearia: boolean;
+};
 type Draft = RequestValues & { requestId: string };
 
 type Props = {
@@ -32,12 +40,20 @@ type Props = {
 
 const rankOptions = rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })));
 const levelOptions = graduationOptions.map((item) => ({ value: item.value, label: item.label }));
+const commanderOptions = [{ value: "sim", label: "Sim" }, { value: "nao", label: "Não" }];
+const yesNo = (value: boolean) => (value ? "Sim" : "Não");
 
 function requestedValues(member: MemberProfile): RequestValues {
-  return {
+  const values = {
     rank: member.requested_rank ?? member.rank,
     graduation_cavalaria: member.requested_graduation_cavalaria ?? member.graduation_cavalaria ?? "sem_graduacao",
     graduation_arquearia: member.requested_graduation_arquearia ?? member.graduation_arquearia ?? "sem_graduacao",
+  };
+  // Sem graduação na trilha não existe comandante (o servidor aplica a mesma regra).
+  return {
+    ...values,
+    commander_cavalaria: values.graduation_cavalaria !== "sem_graduacao" && (member.requested_commander_cavalaria ?? member.commander_cavalaria ?? false),
+    commander_arquearia: values.graduation_arquearia !== "sem_graduacao" && (member.requested_commander_arquearia ?? member.commander_arquearia ?? false),
   };
 }
 
@@ -46,9 +62,21 @@ function adjustmentsOf(requested: RequestValues, draft: RequestValues): RequestA
   if (draft.rank !== requested.rank) adjustments.rank = draft.rank;
   for (const track of graduationTracks) {
     if (draft[track.field] !== requested[track.field]) adjustments[track.field] = draft[track.field];
+    if (draft[track.commanderField] !== requested[track.commanderField]) adjustments[track.commanderField] = draft[track.commanderField];
   }
   return adjustments;
 }
+
+type Row = {
+  key: keyof RequestValues;
+  label: string;
+  kind: "rank" | "level" | "commander";
+  from: string;
+  to: string;
+  asked: string;
+  /** Linha de comandante com a graduação da trilha zerada: nada a decidir. */
+  locked?: boolean;
+};
 
 export default function MemberQueue({ members, currentUserId, principal, busyId, canManage, canEditAccess, onSetStatus, onReviewRequest, onEditAccess }: Props) {
   // Um rascunho vale só para o pedido em que foi criado: se o membro pedir outra coisa, ele é descartado.
@@ -63,7 +91,16 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
     setDrafts((current) => ({ ...current, [member.id]: { ...requestedValues(member), requestId: member.access_request_id as string } }));
   }
   function updateDraft(memberId: string, patch: Partial<RequestValues>) {
-    setDrafts((current) => current[memberId] ? { ...current, [memberId]: { ...current[memberId], ...patch } } : current);
+    setDrafts((current) => {
+      const draft = current[memberId];
+      if (!draft) return current;
+      const next = { ...draft, ...patch };
+      // Graduação zerada numa trilha: o comando dela cai junto.
+      for (const track of graduationTracks) {
+        if (next[track.field] === "sem_graduacao") next[track.commanderField] = false;
+      }
+      return { ...current, [memberId]: next };
+    });
   }
   function stopAdjust(memberId: string) {
     setDrafts((current) => {
@@ -89,15 +126,34 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
       const adjustments = draft ? adjustmentsOf(requested, draft) : {};
       const adjusted = Object.keys(adjustments).length > 0;
 
-      const rows = [
-        { key: "rank" as const, label: "Patente", from: rankLabels[member.rank], to: rankLabels[shown.rank], asked: rankLabels[requested.rank] },
-        ...graduationTracks.map((track) => ({
-          key: track.field,
-          label: `Graduação em ${track.label}`,
-          from: graduationLabels[member[track.field] ?? "sem_graduacao"],
-          to: graduationLabels[shown[track.field]],
-          asked: graduationLabels[requested[track.field]],
-        })),
+      const rows: Row[] = [
+        { key: "rank", kind: "rank", label: "Patente", from: rankLabels[member.rank], to: rankLabels[shown.rank], asked: rankLabels[requested.rank] },
+        ...graduationTracks.flatMap((track): Row[] => {
+          const currentCommander = isCommander(member[track.field], member[track.commanderField]);
+          const commanderRow: Row = {
+            key: track.commanderField,
+            kind: "commander",
+            label: `Comandante de ${track.label}`,
+            from: yesNo(currentCommander),
+            to: yesNo(shown[track.commanderField]),
+            asked: yesNo(requested[track.commanderField]),
+            locked: shown[track.field] === "sem_graduacao",
+          };
+          // A linha de comandante só aparece quando há algo a decidir: já é, foi pedido, ou o
+          // revisor está ajustando uma trilha que tem graduação.
+          const relevant = currentCommander || requested[track.commanderField] || shown[track.commanderField] || (Boolean(draft) && !commanderRow.locked);
+          return [
+            {
+              key: track.field,
+              kind: "level",
+              label: `Graduação em ${track.label}`,
+              from: graduationLabels[member[track.field] ?? "sem_graduacao"],
+              to: graduationLabels[shown[track.field]],
+              asked: graduationLabels[requested[track.field]],
+            },
+            ...(relevant ? [commanderRow] : []),
+          ];
+        }),
       ];
 
       return <article className={`queue-card${blocked ? " is-blocked" : ""}`} key={member.id}>
@@ -126,13 +182,21 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
                 <td className="queue-arrow">{changed && <ArrowRight aria-label="muda para" />}</td>
                 <td>{draft
                   ? <>
-                    <Select
-                      id={selectId}
-                      value={draft[row.key]}
-                      options={row.key === "rank" ? rankOptions : levelOptions}
-                      onChange={(value) => updateDraft(member.id, { [row.key]: value } as Partial<RequestValues>)}
-                      disabled={busy}
-                    />
+                    {row.kind === "commander"
+                      ? <Select
+                        id={selectId}
+                        value={draft[row.key as "commander_cavalaria" | "commander_arquearia"] ? "sim" : "nao"}
+                        options={commanderOptions}
+                        onChange={(value) => updateDraft(member.id, { [row.key]: value === "sim" } as Partial<RequestValues>)}
+                        disabled={busy || row.locked}
+                      />
+                      : <Select
+                        id={selectId}
+                        value={draft[row.key] as string}
+                        options={row.kind === "rank" ? rankOptions : levelOptions}
+                        onChange={(value) => updateDraft(member.id, { [row.key]: value } as Partial<RequestValues>)}
+                        disabled={busy}
+                      />}
                     {rowAdjusted && <small className="queue-asked">Pedido do membro: {row.asked}</small>}
                   </>
                   : row.to}</td>

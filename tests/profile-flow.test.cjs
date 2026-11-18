@@ -117,7 +117,7 @@ test("registration still requires the basic account fields", async () => {
   assert.equal((await route.POST(request({ ...account, nickname: "" }))).status, 400);
 });
 
-function review({ authorized = true, changed = false, principal = false } = {}) {
+function review({ authorized = true, changed = false, principal = false, target = {} } = {}) {
   let changes;
   let audit;
   const supabase = {
@@ -128,7 +128,7 @@ function review({ authorized = true, changed = false, principal = false } = {}) 
   const admin = {
     from: () => ({
       select() { return this; }, eq() { return this; },
-      maybeSingle: async () => ({ data: { requested_rank: "cabo", graduation_cavalaria: "sem_graduacao", graduation_arquearia: "prata", requested_graduation_cavalaria: "bronze", requested_graduation_arquearia: null } }),
+      maybeSingle: async () => ({ data: { requested_rank: "cabo", graduation_cavalaria: "sem_graduacao", graduation_arquearia: "prata", requested_graduation_cavalaria: "bronze", requested_graduation_arquearia: null, ...target } }),
       update(value) {
         changes = value;
         return { eq() { return this; }, select: async () => ({ data: changed ? [] : [{ id: "member" }] }) };
@@ -256,4 +256,88 @@ test("only the principal admin sets each graduation track, and the level must be
   const invalid = review({ principal: true });
   assert.equal((await invalid.route.PATCH(request({ graduation_cavalaria: "diamante" }), params)).status, 400);
   assert.equal(invalid.changes(), undefined);
+});
+
+// --- Comandante por trilha ---------------------------------------------------
+
+test("approving a commander request applies it to that track only", async () => {
+  const { send, changes, audit } = approve(undefined, { target: { requested_commander_cavalaria: true } });
+  assert.equal((await send()).status, 200);
+  assert.equal(changes().graduation_cavalaria, "bronze");
+  assert.equal(changes().commander_cavalaria, true);
+  // A trilha que o pedido nao trouxe continua sem comando.
+  assert.equal(changes().commander_arquearia, false);
+  assert.equal(changes().requested_commander_cavalaria, null);
+  assert.equal(changes().requested_commander_arquearia, null);
+  assert.equal(audit()[4].applied.commander_cavalaria, true);
+  assert.equal(audit()[4].adjusted, false);
+});
+
+test("the reviewer can refuse the commander mark and keep the rest of the request", async () => {
+  const { send, changes, audit } = approve({ commander_cavalaria: false }, { target: { requested_commander_cavalaria: true } });
+  assert.equal((await send()).status, 200);
+  assert.equal(changes().graduation_cavalaria, "bronze");
+  assert.equal(changes().commander_cavalaria, false);
+  assert.equal(audit()[4].adjusted, true);
+  assert.equal(audit()[4].requested.commander_cavalaria, true);
+});
+
+test("a request that drops the graduation also drops the commander mark", async () => {
+  // O membro era comandante de arquearia; o pedido zera a graduacao dessa trilha.
+  const { send, changes } = approve(undefined, { target: { commander_arquearia: true, requested_graduation_arquearia: "sem_graduacao" } });
+  assert.equal((await send()).status, 200);
+  assert.equal(changes().graduation_arquearia, "sem_graduacao");
+  assert.equal(changes().commander_arquearia, false);
+});
+
+test("lowering a graduation to none while approving clears that track's commander mark", async () => {
+  const { send, changes } = approve({ graduation_cavalaria: "sem_graduacao" }, { target: { requested_commander_cavalaria: true } });
+  assert.equal((await send()).status, 200);
+  assert.equal(changes().commander_cavalaria, false);
+});
+
+test("commander without a graduation on the track is refused", async () => {
+  // Cavalaria pedida como bronze; o revisor tenta forcar comandante em arquearia sem graduacao.
+  const { send, changes } = approve({ graduation_arquearia: "sem_graduacao", commander_arquearia: true });
+  assert.equal((await send()).status, 400);
+  assert.equal(changes(), undefined);
+});
+
+test("commander adjustments must be booleans", async () => {
+  for (const value of ["sim", 1, null, "true"]) {
+    const { send, changes } = approve({ commander_cavalaria: value });
+    assert.equal((await send()).status, 400, JSON.stringify(value));
+    assert.equal(changes(), undefined);
+  }
+});
+
+test("only the principal admin sets the commander mark directly, and it needs a graduation", async () => {
+  const denied = review({ principal: false });
+  assert.equal((await denied.route.PATCH(request({ commander_arquearia: true }), params)).status, 403);
+  assert.equal(denied.changes(), undefined);
+
+  const allowed = review({ principal: true });
+  assert.equal((await allowed.route.PATCH(request({ commander_arquearia: true }), params)).status, 200);
+  assert.equal(allowed.changes().commander_arquearia, true);
+
+  // A graduacao que ficara em vigor e a que vale: aqui a cavalaria atual e "sem_graduacao".
+  const noLevel = review({ principal: true });
+  assert.equal((await noLevel.route.PATCH(request({ commander_cavalaria: true }), params)).status, 400);
+  assert.equal(noLevel.changes(), undefined);
+
+  // Pedindo as duas coisas juntas, vale o nivel novo.
+  const together = review({ principal: true });
+  assert.equal((await together.route.PATCH(request({ graduation_cavalaria: "prata", commander_cavalaria: true }), params)).status, 200);
+  assert.equal(together.changes().commander_cavalaria, true);
+
+  const invalid = review({ principal: true });
+  assert.equal((await invalid.route.PATCH(request({ commander_arquearia: "sim" }), params)).status, 400);
+  assert.equal(invalid.changes(), undefined);
+});
+
+test("removing a graduation directly also removes the commander mark", async () => {
+  const { route, changes } = review({ principal: true, target: { commander_arquearia: true } });
+  assert.equal((await route.PATCH(request({ graduation_arquearia: "sem_graduacao" }), params)).status, 200);
+  assert.equal(changes().graduation_arquearia, "sem_graduacao");
+  assert.equal(changes().commander_arquearia, false);
 });

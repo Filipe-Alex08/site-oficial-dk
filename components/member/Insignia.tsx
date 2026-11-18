@@ -23,6 +23,7 @@ export function InsigniaColorFilters() {
 function Insignia({ src, label, variant = "inline", kind = "rank", caption, artClass = "" }: {
   src: string | null; label: string; variant?: Variant; kind?: "rank" | "graduation" | "build"; caption?: string; artClass?: string;
 }) {
+  // artClass pode trazer "is-commander": o selo de comandante é desenhado por CSS sobre a medalha.
   const art = <span className={`insignia-art ${artClass}`} aria-hidden="true">
       {src ? <Image src={src} alt="" width={64} height={64} /> : kind === "graduation" ? <Award /> : <Shield />}
     </span>;
@@ -38,12 +39,21 @@ export function RankInsignia({ rank, variant }: { rank: DkRank; variant?: Varian
   return <Insignia src={rankIcons[rank]} label={rankLabels[rank]} variant={variant} />;
 }
 
-export function GraduationInsignia({ level, order, track, variant }: {
+export function GraduationInsignia({ level, order, track, variant, commander = false }: {
   level: GraduationLevel; order?: string | null; track?: DocumentTrack; variant?: Variant;
+  /** Comandante da trilha: mesmo nível da medalha, com o selo por cima. Ignorado sem graduação. */
+  commander?: boolean;
 }) {
   const resolvedTrack = track ?? getGraduationTrack(order);
-  const label = resolvedTrack ? `${resolvedTrack === "cavalaria" ? "Cavalaria" : "Arquearia"} ${graduationLabels[level]}` : graduationLabels[level];
-  return <Insignia src={getGraduationIcon(level, resolvedTrack)} label={label} variant={variant} kind="graduation" artClass={resolvedTrack === "arquearia" ? `archery-${level}` : ""} />;
+  const trackName = resolvedTrack ? (resolvedTrack === "cavalaria" ? "Cavalaria" : "Arquearia") : null;
+  const isLeader = commander && level !== "sem_graduacao";
+  const label = isLeader && trackName
+    ? `Comandante de ${trackName} · ${graduationLabels[level]}`
+    : trackName ? `${trackName} ${graduationLabels[level]}` : graduationLabels[level];
+  // Sem trilha conhecida não há qual selo desenhar (cavalaria e arquearia têm o seu), então não marca.
+  const sealed = isLeader && resolvedTrack !== null;
+  const artClass = [resolvedTrack === "arquearia" ? `archery-${level}` : "", sealed ? `is-commander commander-${resolvedTrack}` : ""].filter(Boolean).join(" ");
+  return <Insignia src={getGraduationIcon(level, resolvedTrack)} label={label} variant={variant} kind="graduation" artClass={artClass} />;
 }
 
 /**
@@ -51,7 +61,12 @@ export function GraduationInsignia({ level, order, track, variant }: {
  * colunas de trilha (banco sem a migração 015), cai na graduação única antiga.
  */
 export function GraduationInsignias({ profile, variant }: {
-  profile: { graduation_level?: GraduationLevel | null; graduation_order?: string | null; graduation_cavalaria?: GraduationLevel | null; graduation_arquearia?: GraduationLevel | null };
+  profile: {
+    graduation_level?: GraduationLevel | null; graduation_order?: string | null;
+    graduation_cavalaria?: GraduationLevel | null; graduation_arquearia?: GraduationLevel | null;
+    /** Só existem depois da migração 024. */
+    commander_cavalaria?: boolean | null; commander_arquearia?: boolean | null;
+  };
   variant?: Variant;
 }) {
   const hasTracks = profile.graduation_cavalaria != null || profile.graduation_arquearia != null;
@@ -61,8 +76,8 @@ export function GraduationInsignias({ profile, variant }: {
   }
   const { graduation_cavalaria: cavalaria, graduation_arquearia: arquearia } = profile;
   return <>
-    {cavalaria && cavalaria !== "sem_graduacao" && <GraduationInsignia level={cavalaria} track="cavalaria" variant={variant} />}
-    {arquearia && arquearia !== "sem_graduacao" && <GraduationInsignia level={arquearia} track="arquearia" variant={variant} />}
+    {cavalaria && cavalaria !== "sem_graduacao" && <GraduationInsignia level={cavalaria} track="cavalaria" variant={variant} commander={Boolean(profile.commander_cavalaria)} />}
+    {arquearia && arquearia !== "sem_graduacao" && <GraduationInsignia level={arquearia} track="arquearia" variant={variant} commander={Boolean(profile.commander_arquearia)} />}
   </>;
 }
 

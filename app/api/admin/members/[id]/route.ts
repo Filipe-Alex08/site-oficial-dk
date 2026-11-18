@@ -9,7 +9,9 @@ const ALLOWED_STATUSES = ["pendente", "aprovado", "recusado", "suspenso", "desat
 type MemberStatus = (typeof ALLOWED_STATUSES)[number];
 
 const GRADUATION_TRACK_FIELDS = ["graduation_cavalaria", "graduation_arquearia"] as const;
-const ADJUSTABLE_FIELDS = ["rank", ...GRADUATION_TRACK_FIELDS] as const;
+const COMMANDER_FIELDS = ["commander_cavalaria", "commander_arquearia"] as const;
+const ADJUSTABLE_FIELDS = ["rank", ...GRADUATION_TRACK_FIELDS, ...COMMANDER_FIELDS] as const;
+const COMMANDER_OF = { graduation_cavalaria: "commander_cavalaria", graduation_arquearia: "commander_arquearia" } as const;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const caller = await requireAdmin(["principal", "membros"]);
@@ -32,7 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const [{ data: target }, { data: roleRows }] = await Promise.all([
     admin
       .from("profiles")
-      .select("id, full_name, nickname, status, rank, graduation_cavalaria, graduation_arquearia, access_request_id, requested_rank, requested_graduation_cavalaria, requested_graduation_arquearia")
+      .select("id, full_name, nickname, status, rank, graduation_cavalaria, graduation_arquearia, commander_cavalaria, commander_arquearia, access_request_id, requested_rank, requested_graduation_cavalaria, requested_graduation_arquearia, requested_commander_cavalaria, requested_commander_arquearia")
       .eq("id", id)
       .maybeSingle(),
     admin.from("user_admin_roles").select("role").eq("user_id", id),
@@ -67,8 +69,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
     }
 
-    // Só estas três chaves, e só dentro de `adjustments`: campos soltos no corpo continuam ignorados.
-    const adjustments: Partial<Record<(typeof ADJUSTABLE_FIELDS)[number], string>> = {};
+    // Só estas chaves, e só dentro de `adjustments`: campos soltos no corpo continuam ignorados.
+    const adjustments: Partial<Record<(typeof ADJUSTABLE_FIELDS)[number], string | boolean>> = {};
     if (body.adjustments !== undefined) {
       const raw = body.adjustments;
       if (requestAction !== "approve" || !raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -82,20 +84,43 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           if (!rankOptions.some((item) => item.value === value)) {
             return NextResponse.json({ error: "Patente inválida." }, { status: 400 });
           }
+        } else if ((COMMANDER_FIELDS as readonly string[]).includes(field)) {
+          if (typeof value !== "boolean") {
+            return NextResponse.json({ error: "Comando inválido." }, { status: 400 });
+          }
         } else if (!graduationOptions.some((item) => item.value === value)) {
           return NextResponse.json({ error: "Graduação inválida." }, { status: 400 });
         }
-        adjustments[field as (typeof ADJUSTABLE_FIELDS)[number]] = value as string;
+        adjustments[field as (typeof ADJUSTABLE_FIELDS)[number]] = value as string | boolean;
       }
     }
 
-    // O que o membro pediu; o que o pedido não trouxe continua como está.
-    const requested = {
-      rank: target.requested_rank ?? target.rank,
+    // O que o membro pediu; o que o pedido não trouxe continua como está. Sem graduação na
+    // trilha não há comandante, então um pedido que zera a graduação também zera o comando.
+    const requestedGraduation = {
       graduation_cavalaria: target.requested_graduation_cavalaria ?? target.graduation_cavalaria,
       graduation_arquearia: target.requested_graduation_arquearia ?? target.graduation_arquearia,
     };
+    const requested = {
+      rank: target.requested_rank ?? target.rank,
+      ...requestedGraduation,
+      commander_cavalaria: requestedGraduation.graduation_cavalaria === "sem_graduacao" ? false : (target.requested_commander_cavalaria ?? target.commander_cavalaria ?? false),
+      commander_arquearia: requestedGraduation.graduation_arquearia === "sem_graduacao" ? false : (target.requested_commander_arquearia ?? target.commander_arquearia ?? false),
+    };
     const applied = { ...requested, ...adjustments };
+
+    // Se o revisor ajustou a graduação para "sem graduação", o comando cai junto; pedir
+    // comandante sem graduação (ajuste explícito) é recusado.
+    if (requestAction === "approve") {
+      for (const graduationField of GRADUATION_TRACK_FIELDS) {
+        const commanderField = COMMANDER_OF[graduationField];
+        if (applied[graduationField] !== "sem_graduacao") continue;
+        if (adjustments[commanderField] === true) {
+          return NextResponse.json({ error: "Comandante exige graduação na trilha." }, { status: 400 });
+        }
+        applied[commanderField] = false;
+      }
+    }
     const adjusted = ADJUSTABLE_FIELDS.some((field) => applied[field] !== requested[field]);
 
     const changes = {
@@ -104,6 +129,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       requested_rank: null,
       requested_graduation_cavalaria: null,
       requested_graduation_arquearia: null,
+      requested_commander_cavalaria: null,
+      requested_commander_arquearia: null,
     };
 
     const { data, error } = await admin
@@ -128,7 +155,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ success: true });
   }
 
-  const update: Record<string, string> = {};
+  const update: Record<string, string | boolean> = {};
 
   const status = body.status;
   if (status !== undefined) {
@@ -173,6 +200,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Graduação inválida." }, { status: 400 });
     }
     update[field] = level as string;
+  }
+
+  // Comandante da trilha: mesma regra da graduação (só o ADM Principal grava direto) e
+  // exige graduação na trilha, olhando o valor que ficará em vigor.
+  for (const graduationField of GRADUATION_TRACK_FIELDS) {
+    const commanderField = COMMANDER_OF[graduationField];
+    const commander = body[commanderField];
+    const resultingLevel = (update[graduationField] as string | undefined) ?? target[graduationField];
+    if (commander !== undefined) {
+      if (!caller.isPrincipal) {
+        return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
+      }
+      if (typeof commander !== "boolean") {
+        return NextResponse.json({ error: "Comando inválido." }, { status: 400 });
+      }
+      if (commander && resultingLevel === "sem_graduacao") {
+        return NextResponse.json({ error: "Comandante exige graduação na trilha." }, { status: 400 });
+      }
+      update[commanderField] = commander;
+    } else if (update[graduationField] === "sem_graduacao" && target[commanderField]) {
+      update[commanderField] = false;   // graduação removida: o comando cai junto
+    }
   }
 
   if (!Object.keys(update).length) {

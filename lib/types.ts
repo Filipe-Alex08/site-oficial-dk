@@ -43,6 +43,9 @@ export type AttendanceEntry = {
   /** Só vêm depois da migração 015; antes dela ficam ausentes. */
   graduation_cavalaria?: GraduationLevel | null;
   graduation_arquearia?: GraduationLevel | null;
+  /** Só vêm depois da migração 024; antes dela ficam ausentes. */
+  commander_cavalaria?: boolean | null;
+  commander_arquearia?: boolean | null;
   response: AttendanceResponse;
   guest_count: number;
   note?: string | null;
@@ -234,6 +237,11 @@ export type MemberProfile = {
   graduation_arquearia?: GraduationLevel;
   requested_graduation_cavalaria?: GraduationLevel | null;
   requested_graduation_arquearia?: GraduationLevel | null;
+  /** Comandante da trilha (migração 024). Exige graduação na trilha; aprovado por um ADM. */
+  commander_cavalaria?: boolean;
+  commander_arquearia?: boolean;
+  requested_commander_cavalaria?: boolean | null;
+  requested_commander_arquearia?: boolean | null;
   /** Tinha graduação, mas a ordem não dizia a trilha: o ADM Principal define. */
   graduation_review_needed?: boolean;
   access_request_id?: string | null;

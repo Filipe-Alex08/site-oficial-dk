@@ -13,7 +13,7 @@ import TrackGroup from "@/components/member/TrackGroup";
 import CountBadge from "@/components/ui/CountBadge";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBuildIcon } from "@/lib/insignias";
-import { graduationLabels, graduationTracks, houseFor, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { graduationLabels, graduationTracks, houseFor, isCommander, memberKindLabels, rankLabels } from "@/lib/member-access";
 import LiveRefresh from "@/components/LiveRefresh";
 import { getViewer } from "@/lib/viewer";
 
@@ -88,16 +88,18 @@ export default async function MemberPage() {
               </dl>
               {graduationTracks.map((track) => {
                 const level = profile[track.field] ?? "sem_graduacao";
+                const commander = isCommander(level, profile[track.commanderField]);
                 const house = houseFor(profile, track.value);
                 return (
                   <TrackGroup
                     key={track.value}
                     title={track.label}
-                    icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" /> : undefined}
+                    icon={level !== "sem_graduacao" ? <GraduationInsignia level={level} track={track.value} variant="icon" commander={commander} /> : undefined}
                     tier={level !== "sem_graduacao" ? level : undefined}
                   >
                     <dl>
                       <div><dt>Graduação</dt><dd>{graduationLabels[level]}</dd></div>
+                      {commander && <div><dt>Função</dt><dd>Comandante de {track.label}</dd></div>}
                       <div><dt>Casa</dt><dd>{house || "Não informada"}</dd></div>
                     </dl>
                   </TrackGroup>

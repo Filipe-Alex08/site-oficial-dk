@@ -26,10 +26,23 @@ export const graduationTracks: Array<{
   label: string;
   field: "graduation_cavalaria" | "graduation_arquearia";
   houseField: "house_cavalaria" | "house_arquearia";
+  commanderField: "commander_cavalaria" | "commander_arquearia";
+  requestedCommanderField: "requested_commander_cavalaria" | "requested_commander_arquearia";
 }> = [
-  { value: "cavalaria", label: "Cavalaria", field: "graduation_cavalaria", houseField: "house_cavalaria" },
-  { value: "arquearia", label: "Arquearia", field: "graduation_arquearia", houseField: "house_arquearia" },
+  { value: "cavalaria", label: "Cavalaria", field: "graduation_cavalaria", houseField: "house_cavalaria", commanderField: "commander_cavalaria", requestedCommanderField: "requested_commander_cavalaria" },
+  { value: "arquearia", label: "Arquearia", field: "graduation_arquearia", houseField: "house_arquearia", commanderField: "commander_arquearia", requestedCommanderField: "requested_commander_arquearia" },
 ];
+
+/**
+ * Comandante em uma trilha. Não existe comandante sem graduação na trilha: o banco
+ * limpa a marca, e aqui ela também é ignorada se a graduação for "sem graduação".
+ */
+export function isCommander(
+  level: GraduationLevel | null | undefined,
+  commander: boolean | null | undefined,
+): boolean {
+  return Boolean(commander) && Boolean(level) && level !== "sem_graduacao";
+}
 
 /**
  * Casa do integrante em uma trilha. Sem as colunas por trilha (banco sem a

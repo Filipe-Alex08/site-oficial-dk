@@ -24,7 +24,7 @@ import { activityFormHasContent, activityFormToTemplate, emptyActivity, emptyPos
 import CountBadge from "@/components/ui/CountBadge";
 import Select from "@/components/ui/Select";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
-import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
+import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, isCommander, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { friendlyError } from "@/lib/friendly-error";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
@@ -39,6 +39,8 @@ type MemberAccessForm = {
   rank: DkRank;
   graduation_cavalaria: GraduationLevel;
   graduation_arquearia: GraduationLevel;
+  commander_cavalaria: boolean;
+  commander_arquearia: boolean;
 };
 
 type MemberTab = "pendentes" | "todos";
@@ -413,6 +415,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
       rank: member.rank,
       graduation_cavalaria: member.graduation_cavalaria ?? "sem_graduacao",
       graduation_arquearia: member.graduation_arquearia ?? "sem_graduacao",
+      commander_cavalaria: isCommander(member.graduation_cavalaria, member.commander_cavalaria),
+      commander_arquearia: isCommander(member.graduation_arquearia, member.commander_arquearia),
     });
   }
 
@@ -448,6 +452,8 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
         rank: memberForm.rank,
         graduation_cavalaria: memberForm.graduation_cavalaria,
         graduation_arquearia: memberForm.graduation_arquearia,
+        commander_cavalaria: memberForm.commander_cavalaria,
+        commander_arquearia: memberForm.commander_arquearia,
       } : { member_kind: memberForm.member_kind }),
     });
     const result = await response.json();
@@ -818,10 +824,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
               <div className="form-section-body">
                 {principal ? <>
                   <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-                  {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label><Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel })} /></div>)}
+                  {graduationTracks.map((track) => {
+                    const hasLevel = memberForm[track.field] !== "sem_graduacao";
+                    return <div className="field" key={track.value}>
+                      <label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label>
+                      <Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel, ...(value === "sem_graduacao" ? { [track.commanderField]: false } : {}) })} />
+                      <label className="check-field" htmlFor={`member-${track.commanderField}`}><input id={`member-${track.commanderField}`} type="checkbox" disabled={!hasLevel} checked={hasLevel && memberForm[track.commanderField]} onChange={(event) => setMemberForm({ ...memberForm, [track.commanderField]: event.target.checked })} /> Comandante de {track.label}</label>
+                    </div>;
+                  })}
                 </> : <dl className="readonly-list">
                   <div><dt>Patente</dt><dd>{rankLabels[memberForm.rank]}</dd></div>
-                  {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}</dd></div>)}
+                  {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}{memberForm[track.commanderField] ? " · Comandante" : ""}</dd></div>)}
                 </dl>}
               </div>
             </section>

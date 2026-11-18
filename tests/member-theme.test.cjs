@@ -61,3 +61,24 @@ test("each track has its own house, falling back to the single legacy house only
   assert.equal(houseFor({ house: "Casa A" }, "arquearia"), "Casa A");
   assert.equal(houseFor(null, "cavalaria"), "");
 });
+
+test("comandante so existe com graduacao na trilha", () => {
+  const { isCommander } = moduleExports;
+  assert.equal(isCommander("bronze", true), true);
+  assert.equal(isCommander("prata", true), true);
+  assert.equal(isCommander("ouro", true), true);
+  assert.equal(isCommander("sem_graduacao", true), false);
+  assert.equal(isCommander("ouro", false), false);
+  assert.equal(isCommander("ouro", null), false);
+  assert.equal(isCommander(undefined, true), false);
+  assert.equal(isCommander(null, true), false);
+});
+
+test("cada trilha aponta para as proprias colunas de comandante", () => {
+  const { graduationTracks } = moduleExports;
+  const byTrack = Object.fromEntries(graduationTracks.map((track) => [track.value, track]));
+  assert.equal(byTrack.cavalaria.commanderField, "commander_cavalaria");
+  assert.equal(byTrack.arquearia.commanderField, "commander_arquearia");
+  assert.equal(byTrack.cavalaria.requestedCommanderField, "requested_commander_cavalaria");
+  assert.equal(byTrack.arquearia.requestedCommanderField, "requested_commander_arquearia");
+});
