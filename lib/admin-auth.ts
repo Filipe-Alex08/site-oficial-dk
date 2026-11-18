@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { logEvent } from "@/lib/app-log";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminRole } from "@/lib/types";
 
@@ -27,7 +28,17 @@ export async function requireAdmin(required: AdminRole[]): Promise<AdminSession 
 
   const roles = (roleRows ?? []).map((row) => row.role as AdminRole);
   const isPrincipal = roles.includes("principal");
-  if (!isPrincipal && !roles.some((role) => required.includes(role))) return null;
+  if (!isPrincipal && !roles.some((role) => required.includes(role))) {
+    logEvent({
+      level: "aviso",
+      category: "permissao",
+      action: "acesso_negado",
+      message: "Acesso administrativo negado: falta o cargo necessário",
+      actorId: user.id,
+      details: { exigido: required, cargos: roles },
+    });
+    return null;
+  }
 
   return { user, roles, isPrincipal };
 }

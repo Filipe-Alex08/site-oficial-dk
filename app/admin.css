@@ -1138,3 +1138,15 @@ td small { margin-top: 3px; color: var(--text-muted); font-size: 0.82rem; }
 .apify-quota-empty,.apify-quota-error {
   margin-top: 10px
 }
+
+/* Aba de logs */
+.log-table table { min-width: 860px; }
+.log-table td small { display: block; max-width: 520px; overflow-wrap: anywhere; }
+.log-details-row > td { padding-top: 0; }
+.log-details { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 0.9rem; }
+.log-details dt { font-weight: 600; }
+.log-details dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.log-details pre { margin: 0; max-height: 280px; overflow: auto; white-space: pre-wrap; font-size: 0.82rem; }
+@media (max-width: 640px) {
+  .log-details { grid-template-columns: 1fr; }
+}

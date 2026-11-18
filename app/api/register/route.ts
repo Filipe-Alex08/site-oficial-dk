@@ -1,22 +1,10 @@
 import { NextResponse } from "next/server";
 import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
+import { logEvent } from "@/lib/app-log";
+import { getClientIp } from "@/lib/client-ip";
+import { maskEmail } from "@/lib/log-sanitize";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
-import { isIP } from "node:net";
-
-// Cloudflare overwrites CF-Connecting-IP; when it is absent, the rightmost
-// X-Forwarded-For entry is the one appended by the closest trusted proxy.
-// Never trust X-Real-IP or the leftmost XFF entry: both are client-controlled.
-function getClientIp(request: Request) {
-  const cfConnectingIp = request.headers.get("cf-connecting-ip")?.trim();
-  if (cfConnectingIp && isIP(cfConnectingIp)) return cfConnectingIp;
-
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const lastHop = forwardedFor?.split(",").map((part) => part.trim()).filter(Boolean).pop();
-  if (lastHop && isIP(lastHop)) return lastHop;
-
-  return "unknown";
-}
 
 async function readRegistrationBody(request: Request) {
   const maxBytes = 16 * 1024;
@@ -80,6 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cadastro temporariamente indisponível." }, { status: 503 });
     }
     if (!allowed) {
+      logEvent({ level: "aviso", category: "cadastro", action: "cadastro_bloqueado", message: "Cadastro bloqueado pelo limitador de tentativas", request });
       return NextResponse.json({ error: "Muitas tentativas. Tente novamente mais tarde." }, { status: 429 });
     }
 
@@ -104,6 +93,7 @@ export async function POST(request: Request) {
     if (inviteError) console.error("Falha ao buscar convite", inviteError);
 
     if (!invite || (invite.expires_at && new Date(invite.expires_at) < new Date()) || invite.current_uses >= invite.max_uses) {
+      logEvent({ level: "aviso", category: "cadastro", action: "convite_invalido", message: "Cadastro recusado: convite inválido, expirado ou esgotado", request, details: { email: maskEmail(String(body.email)) } });
       return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
     }
 
@@ -152,10 +142,12 @@ export async function POST(request: Request) {
     if (consumeError || !consumed) {
       await admin.auth.admin.deleteUser(authData.user.id);
       if (consumeError) console.error("Falha ao consumir convite", consumeError);
+      logEvent({ level: "aviso", category: "cadastro", action: "convite_perdido", message: "Cadastro desfeito: convite consumido por outro cadastro", request });
       return NextResponse.json({ error: "Convite inválido, expirado ou já utilizado." }, { status: 403 });
     }
 
     pendingUserId = null;
+    logEvent({ category: "cadastro", action: "cadastro", message: "Novo cadastro aguardando aprovação", actorId: authData.user.id, request, details: { email: maskEmail(String(body.email)), apelido: String(body.nickname).trim() } });
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     if (pendingUserId) {

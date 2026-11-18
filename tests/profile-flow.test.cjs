@@ -55,6 +55,9 @@ function registration({ consumeThrows = false } = {}) {
     route: loadRoute("app/api/register/route.ts", {
       "next/server": nextServer, "@/lib/supabase/admin": { createAdminClient: () => admin },
       "@/lib/api-guard": apiGuard,
+      "@/lib/client-ip": loadRoute("lib/client-ip.ts", {}),
+      "@/lib/log-sanitize": loadRoute("lib/log-sanitize.ts", {}),
+      "@/lib/app-log": { logEvent: () => {} },
     }),
     profile: () => inserted,
     consumedWith: () => consumedWith,

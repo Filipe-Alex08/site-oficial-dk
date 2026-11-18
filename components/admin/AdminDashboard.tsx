@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenCheck, CalendarPlus, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { BookOpenCheck, CalendarPlus, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ScrollText, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import BirthdayBadge from "@/components/member/BirthdayBadge";
 import DocumentManager from "@/components/admin/DocumentManager";
 import AttendanceManager from "@/components/admin/AttendanceManager";
 import AssessmentAdmin from "@/components/admin/AssessmentAdmin";
+import LogsViewer from "@/components/admin/LogsViewer";
 import MediaGalleryManager from "@/components/admin/MediaGalleryManager";
 import Select from "@/components/ui/Select";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
@@ -16,7 +17,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, ActivityStatus, AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile, Post } from "@/lib/types";
 
-type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados";
+type Section = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados" | "logs";
 type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
 type MemberAccessForm = {
   id: string;
@@ -66,7 +67,7 @@ function defaultInstagramDateRange() {
   return { start: toDateInput(start), end: toDateInput(end) };
 }
 
-export default function AdminDashboard({ roles, canManageAssessments = false, currentUserId = "" }: { roles: AdminRole[]; canManageAssessments?: boolean; currentUserId?: string }) {
+export default function AdminDashboard({ roles, canManageAssessments = false, canViewLogs = false, currentUserId = "" }: { roles: AdminRole[]; canManageAssessments?: boolean; canViewLogs?: boolean; currentUserId?: string }) {
   const supabase = useMemo(() => createClient(), []);
   const principal = roles.includes("principal");
   const canMedia = principal || roles.includes("midias");
@@ -79,6 +80,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
     ...(canMembers ? ["membros" as const, "convites" as const] : []),
     ...(canMembers ? ["documentos" as const] : []),
     ...(canManageAssessments ? ["simulados" as const] : []),
+    ...(canViewLogs ? ["logs" as const] : []),
   ];
 
   const router = useRouter();
@@ -131,6 +133,30 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
   }, [supabase, canMedia, canCalendar, canMembers, principal]);
 
   const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
+
+  // Permissão "Ver logs": só o ADM Principal enxerga e altera, via API (a tabela é só do servidor).
+  const logViewersQuery = useQuery({
+    queryKey: ["admin-log-viewers"],
+    enabled: principal,
+    queryFn: async () => {
+      const response = await fetch("/api/admin/log-permissions", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível carregar as permissões de logs.");
+      return new Set<string>(data.userIds as string[]);
+    },
+  });
+
+  async function toggleLogViewer(userId: string, granted: boolean) {
+    if (!principal) return;
+    try {
+      const response = await fetch("/api/admin/log-permissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, granted }) });
+      const data = await response.json();
+      show(response.ok ? "Permissão de logs atualizada." : data.error || "Não foi possível salvar a permissão.");
+    } catch {
+      show("Não foi possível salvar a permissão: sem conexão.");
+    }
+    await logViewersQuery.refetch();
+  }
 
   function show(text: string) {
     // Erros costumam começar com negação ou citar falha; o resto é confirmação.
@@ -396,6 +422,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
           {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
           {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
           {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} />}
+          {canViewLogs && <AdminNav icon={<ScrollText />} label="Logs" active={section === "logs"} onClick={() => setSection("logs")} />}
         </nav>
       </aside>
 
@@ -503,7 +530,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
                 {graduationTracks.map((track) => <div className="field" key={track.value}><label>Graduação em {track.label}</label><p className="form-help">{graduationLabels[memberForm[track.field]]}</p></div>)}
               </>}
             </div>
-            {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}</fieldset>}
+            {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}<label className="check-field"><input type="checkbox" disabled={!logViewersQuery.data} checked={logViewersQuery.data?.has(memberForm.id) ?? false} onChange={(event) => void toggleLogViewer(memberForm.id, event.target.checked)} /> Ver logs</label></fieldset>}
             <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
           </form>}
           {!principal && <p className="admin-hint">Funções de administrador são gerenciadas pelo ADM Principal.</p>}
@@ -517,6 +544,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, cu
 
         {section === "documentos" && canMembers && <DocumentManager />}
         {section === "simulados" && canManageAssessments && <AssessmentAdmin />}
+        {section === "logs" && canViewLogs && <LogsViewer />}
       </div>
     </section>
   );

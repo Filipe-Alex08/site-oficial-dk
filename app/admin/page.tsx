@@ -17,11 +17,12 @@ export default async function AdminPage() {
   // sem esta checagem, um acesso sem sessão estoura aqui antes do redirect.
   if (!user) redirect("/area-do-membro/login");
 
-  const [{ data }, { data: canManageAssessments }] = await Promise.all([
+  const [{ data }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
     supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
     supabase.rpc("can_manage_assessments"),
+    supabase.rpc("can_view_logs"),
   ]);
   const roles = (data?.map((item) => item.role) || []) as AdminRole[];
 
-  return <Suspense fallback={null}><AdminDashboard roles={roles} canManageAssessments={Boolean(canManageAssessments)} currentUserId={user.id} /></Suspense>;
+  return <Suspense fallback={null}><AdminDashboard roles={roles} canManageAssessments={Boolean(canManageAssessments)} canViewLogs={Boolean(canViewLogs)} currentUserId={user.id} /></Suspense>;
 }

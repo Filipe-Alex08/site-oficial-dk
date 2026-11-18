@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { forbidden, isSameOriginRequest, notConfigured } from "@/lib/api-guard";
+import { logEvent } from "@/lib/app-log";
+import { maskEmail } from "@/lib/log-sanitize";
 import { createClient } from "@/lib/supabase/server";
 
 // Entrada por e-mail e senha. Fica no servidor para que a sessão nasça dentro
@@ -23,14 +25,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Informe e-mail e senha." }, { status: 400 });
   }
 
+  const maskedEmail = maskEmail(email);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) {
     if (error?.status === 429) {
+      logEvent({ level: "aviso", category: "auth", action: "login_bloqueado", message: "Login bloqueado por excesso de tentativas", request, details: { email: maskedEmail } });
       return NextResponse.json(
         { error: "Muitas tentativas. Aguarde alguns minutos e tente de novo." },
         { status: 429 },
       );
     }
+    logEvent({ level: "aviso", category: "auth", action: "login_falhou", message: "Login com e-mail ou senha inválidos", request, details: { email: maskedEmail } });
     // Mensagem única para não revelar se o e-mail existe.
     return NextResponse.json({ error: "E-mail ou senha inválidos." }, { status: 401 });
   }
@@ -43,11 +48,13 @@ export async function POST(request: Request) {
 
   if (!profile || profile.status !== "aprovado") {
     await supabase.auth.signOut();
+    logEvent({ level: "aviso", category: "auth", action: "login_sem_acesso", message: "Login recusado: cadastro não aprovado", actorId: data.user.id, request, details: { status: profile?.status ?? null } });
     const text = profile?.status === "pendente"
       ? "Seu cadastro ainda está aguardando aprovação."
       : "Seu acesso ainda não está liberado.";
     return NextResponse.json({ error: text }, { status: 403 });
   }
 
+  logEvent({ category: "auth", action: "login", message: "Login realizado", actorId: data.user.id, request });
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }
