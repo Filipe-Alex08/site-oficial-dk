@@ -10,9 +10,12 @@ const empty = {
 
 export default function RegistrationForm({ initialCode = "" }: { initialCode?: string }) {
   const [form, setForm] = useState({ ...empty, invite_code: initialCode.toUpperCase() });
+  // A confirmação só existe na tela: não faz parte do que é enviado ao servidor.
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const mismatch = confirmPassword !== "" && confirmPassword !== form.password;
 
   function update(name: string, value: string) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -20,6 +23,10 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (confirmPassword !== form.password) {
+      setError("A confirmação não é igual à senha.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -60,20 +67,35 @@ export default function RegistrationForm({ initialCode = "" }: { initialCode?: s
           <input id="invite_code" value={form.invite_code} onChange={(e) => update("invite_code", e.target.value.toUpperCase())} required />
         </div>
         <div className="field">
-          <label htmlFor="email">E-mail</label>
-          <input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
-        </div>
-        <div className="field">
-          <label htmlFor="password">Senha</label>
-          <input id="password" type="password" minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} required />
-        </div>
-        <div className="field">
           <label htmlFor="full_name">Nome completo</label>
           <input id="full_name" value={form.full_name} onChange={(e) => update("full_name", e.target.value)} required />
         </div>
         <div className="field">
           <label htmlFor="nickname">Apelido</label>
           <input id="nickname" value={form.nickname} onChange={(e) => update("nickname", e.target.value)} required />
+        </div>
+        <div className="field field-full">
+          <label htmlFor="email">E-mail</label>
+          <input id="email" type="email" autoComplete="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
+        </div>
+        <div className="field">
+          <label htmlFor="password">Senha</label>
+          <input id="password" type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(e) => { setError(""); update("password", e.target.value); }} required />
+        </div>
+        <div className="field">
+          <label htmlFor="confirm_password">Confirmar senha</label>
+          <input
+            id="confirm_password"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => { setError(""); setConfirmPassword(e.target.value); }}
+            aria-invalid={mismatch || undefined}
+            aria-describedby={mismatch ? "confirm_password_error" : undefined}
+            required
+          />
+          {mismatch && <small id="confirm_password_error" className="form-help" role="alert">As senhas não são iguais.</small>}
         </div>
       </div>
       <button className="button button-primary" type="submit" disabled={loading}>
