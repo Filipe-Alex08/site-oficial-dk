@@ -1,18 +1,22 @@
 "use client";
 
-import { Edit3, Search, ShieldCheck, Trash2, XCircle } from "lucide-react";
+import { Edit3, ShieldCheck, Trash2, UserX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAdminData, type MemberTab } from "@/components/admin/AdminDataContext";
-import AdminDialog from "@/components/admin/AdminDialog";
-import AdminTable from "@/components/admin/AdminTable";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import FormSectionHead from "@/components/admin/FormSectionHead";
 import MemberQueue, { type RequestAdjustments } from "@/components/admin/MemberQueue";
 import { useToast } from "@/components/admin/ToastProvider";
-import { statusLabel } from "@/components/admin/ui/StatusBadge";
+import Avatar from "@/components/admin/ui/Avatar";
+import DataTable from "@/components/admin/ui/DataTable";
+import Drawer from "@/components/admin/ui/Drawer";
+import Panel from "@/components/admin/ui/Panel";
+import RowMenu from "@/components/admin/ui/RowMenu";
+import StatusBadge from "@/components/admin/ui/StatusBadge";
+import { FilterChips, SearchField, Toolbar } from "@/components/admin/ui/Toolbar";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import CountBadge from "@/components/ui/CountBadge";
@@ -34,8 +38,8 @@ type MemberAccessForm = {
 };
 type MemberStatusFilter = "todos" | MemberProfile["status"];
 
-const memberStatusOptions: Array<{ value: MemberStatusFilter; label: string }> = [
-  { value: "todos", label: "Todas as situações" },
+const statusFilters: Array<{ value: MemberStatusFilter; label: string }> = [
+  { value: "todos", label: "Todos" },
   { value: "aprovado", label: "Aprovados" },
   { value: "pendente", label: "Pendentes" },
   { value: "suspenso", label: "Suspensos" },
@@ -63,17 +67,17 @@ export default function MembersSection() {
   const membersQueue = useMemo(() => members.filter((member) =>
     member.status === "pendente" || Boolean(member.access_request_id) || (principal && Boolean(member.graduation_review_needed)),
   ), [members, principal]);
-  const filteredMembers = useMemo(() => {
+  const searched = useMemo(() => {
     const term = memberSearch.trim().toLocaleLowerCase("pt-BR");
-    return members.filter((member) =>
-      (memberStatus === "todos" || member.status === memberStatus)
-      && (!term || [member.nickname, member.full_name, member.email ?? ""].some((value) => value.toLocaleLowerCase("pt-BR").includes(term))),
-    );
-  }, [members, memberSearch, memberStatus]);
+    return members.filter((member) => !term || [member.nickname, member.full_name, member.email ?? ""].some((value) => value.toLocaleLowerCase("pt-BR").includes(term)));
+  }, [members, memberSearch]);
+  const filteredMembers = useMemo(() => searched.filter((member) => memberStatus === "todos" || member.status === memberStatus), [searched, memberStatus]);
+  const statusOptions = statusFilters.map((option) => ({ ...option, count: option.value === "todos" ? searched.length : searched.filter((member) => member.status === option.value).length }));
   const requestedTab = searchParams.get("aba");
   const memberTab: MemberTab = requestedTab === "pendentes" || requestedTab === "todos"
     ? requestedTab
     : (loading || membersNeedingAction > 0 ? "pendentes" : "todos");
+  const formMember = memberForm ? members.find((member) => member.id === memberForm.id) : undefined;
 
   // Permissão "Ver logs": só o ADM Principal enxerga e altera, via API (a tabela é só do servidor).
   const logViewersQuery = useQuery({
@@ -137,6 +141,11 @@ export default function MembersSection() {
   async function decideRegistration(member: MemberProfile, status: "aprovado" | "recusado") {
     if (status === "recusado" && !(await confirm({ title: `Recusar o cadastro de ${member.nickname}?`, message: "A pessoa não terá acesso à área do membro.", confirmLabel: "Recusar cadastro", danger: true }))) return;
     await updateMemberStatus(member.id, status, status === "aprovado" ? `Cadastro de ${member.nickname} aprovado.` : `Cadastro de ${member.nickname} recusado.`);
+  }
+
+  async function suspendMember(member: MemberProfile) {
+    if (!(await confirm({ title: `Suspender ${member.nickname}?`, message: "A pessoa perde o acesso à área do membro até ser aprovada de novo.", confirmLabel: "Suspender", danger: true }))) return;
+    await updateMemberStatus(member.id, "suspenso", `${member.nickname} suspenso.`);
   }
 
   function editMember(member: MemberProfile) {
@@ -239,79 +248,108 @@ export default function MembersSection() {
     </div>}
 
     {memberTab === "todos" && <div role="tabpanel">
-      <div className="admin-toolbar">
-        <div className="admin-toolbar-filters">
-          <label className="admin-search"><span className="sr-only">Buscar membro</span><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar por apelido, nome ou e-mail" /></label>
-          <Select id="member-status-filter" value={memberStatus} options={memberStatusOptions} onChange={(value) => setMemberStatus(value as MemberStatusFilter)} />
-        </div>
-      </div>
-      <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]} count={filteredMembers.length} empty="Nenhum membro encontrado para esses filtros.">
-        {filteredMembers.map((member) => <tr key={member.id}>
-          <td><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></td>
-          <td>
-            <span className="badge graduation">{memberKindLabels[member.member_kind]}</span>
-            <small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small>
-          </td>
-          <td>
-            <div className="member-rank-insignias">
-              <RankInsignia rank={member.rank} />
-              {highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}
-              {member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}
-            </div>
-          </td>
-          <td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td>
-          <td className="row-actions">
-            {canEditAccess(member) && <button title="Editar acessos" aria-label={`Editar acessos de ${member.nickname}`} onClick={() => editMember(member)}><Edit3 /></button>}
-            {canManageMember(member) && <>
-              {member.status !== "aprovado" && <button className="is-ok" title="Aprovar" aria-label={`Aprovar ${member.nickname}`} onClick={() => void updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}
-              <button className="is-danger" title="Suspender" aria-label={`Suspender ${member.nickname}`} onClick={() => void updateMemberStatus(member.id, "suspenso")}><XCircle /></button>
-              <button className="is-danger" title="Excluir" aria-label={`Excluir ${member.nickname}`} onClick={() => void deleteMember(member)}><Trash2 /></button>
-            </>}
-            {!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}
-          </td>
-        </tr>)}
-      </AdminTable>
+      <Toolbar
+        filters={<>
+          <SearchField value={memberSearch} onChange={setMemberSearch} placeholder="Buscar por apelido, nome ou e-mail" label="Buscar membro" />
+          <FilterChips label="Situação" value={memberStatus} options={statusOptions} onChange={setMemberStatus} />
+        </>}
+      />
+      <Panel flush>
+        <DataTable
+          rows={filteredMembers}
+          rowKey={(member) => member.id}
+          empty="Nenhum membro encontrado para esses filtros."
+          caption="Todos os membros"
+          columns={[
+            {
+              key: "member", header: "Membro", hideLabel: true,
+              render: (member) => <div className="member-cell">
+                <Avatar name={member.nickname} path={member.avatar_path} size={40} />
+                <div><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></div>
+              </div>,
+            },
+            {
+              key: "access", header: "Acesso interno",
+              render: (member) => <>
+                <span className="badge graduation">{memberKindLabels[member.member_kind]}</span>
+                {principal && <small>{(memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador"}</small>}
+              </>,
+            },
+            {
+              key: "rank", header: "Patente e graduação",
+              render: (member) => <div className="member-rank-insignias">
+                <RankInsignia rank={member.rank} />
+                {highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}
+                {member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}
+              </div>,
+            },
+            { key: "status", header: "Situação", render: (member) => <StatusBadge status={member.status} /> },
+            {
+              key: "actions", header: "Ações", srOnlyHeader: true, className: "row-actions",
+              render: (member) => {
+                if (!canEditAccess(member) && !canManageMember(member)) return <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>;
+                const manage = canManageMember(member);
+                return <RowMenu label={`Ações de ${member.nickname}`} items={[
+                  { label: "Editar acessos", icon: <Edit3 />, hidden: !canEditAccess(member), onSelect: () => editMember(member) },
+                  { label: "Aprovar", icon: <ShieldCheck />, hidden: !manage || member.status === "aprovado", disabled: busyMemberId === member.id, onSelect: () => void updateMemberStatus(member.id, "aprovado", `${member.nickname} aprovado.`) },
+                  { label: "Suspender", icon: <UserX />, danger: true, hidden: !manage || member.status === "suspenso", onSelect: () => void suspendMember(member) },
+                  { label: "Excluir", icon: <Trash2 />, danger: true, hidden: !manage, onSelect: () => void deleteMember(member) },
+                ]} />;
+              },
+            },
+          ]}
+        />
+      </Panel>
     </div>}
 
-    {memberForm && <AdminDialog
+    {memberForm && <Drawer
       title={`Acessos de ${memberForm.nickname}`}
       description={memberForm.full_name}
       onClose={() => setMemberForm(null)}
       onSubmit={saveMemberAccess}
+      headerExtra={formMember && <div className="drawer-profile">
+        <Avatar name={formMember.nickname} path={formMember.avatar_path} size={52} />
+        <div>
+          <StatusBadge status={formMember.status} />
+          <div className="member-rank-insignias"><RankInsignia rank={formMember.rank} />{highestGraduation(formMember) !== "sem_graduacao" && <GraduationInsignias profile={formMember} />}</div>
+        </div>
+      </div>}
       footer={<><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button><button className="button button-primary" type="submit">Salvar acessos</button></>}
     >
-      <section className="form-section">
-        <FormSectionHead title="Vínculo" />
-        <div className="form-section-body">
-          <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
-        </div>
-      </section>
-      <section className="form-section">
-        <FormSectionHead title="Patente e graduação" hint={principal ? "Alterações valem na hora." : "Somente o ADM Principal altera estes dados."} />
-        <div className="form-section-body">
-          {principal ? <>
-            <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-            {graduationTracks.map((track) => {
-              const hasLevel = memberForm[track.field] !== "sem_graduacao";
-              return <div className="field" key={track.value}>
-                <label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label>
-                <Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel, ...(value === "sem_graduacao" ? { [track.commanderField]: false } : {}) })} />
-                <label className="check-field" htmlFor={`member-${track.commanderField}`}><input id={`member-${track.commanderField}`} type="checkbox" disabled={!hasLevel} checked={hasLevel && memberForm[track.commanderField]} onChange={(event) => setMemberForm({ ...memberForm, [track.commanderField]: event.target.checked })} /> Comandante de {track.label}</label>
-              </div>;
-            })}
-          </> : <dl className="readonly-list">
-            <div><dt>Patente</dt><dd>{rankLabels[memberForm.rank]}</dd></div>
-            {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}{memberForm[track.commanderField] ? " · Comandante" : ""}</dd></div>)}
-          </dl>}
-        </div>
-      </section>
-      {principal && <section className="form-section">
-        <FormSectionHead title="Permissões administrativas" hint="O que esta pessoa pode gerenciar no painel." />
-        <div className="form-section-body switch-list" role="group" aria-label="Permissões administrativas">
-          {adminRoleOptions.map((item) => <label className="switch-field" key={item.value}><span><strong>{item.label}</strong></span><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => void toggleAdminRole(memberForm.id, item.value, event.target.checked)} /></label>)}
-          <label className="switch-field"><span><strong>Ver logs</strong></span><input type="checkbox" disabled={!logViewersQuery.data} checked={logViewersQuery.data?.has(memberForm.id) ?? false} onChange={(event) => void toggleLogViewer(memberForm.id, event.target.checked)} /></label>
-        </div>
-      </section>}
-    </AdminDialog>}
+      <div className="admin-form">
+        <section className="form-section">
+          <FormSectionHead title="Vínculo" />
+          <div className="form-section-body">
+            <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
+          </div>
+        </section>
+        <section className="form-section">
+          <FormSectionHead title="Patente e graduação" hint={principal ? "Alterações valem na hora." : "Somente o ADM Principal altera estes dados."} />
+          <div className="form-section-body">
+            {principal ? <>
+              <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
+              {graduationTracks.map((track) => {
+                const hasLevel = memberForm[track.field] !== "sem_graduacao";
+                return <div className="field" key={track.value}>
+                  <label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label>
+                  <Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel, ...(value === "sem_graduacao" ? { [track.commanderField]: false } : {}) })} />
+                  <label className="check-field" htmlFor={`member-${track.commanderField}`}><input id={`member-${track.commanderField}`} type="checkbox" disabled={!hasLevel} checked={hasLevel && memberForm[track.commanderField]} onChange={(event) => setMemberForm({ ...memberForm, [track.commanderField]: event.target.checked })} /> Comandante de {track.label}</label>
+                </div>;
+              })}
+            </> : <dl className="readonly-list">
+              <div><dt>Patente</dt><dd>{rankLabels[memberForm.rank]}</dd></div>
+              {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}{memberForm[track.commanderField] ? " · Comandante" : ""}</dd></div>)}
+            </dl>}
+          </div>
+        </section>
+        {principal && <section className="form-section">
+          <FormSectionHead title="Permissões administrativas" hint="O que esta pessoa pode gerenciar no painel." />
+          <div className="form-section-body switch-list" role="group" aria-label="Permissões administrativas">
+            {adminRoleOptions.map((item) => <label className="switch-field" key={item.value}><span><strong>{item.label}</strong></span><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => void toggleAdminRole(memberForm.id, item.value, event.target.checked)} /></label>)}
+            <label className="switch-field"><span><strong>Ver logs</strong></span><input type="checkbox" disabled={!logViewersQuery.data} checked={logViewersQuery.data?.has(memberForm.id) ?? false} onChange={(event) => void toggleLogViewer(memberForm.id, event.target.checked)} /></label>
+          </div>
+        </section>}
+      </div>
+    </Drawer>}
   </div>;
 }
