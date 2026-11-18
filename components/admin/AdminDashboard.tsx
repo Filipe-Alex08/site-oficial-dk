@@ -1,10 +1,16 @@
 "use client";
 
-import { BookOpenCheck, CalendarPlus, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ScrollText, ShieldCheck, TicketPlus, Trash2, UserCog, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarPlus, CheckCircle2, ChevronDown, ChevronRight, Copy, Edit3, FileText, ImagePlus, LayoutDashboard, RefreshCw, ScrollText, Search, ShieldCheck, TicketPlus, Trash2, UserCog, Users, XCircle } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
+import AdminDialog from "@/components/admin/AdminDialog";
+import AdminTitle from "@/components/admin/AdminTitle";
+import FormSectionHead from "@/components/admin/FormSectionHead";
+import InfoTip from "@/components/ui/InfoTip";
+import MemberQueue, { type RequestAdjustments } from "@/components/admin/MemberQueue";
 import DocumentManager from "@/components/admin/DocumentManager";
 import AttendanceManager from "@/components/admin/AttendanceManager";
 import AssessmentAdmin, { assessmentAdminQueryKey, fetchAssessmentAdminData } from "@/components/admin/AssessmentAdmin";
@@ -30,13 +36,16 @@ type MemberAccessForm = {
   graduation_arquearia: GraduationLevel;
 };
 
-/** "Cavalaria: Prata · Arquearia: Bronze" para a conferência de pedidos. */
-function trackSummary(member: MemberProfile, requested = false) {
-  return graduationTracks.map((track) => {
-    const level = requested ? member[`requested_${track.field}`] ?? member[track.field] : member[track.field];
-    return `${track.label}: ${graduationLabels[level ?? "sem_graduacao"]}`;
-  }).join(" · ");
-}
+type MemberTab = "pendentes" | "todos";
+type MemberStatusFilter = "todos" | MemberProfile["status"];
+
+const memberStatusOptions: Array<{ value: MemberStatusFilter; label: string }> = [
+  { value: "todos", label: "Todas as situações" },
+  { value: "aprovado", label: "Aprovados" },
+  { value: "pendente", label: "Pendentes" },
+  { value: "suspenso", label: "Suspensos" },
+  { value: "recusado", label: "Recusados" },
+];
 
 const statusLabels: Record<string, string> = {
   pendente: "Pendente", aprovado: "Aprovado", suspenso: "Suspenso", recusado: "Recusado",
@@ -111,6 +120,9 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const [instagramDateRange, setInstagramDateRange] = useState(defaultInstagramDateRange);
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
+  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberStatus, setMemberStatus] = useState<MemberStatusFilter>("todos");
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -141,6 +153,27 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const membersNeedingAction = useMemo(() => members.filter((member) =>
     member.status === "pendente" || (Boolean(member.access_request_id) && member.id !== currentUserId) || (principal && member.graduation_review_needed),
   ).length, [members, principal, currentUserId]);
+  // Inclui a própria solicitação do admin: aparece só como aviso e não entra no badge.
+  const membersQueue = useMemo(() => members.filter((member) =>
+    member.status === "pendente" || Boolean(member.access_request_id) || (principal && Boolean(member.graduation_review_needed)),
+  ), [members, principal]);
+  const filteredMembers = useMemo(() => {
+    const term = memberSearch.trim().toLocaleLowerCase("pt-BR");
+    return members.filter((member) =>
+      (memberStatus === "todos" || member.status === memberStatus)
+      && (!term || [member.nickname, member.full_name, member.email ?? ""].some((value) => value.toLocaleLowerCase("pt-BR").includes(term))),
+    );
+  }, [members, memberSearch, memberStatus]);
+  const requestedTab = searchParams.get("aba");
+  const memberTab: MemberTab = requestedTab === "pendentes" || requestedTab === "todos"
+    ? requestedTab
+    : (dashboardQuery.isPending || membersNeedingAction > 0 ? "pendentes" : "todos");
+  function setMemberTab(next: MemberTab) {
+    router.push(`${pathname}?secao=membros&aba=${next}`, { scroll: false });
+  }
+  function goToQueue() {
+    router.push(`${pathname}?secao=membros&aba=pendentes`, { scroll: false });
+  }
   // Mesma chave de cache da aba Avaliações: corrigir uma resposta lá atualiza o badge aqui.
   const assessmentBadgeQuery = useQuery({
     queryKey: assessmentAdminQueryKey,
@@ -294,11 +327,23 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     await dashboardQuery.refetch();
   }
 
-  async function updateMemberStatus(id: string, status: string) {
-    const response = await fetch(`/api/admin/members/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-    const result = await response.json();
-    show(response.ok ? "Cadastro atualizado." : friendlyError(result.error));
+  async function updateMemberStatus(id: string, status: string, success = "Cadastro atualizado.") {
+    setBusyMemberId(id);
+    try {
+      const response = await fetch(`/api/admin/members/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+      const result = await response.json();
+      show(response.ok ? success : friendlyError(result.error));
+    } catch {
+      show("Não foi possível atualizar o cadastro: sem conexão.");
+    } finally {
+      setBusyMemberId(null);
+    }
     await dashboardQuery.refetch();
+  }
+
+  async function decideRegistration(member: MemberProfile, status: "aprovado" | "recusado") {
+    if (status === "recusado" && !window.confirm(`Recusar o cadastro de ${member.nickname}? A pessoa não terá acesso à área do membro.`)) return;
+    await updateMemberStatus(member.id, status, status === "aprovado" ? `Cadastro de ${member.nickname} aprovado.` : `Cadastro de ${member.nickname} recusado.`);
   }
 
   function editMember(member: MemberProfile) {
@@ -314,15 +359,24 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     });
   }
 
-  async function reviewAccessRequest(member: MemberProfile, action: "approve" | "reject") {
+  async function reviewAccessRequest(member: MemberProfile, action: "approve" | "reject", adjustments?: RequestAdjustments) {
     if (member.id === currentUserId) return show("Sua própria solicitação precisa ser analisada por outro administrador.");
-    const response = await fetch(`/api/admin/members/${member.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_request_action: action, access_request_id: member.access_request_id }),
-    });
-    const result = await response.json();
-    show(response.ok ? (action === "approve" ? "Dados aprovados e acessos atualizados." : "Solicitação recusada.") : friendlyError(result.error));
+    if (action === "reject" && !window.confirm(`Recusar a alteração de dados de ${member.nickname}?`)) return;
+    setBusyMemberId(member.id);
+    try {
+      const response = await fetch(`/api/admin/members/${member.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_request_action: action, access_request_id: member.access_request_id, ...(adjustments ? { adjustments } : {}) }),
+      });
+      const result = await response.json();
+      const approved = adjustments ? "Dados aprovados com ajustes e acessos atualizados." : "Dados aprovados e acessos atualizados.";
+      show(response.ok ? (action === "approve" ? approved : "Solicitação recusada.") : friendlyError(result.error));
+    } catch {
+      show("Não foi possível analisar a solicitação: sem conexão.");
+    } finally {
+      setBusyMemberId(null);
+    }
     await dashboardQuery.refetch();
   }
 
@@ -426,137 +480,280 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     }
   }
 
+  // Lê os dados salvos, não o formulário: senão o bloco opcional fecharia ao apagar o último campo.
+  const editingPostData = editingPost ? posts.find((post) => post.id === editingPost) : undefined;
+
+  const attention: Array<{ key: string; title: string; hint: string; onClick: () => void }> = [];
+  if (canMembers && membersNeedingAction > 0) {
+    attention.push({
+      key: "membros",
+      title: `${membersNeedingAction} ${membersNeedingAction === 1 ? "membro aguardando ação" : "membros aguardando ação"}`,
+      hint: "Cadastros novos, dados a conferir e graduações a revisar.",
+      onClick: goToQueue,
+    });
+  }
+  if (canManageAssessments && pendingReviews > 0) {
+    attention.push({
+      key: "avaliacoes",
+      title: `${pendingReviews} ${pendingReviews === 1 ? "resposta a corrigir" : "respostas a corrigir"}`,
+      hint: "Respostas abertas das avaliações esperando classificação.",
+      onClick: () => setSection("simulados"),
+    });
+  }
+
   return (
     <section className="admin-shell">
       <aside className="admin-sidebar">
-        <h1>Administração</h1>
-        <nav>
-          <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
-          {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
-          {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
-          {canCalendar && <AdminNav icon={<ShieldCheck />} label="Presenças" active={section === "presencas"} onClick={() => setSection("presencas")} />}
-          {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} badge={membersNeedingAction} badgeLabel="membros aguardando ação" />}
-          {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
-          {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
-          {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} badge={pendingReviews} badgeLabel="respostas a corrigir" />}
-          {canViewLogs && <AdminNav icon={<ScrollText />} label="Logs" active={section === "logs"} onClick={() => setSection("logs")} />}
+        <div className="admin-sidebar-head">
+          <h1>Administração</h1>
+        </div>
+        <nav aria-label="Seções do painel">
+          <div className="admin-nav-group">
+            <span className="admin-nav-label">Visão geral</span>
+            <AdminNav icon={<LayoutDashboard />} label="Resumo" active={section === "resumo"} onClick={() => setSection("resumo")} />
+          </div>
+          <div className="admin-nav-group">
+            <span className="admin-nav-label">Conteúdo</span>
+            {canMedia && <AdminNav icon={<ImagePlus />} label="Mídias" active={section === "midias"} onClick={() => setSection("midias")} />}
+            {canCalendar && <AdminNav icon={<CalendarPlus />} label="Calendário" active={section === "calendario"} onClick={() => setSection("calendario")} />}
+            {canMembers && <AdminNav icon={<FileText />} label="Documentos" active={section === "documentos"} onClick={() => setSection("documentos")} />}
+          </div>
+          {(canMembers || canCalendar) && <div className="admin-nav-group">
+            <span className="admin-nav-label">Pessoas</span>
+            {canMembers && <AdminNav icon={<UserCog />} label="Membros" active={section === "membros"} onClick={() => setSection("membros")} badge={membersNeedingAction} badgeLabel="membros aguardando ação" />}
+            {canMembers && <AdminNav icon={<TicketPlus />} label="Convites" active={section === "convites"} onClick={() => setSection("convites")} />}
+            {canCalendar && <AdminNav icon={<ShieldCheck />} label="Presenças" active={section === "presencas"} onClick={() => setSection("presencas")} />}
+          </div>}
+          {(canManageAssessments || canViewLogs) && <div className="admin-nav-group">
+            <span className="admin-nav-label">Gestão</span>
+            {canManageAssessments && <AdminNav icon={<BookOpenCheck />} label="Avaliações" active={section === "simulados"} onClick={() => setSection("simulados")} badge={pendingReviews} badgeLabel="respostas a corrigir" />}
+            {canViewLogs && <AdminNav icon={<ScrollText />} label="Logs" active={section === "logs"} onClick={() => setSection("logs")} />}
+          </div>}
         </nav>
+        <Link className="admin-sidebar-back" href="/membro" title="Voltar ao painel do membro" aria-label="Voltar ao painel do membro"><ArrowLeft /><span>Painel do membro</span></Link>
       </aside>
 
       <div className="admin-content">
-        {section === "presencas" && canCalendar && <AttendanceManager />}
         <div className="toast-stack" aria-live="polite">
           {notice && <div className={`toast is-${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{notice.text}</div>}
           {dashboardQuery.isError && <div className="toast is-error" role="alert">Não foi possível atualizar os dados. <button className="text-button" type="button" onClick={() => void dashboardQuery.refetch()}>Tentar novamente</button></div>}
           {dashboardQuery.isFetching && !dashboardQuery.isError && <div className="toast" role="status"><span className="inline-spinner" /> {dashboardQuery.isPending ? "Carregando…" : "Atualizando…"}</div>}
         </div>
+
+        {section === "presencas" && canCalendar && <AttendanceManager />}
+
         {section === "resumo" && <div>
-          <AdminTitle title="Visão geral" />
+          <AdminTitle eyebrow="Visão geral" title="Resumo" description="O que está acontecendo no site e o que precisa da sua atenção." />
           <div className="metric-grid">
-            {canMedia && <Metric label="Publicações" value={posts.length} onClick={() => setSection("midias")} />}
-            {canCalendar && <Metric label="Atividades" value={activities.length} onClick={() => setSection("calendario")} />}
-            {canMembers && <Metric label="Membros" value={members.length} onClick={() => setSection("membros")} />}
-            {canMembers && <Metric label="Aguardando aprovação" value={members.filter((member) => member.status === "pendente").length} highlight onClick={() => setSection("membros")} />}
-            {canMembers && principal && <Metric label="Graduação a revisar" value={members.filter((member) => member.graduation_review_needed).length} highlight onClick={() => setSection("membros")} />}
+            {canMedia && <Metric icon={<ImagePlus />} label="Publicações" value={posts.length} onClick={() => setSection("midias")} />}
+            {canCalendar && <Metric icon={<CalendarPlus />} label="Atividades" value={activities.length} onClick={() => setSection("calendario")} />}
+            {canMembers && <Metric icon={<Users />} label="Membros" value={members.length} onClick={() => setMemberTab("todos")} />}
+            {canMembers && <Metric icon={<UserCog />} label="Aguardando aprovação" value={members.filter((member) => member.status === "pendente").length} highlight onClick={goToQueue} />}
+            {canMembers && principal && <Metric icon={<ShieldCheck />} label="Graduação a revisar" value={members.filter((member) => member.graduation_review_needed).length} highlight onClick={goToQueue} />}
           </div>
+          {(canMembers || canManageAssessments) && <section className="admin-panel attention-panel" aria-labelledby="attention-title">
+            <div className="admin-panel-head"><div><h3 id="attention-title">Precisa da sua atenção</h3><p>Pendências que dependem de um administrador.</p></div></div>
+            {attention.length
+              ? <ul className="attention-list">{attention.map((item) => <li key={item.key}><button type="button" onClick={item.onClick}><span><strong>{item.title}</strong><small>{item.hint}</small></span><ChevronRight aria-hidden="true" /></button></li>)}</ul>
+              : <p className="attention-empty"><CheckCircle2 aria-hidden="true" /> Tudo em dia. Nenhuma pendência no momento.</p>}
+          </section>}
         </div>}
 
         {section === "midias" && canMedia && <div>
-          <AdminTitle title="Mídias" />
-          <section className="apify-quota-panel" aria-labelledby="apify-quota-title">
-            <div className="apify-quota-heading"><h3 id="apify-quota-title">Cota de importação do Instagram</h3><button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button></div>
-            {quotaError && <p className="apify-quota-error" role="alert">{quotaError}</p>}
-            {quota ? <div className="apify-quota-metric"><div className="apify-quota-values"><div><span>Utilizado neste ciclo</span><strong>US$ {quota.used.toFixed(2)}</strong></div><div><span>Limite mensal</span><strong>{quota.limit > 0 ? `US$ ${quota.limit.toFixed(2)}` : "Indisponível"}</strong></div></div>{quota.limit > 0 && <div className="apify-quota-progress" role="progressbar" aria-label="Cota mensal utilizada" aria-valuenow={Math.min(100, Math.round(quota.used / quota.limit * 100))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.min(100, Math.max(0, quota.used / quota.limit * 100))}%` }} /></div>}<div className="apify-quota-footer"><span>{quota.limit > 0 ? `${Math.round(quota.used / quota.limit * 100)}% do limite utilizado` : "Limite não informado pela Apify"}</span>{quota.start && quota.end && <span>Ciclo: {new Date(quota.start).toLocaleDateString("pt-BR")} a {new Date(quota.end).toLocaleDateString("pt-BR")}</span>}</div></div> : !quotaError && <p className="apify-quota-empty">{loadingQuota ? "Consultando a cota…" : "Cota ainda não consultada."}</p>}
-          </section>
-          <section className="instagram-sync-panel" aria-labelledby="instagram-sync-title">
-            <div className="instagram-sync-heading"><h3 id="instagram-sync-title">Importar do Instagram</h3><p>Traz as publicações do período escolhido.</p></div>
-            <div className="instagram-import-controls">
-              <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
-              <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
-              <button className="button button-ghost" type="button" onClick={() => void syncInstagram()} disabled={syncingInstagram}>
-                <RefreshCw size={17} className={syncingInstagram ? "spin" : ""} />
-                {syncingInstagram ? "Buscando publicações…" : "Importar do Instagram"}
-              </button>
-            </div>
-          </section>
-          <div className="manual-post-heading"><h3>Nova publicação</h3></div>
-          <form className="admin-form" onSubmit={savePost}>
-            <div className="form-grid">
-              <div className="field"><label>Título</label><input value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required /></div>
-              <div className="field"><label>Endereço (URL)</label><input value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} required /></div>
-              <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
-              <div className="field"><label>Imagem de capa (URL)</label><input type="url" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
-              <div className="field"><label>YouTube (URL)</label><input type="url" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
-              <div className="field"><label>TikTok (URL)</label><input type="url" value={postForm.tiktok_url} onChange={(event) => setPostForm({ ...postForm, tiktok_url: event.target.value })} /></div>
-              <div className="field field-full"><label>Resumo</label><textarea value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
-              <div className="field field-full"><label>Conteúdo</label><textarea value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
-              <label className="check-field"><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /> Publicar agora</label>
-            </div>
-            <div className="form-actions"><button className="button button-primary" type="submit">{editingPost ? "Atualizar" : "Criar publicação"}</button>{editingPost && <button className="button button-ghost" type="button" onClick={() => { setEditingPost(null); setPostForm(emptyPost); }}>Cancelar</button>}</div>
-          </form>
-          <div className="post-bulk-actions">
-            <label className="check-field"><input type="checkbox" checked={posts.length > 0 && selectedPostIds.size === posts.length} onChange={toggleAllPostSelection} /> Selecionar todos</label>
-            <button className="button button-ghost" type="button" onClick={() => void removeSelectedPosts()} disabled={!selectedPostIds.size}>
-              <Trash2 size={17} /> Excluir selecionados{selectedPostIds.size ? ` (${selectedPostIds.size})` : ""}
-            </button>
+          <AdminTitle eyebrow="Conteúdo" title="Mídias" description="Publicações do site, importação do Instagram e galerias de fotos e vídeos." />
+          <div className="admin-panel-grid">
+            <section className="admin-panel" aria-labelledby="apify-quota-title">
+              <div className="admin-panel-head">
+                <div><h3 id="apify-quota-title">Cota de importação</h3><p>Consumo mensal da importação do Instagram.</p></div>
+                <button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button>
+              </div>
+              <div className="admin-panel-body">
+                {quotaError && <p className="apify-quota-error" role="alert">{quotaError}</p>}
+                {quota
+                  ? <div className="apify-quota-metric">
+                    <div className="apify-quota-values"><div><span>Utilizado neste ciclo</span><strong>US$ {quota.used.toFixed(2)}</strong></div><div><span>Limite mensal</span><strong>{quota.limit > 0 ? `US$ ${quota.limit.toFixed(2)}` : "Indisponível"}</strong></div></div>
+                    {quota.limit > 0 && <div className="apify-quota-progress" role="progressbar" aria-label="Cota mensal utilizada" aria-valuenow={Math.min(100, Math.round(quota.used / quota.limit * 100))} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.min(100, Math.max(0, quota.used / quota.limit * 100))}%` }} /></div>}
+                    <div className="apify-quota-footer"><span>{quota.limit > 0 ? `${Math.round(quota.used / quota.limit * 100)}% do limite utilizado` : "Limite não informado pela Apify"}</span>{quota.start && quota.end && <span>Ciclo: {new Date(quota.start).toLocaleDateString("pt-BR")} a {new Date(quota.end).toLocaleDateString("pt-BR")}</span>}</div>
+                  </div>
+                  : !quotaError && <p className="apify-quota-empty">{loadingQuota ? "Consultando a cota…" : "Cota ainda não consultada."}</p>}
+              </div>
+            </section>
+            <section className="admin-panel" aria-labelledby="instagram-sync-title">
+              <div className="admin-panel-head"><div className="title-tip"><h3 id="instagram-sync-title">Importar do Instagram</h3><InfoTip label="Mais informações sobre a importação">Traz as publicações do período escolhido.</InfoTip></div></div>
+              <div className="admin-panel-body">
+                <div className="instagram-import-controls">
+                  <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
+                  <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
+                  <button className="button button-ghost" type="button" onClick={() => void syncInstagram()} disabled={syncingInstagram}>
+                    <RefreshCw size={17} className={syncingInstagram ? "spin" : ""} />
+                    {syncingInstagram ? "Buscando publicações…" : "Importar do Instagram"}
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
-          <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]}>{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/midias/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); }}><Edit3 /></button><button title="Excluir" onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+
+          <section className="admin-panel">
+            <div className="admin-panel-head"><h3>{editingPost ? "Editar publicação" : "Nova publicação"}</h3></div>
+            <div className="admin-panel-body">
+              <form className="admin-form" onSubmit={savePost}>
+                <section className="form-section">
+                  <FormSectionHead title="Texto" hint="O que aparece na página da publicação." />
+                  <div className="form-section-body">
+                    <div className="field">
+                      <label htmlFor="post-title">Título</label>
+                      <input id="post-title" value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value, slug: slugify(event.target.value) })} required />                    </div>
+                    <div className="field"><label htmlFor="post-excerpt">Resumo</label><textarea id="post-excerpt" className="is-short" value={postForm.excerpt} onChange={(event) => setPostForm({ ...postForm, excerpt: event.target.value })} required={posts.find((post) => post.id === editingPost)?.source !== "instagram"} /></div>
+                    <div className="field"><label htmlFor="post-content">Conteúdo</label><textarea id="post-content" value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} required /></div>
+                  </div>
+                </section>
+                <section className="form-section">
+                  <FormSectionHead title="Publicação" hint="Onde a publicação entra e quando fica visível." />
+                  <div className="form-section-body">
+                    <div className="field"><label htmlFor="post-category">Categoria</label><Select id="post-category" value={postForm.category} options={["Treinos", "Eventos", "Encontros", "Comunicados"].map((value) => ({ value, label: value }))} onChange={(value) => setPostForm({ ...postForm, category: value })} /></div>
+                    <label className="switch-field"><span><strong>Publicar agora</strong></span><input type="checkbox" checked={postForm.published} onChange={(event) => setPostForm({ ...postForm, published: event.target.checked })} /></label>
+                    <details className="form-more" key={editingPost ?? "nova"} open={Boolean(editingPostData?.cover_url || editingPostData?.youtube_url || editingPostData?.tiktok_url)}>
+                      <summary><span>Capa e links<small>opcional</small></span><ChevronDown aria-hidden="true" /></summary>
+                      <div className="form-more-body">
+                        <div className="field"><label htmlFor="post-cover">Imagem de capa<span className="opt">URL</span></label><input id="post-cover" type="url" inputMode="url" placeholder="https://" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
+                        <div className="field"><label htmlFor="post-youtube">YouTube<span className="opt">URL</span></label><input id="post-youtube" type="url" inputMode="url" placeholder="https://" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
+                        <div className="field"><label htmlFor="post-tiktok">TikTok<span className="opt">URL</span></label><input id="post-tiktok" type="url" inputMode="url" placeholder="https://" value={postForm.tiktok_url} onChange={(event) => setPostForm({ ...postForm, tiktok_url: event.target.value })} /></div>
+                        <div className="field"><label htmlFor="post-slug">Endereço personalizado</label><input id="post-slug" value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} /><p className="field-hint">Gerado a partir do título. Só altere se precisar.</p></div>
+                      </div>
+                    </details>
+                  </div>
+                </section>
+                <div className="form-actions"><button className="button button-primary" type="submit">{editingPost ? "Salvar alterações" : "Criar publicação"}</button>{editingPost && <button className="button button-ghost" type="button" onClick={() => { setEditingPost(null); setPostForm(emptyPost); }}>Cancelar</button>}</div>
+              </form>
+            </div>
+          </section>
+
+          <section className="admin-panel">
+            <div className="admin-panel-head">
+              <div><h3>Publicações</h3><p>{posts.length} {posts.length === 1 ? "publicação" : "publicações"}</p></div>
+              <div className="admin-toolbar-meta">
+                <label className="check-field"><input type="checkbox" checked={posts.length > 0 && selectedPostIds.size === posts.length} onChange={toggleAllPostSelection} /> Selecionar todos</label>
+                <button className="button button-danger button-small" type="button" onClick={() => void removeSelectedPosts()} disabled={!selectedPostIds.size}>
+                  <Trash2 size={16} /> Excluir selecionados{selectedPostIds.size ? ` (${selectedPostIds.size})` : ""}
+                </button>
+              </div>
+            </div>
+            <AdminTable headers={["Selecionar", "Publicação", "Categoria", "Situação", "Ações"]} count={posts.length} empty="Nenhuma publicação ainda.">{posts.map((post) => <tr key={post.id}><td><input type="checkbox" aria-label={`Selecionar ${post.title}`} checked={selectedPostIds.has(post.id)} onChange={() => togglePostSelection(post.id)} /></td><td><strong>{post.title}</strong><small>/midias/{post.slug}</small></td><td>{post.category}</td><td><span className={`badge ${post.published ? "aprovado" : "pendente"}`}>{post.published ? "Publicada" : "Rascunho"}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${post.title}`} onClick={() => { setEditingPost(post.id); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt, content: post.content, category: post.category, cover_url: post.cover_url || "", youtube_url: post.youtube_url || "", tiktok_url: post.tiktok_url || "", published: post.published }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${post.title}`} onClick={() => removePost(post.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          </section>
           <MediaGalleryManager posts={posts} />
         </div>}
 
         {section === "calendario" && canCalendar && <div>
-          <AdminTitle title="Calendário" />
-          <form className="admin-form" onSubmit={saveActivity}>
-            <div className="form-grid">
-              <div className="field"><label>Atividade</label><input value={activityForm.title} onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })} required /></div>
-              <div className="field"><label>Início</label><input type="datetime-local" value={activityForm.starts_at} onChange={(event) => setActivityForm({ ...activityForm, starts_at: event.target.value })} required /></div>
-              <div className="field"><label>Término</label><input type="datetime-local" value={activityForm.ends_at} onChange={(event) => setActivityForm({ ...activityForm, ends_at: event.target.value })} /></div>
-              <div className="field"><label>Local</label><input value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required /></div>
-              <div className="field"><label>Tipo</label><input value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required /></div>
-              <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => setActivityForm({ ...activityForm, status: value as ActivityStatus })} /></div>
-              <div className="field field-full"><label>Descrição</label><textarea value={activityForm.description} onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })} /></div>
-              <label className="check-field"><input type="checkbox" checked={activityForm.attendance_open} onChange={(event) => setActivityForm({ ...activityForm, attendance_open: event.target.checked })} /> Permitir confirmação de presença</label>
+          <AdminTitle eyebrow="Conteúdo" title="Calendário" description="Treinos, eventos e encontros que aparecem no site e na lista de presença." />
+          <section className="admin-panel">
+            <div className="admin-panel-head"><h3>{editingActivity ? "Editar atividade" : "Nova atividade"}</h3></div>
+            <div className="admin-panel-body">
+              <form className="admin-form" onSubmit={saveActivity}>
+                <section className="form-section">
+                  <FormSectionHead title="Atividade" hint="Nome, tipo e situação atual." />
+                  <div className="form-section-body is-two">
+                    <div className="field is-full"><label htmlFor="activity-title">Nome</label><input id="activity-title" value={activityForm.title} onChange={(event) => setActivityForm({ ...activityForm, title: event.target.value })} required /></div>
+                    <div className="field"><label htmlFor="activity-type">Tipo</label><input id="activity-type" value={activityForm.type} placeholder="Treino, encontro, evento…" onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })} required /></div>
+                    <div className="field"><label htmlFor="activity-status">Situação</label><Select id="activity-status" value={activityForm.status} options={[{ value: "confirmado", label: "Confirmado" }, { value: "a_definir", label: "A definir" }, { value: "adiado", label: "Adiado" }, { value: "cancelado", label: "Cancelado" }, { value: "finalizado", label: "Finalizado" }]} onChange={(value) => setActivityForm({ ...activityForm, status: value as ActivityStatus })} /></div>
+                  </div>
+                </section>
+                <section className="form-section">
+                  <FormSectionHead title="Quando e onde" hint="Data, horário e local do encontro." />
+                  <div className="form-section-body is-two">
+                    <div className="field"><label htmlFor="activity-start">Início</label><input id="activity-start" type="datetime-local" value={activityForm.starts_at} onChange={(event) => setActivityForm({ ...activityForm, starts_at: event.target.value })} required /></div>
+                    <div className="field"><label htmlFor="activity-end">Término<span className="opt">opcional</span></label><input id="activity-end" type="datetime-local" value={activityForm.ends_at} onChange={(event) => setActivityForm({ ...activityForm, ends_at: event.target.value })} /></div>
+                    <div className="field is-full"><label htmlFor="activity-location">Local</label><input id="activity-location" value={activityForm.location} onChange={(event) => setActivityForm({ ...activityForm, location: event.target.value })} required /></div>
+                  </div>
+                </section>
+                <section className="form-section">
+                  <FormSectionHead title="Detalhes" hint="Informações extras e lista de presença." />
+                  <div className="form-section-body">
+                    <div className="field"><label htmlFor="activity-description">Descrição<span className="opt">opcional</span></label><textarea id="activity-description" className="is-short" value={activityForm.description} onChange={(event) => setActivityForm({ ...activityForm, description: event.target.value })} /></div>
+                    <label className="switch-field"><span><strong>Permitir confirmação de presença</strong></span><input type="checkbox" checked={activityForm.attendance_open} onChange={(event) => setActivityForm({ ...activityForm, attendance_open: event.target.checked })} /></label>
+                  </div>
+                </section>
+                <div className="form-actions"><button className="button button-primary" type="submit">{editingActivity ? "Salvar alterações" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
+              </form>
             </div>
-            <div className="form-actions"><button className="button button-primary" type="submit">{editingActivity ? "Atualizar" : "Adicionar ao calendário"}</button>{editingActivity && <button className="button button-ghost" type="button" onClick={() => { setEditingActivity(null); setActivityForm(emptyActivity); }}>Cancelar</button>}</div>
-          </form>
-          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]}>{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); }}><Edit3 /></button><button title="Excluir" onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
+          </section>
+          <AdminTable headers={["Atividade", "Data", "Lista", "Situação", "Ações"]} count={activities.length} empty="Nenhuma atividade cadastrada.">{activities.map((item) => <tr key={item.id}><td><strong>{item.title}</strong><small>{item.location}</small></td><td>{new Date(item.starts_at).toLocaleString("pt-BR")}</td><td>{item.attendance_open ? "Aberta" : "Fechada"}</td><td><span className={`badge ${item.status}`}>{statusLabel(item.status)}</span></td><td className="row-actions"><button title="Editar" aria-label={`Editar ${item.title}`} onClick={() => { setEditingActivity(item.id); setActivityForm({ title: item.title, starts_at: toDateTimeInput(item.starts_at), ends_at: toDateTimeInput(item.ends_at), location: item.location, type: item.type, status: item.status, description: item.description || "", attendance_open: item.attendance_open ?? true }); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Edit3 /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${item.title}`} onClick={() => removeActivity(item.id)}><Trash2 /></button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "membros" && canMembers && <div>
-          <AdminTitle title="Membros" />
-          {members.filter((member) => member.access_request_id).map((member) => <article className="admin-form" key={member.access_request_id}>
-            <h3>Conferência de {member.nickname} <small>({member.full_name})</small></h3>
-            <p>Atual: {rankLabels[member.rank]} · {trackSummary(member)}</p>
-            <p>Informado: {member.requested_rank && rankLabels[member.requested_rank]} · {trackSummary(member, true)}</p>
-            {member.id === currentUserId
-              ? <p className="form-help">Sua própria solicitação precisa ser analisada por outro administrador.</p>
-              : <div className="form-actions">
-                <button className="button button-primary" type="button" onClick={() => reviewAccessRequest(member, "approve")}>Aprovar dados</button>
-                <button className="button button-ghost" type="button" onClick={() => reviewAccessRequest(member, "reject")}>Recusar dados</button>
-              </div>}
-          </article>)}
-          {memberForm && <form className="admin-form access-form" onSubmit={saveMemberAccess}>
-            <h3>Acessos de {memberForm.nickname} <small>({memberForm.full_name})</small></h3>
-            <div className="form-grid">
-              <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
-              {principal ? <>
-                <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-                {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label><Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel })} /></div>)}
-              </> : <>
-                <div className="field"><label>Patente</label><p className="form-help">{rankLabels[memberForm.rank]}</p></div>
-                {graduationTracks.map((track) => <div className="field" key={track.value}><label>Graduação em {track.label}</label><p className="form-help">{graduationLabels[memberForm[track.field]]}</p></div>)}
-              </>}
+          <AdminTitle eyebrow="Pessoas" title="Membros" description="Aprove cadastros e pedidos de alteração de dados, ou consulte e gerencie todos os membros." />
+          <div className="admin-subtabs" role="tablist" aria-label="Seções de membros">
+            <button type="button" role="tab" aria-selected={memberTab === "pendentes"} className={memberTab === "pendentes" ? "active" : ""} onClick={() => setMemberTab("pendentes")}>Aguardando ação <CountBadge count={membersNeedingAction} label="membros aguardando ação" /></button>
+            <button type="button" role="tab" aria-selected={memberTab === "todos"} className={memberTab === "todos" ? "active" : ""} onClick={() => setMemberTab("todos")}>Todos os membros</button>
+          </div>
+
+          {memberTab === "pendentes" && <div role="tabpanel">
+            {dashboardQuery.isPending && !members.length
+              ? <p className="admin-hint" role="status">Carregando…</p>
+              : <MemberQueue
+                members={membersQueue}
+                currentUserId={currentUserId}
+                principal={principal}
+                busyId={busyMemberId}
+                canManage={canManageMember}
+                canEditAccess={canEditAccess}
+                onSetStatus={(member, status) => void decideRegistration(member, status)}
+                onReviewRequest={(member, action, adjustments) => void reviewAccessRequest(member, action, adjustments)}
+                onEditAccess={editMember}
+              />}
+          </div>}
+
+          {memberTab === "todos" && <div role="tabpanel">
+            <div className="admin-toolbar">
+              <div className="admin-toolbar-filters">
+                <label className="admin-search"><span className="sr-only">Buscar membro</span><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar por apelido, nome ou e-mail" /></label>
+                <Select id="member-status-filter" value={memberStatus} options={memberStatusOptions} onChange={(value) => setMemberStatus(value as MemberStatusFilter)} />
+              </div>
+              <div className="admin-toolbar-meta">
+                <span>{filteredMembers.length} {filteredMembers.length === 1 ? "membro" : "membros"}</span>
+                {!principal && <span>Funções de administrador são gerenciadas pelo ADM Principal.</span>}
+              </div>
             </div>
-            {principal && <fieldset className="role-fieldset"><legend>Permissões administrativas</legend>{adminRoleOptions.map((item) => <label className="check-field" key={item.value}><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /> {item.label}</label>)}<label className="check-field"><input type="checkbox" disabled={!logViewersQuery.data} checked={logViewersQuery.data?.has(memberForm.id) ?? false} onChange={(event) => void toggleLogViewer(memberForm.id, event.target.checked)} /> Ver logs</label></fieldset>}
-            <div className="form-actions"><button className="button button-primary" type="submit">Salvar acessos</button><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button></div>
-          </form>}
-          {!principal && <p className="admin-hint">Funções de administrador são gerenciadas pelo ADM Principal.</p>}
-          <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]}>{members.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}{member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button title="Aprovar" onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button title="Suspender" onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button title="Excluir" onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
+            <AdminTable headers={["Membro", "Acesso interno", "Patente e graduação", "Situação", "Ações"]} count={filteredMembers.length} empty="Nenhum membro encontrado para esses filtros.">{filteredMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong><BirthdayBadge birthDate={member.birth_date} /><small>{member.full_name} • {member.email}</small></td><td><span className="badge graduation">{memberKindLabels[member.member_kind]}</span><small>{principal ? ((memberRoles[member.id] || []).map((role) => adminRoleOptions.find((option) => option.value === role)?.label ?? role).join(", ") || "Sem função de administrador") : ""}</small></td><td><div className="member-rank-insignias"><RankInsignia rank={member.rank} />{highestGraduation(member) !== "sem_graduacao" ? <GraduationInsignias profile={member} /> : <small>Sem graduação</small>}{member.graduation_review_needed && <span className="badge pendente" title="Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.">Graduação a revisar</span>}</div></td><td><span className={`badge ${member.status}`}>{statusLabel(member.status)}</span></td><td className="row-actions">{canEditAccess(member) && <button title="Editar acessos" aria-label={`Editar acessos de ${member.nickname}`} onClick={() => editMember(member)}><Edit3 /></button>}{canManageMember(member) && <>{member.status !== "aprovado" && <button className="is-ok" title="Aprovar" aria-label={`Aprovar ${member.nickname}`} onClick={() => updateMemberStatus(member.id, "aprovado")}><ShieldCheck /></button>}<button className="is-danger" title="Suspender" aria-label={`Suspender ${member.nickname}`} onClick={() => updateMemberStatus(member.id, "suspenso")}><XCircle /></button><button className="is-danger" title="Excluir" aria-label={`Excluir ${member.nickname}`} onClick={() => deleteMember(member.id)}><Trash2 /></button></>}{!canEditAccess(member) && !canManageMember(member) && <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>}</td></tr>)}</AdminTable>
+          </div>}
+
+          {memberForm && <AdminDialog
+            title={`Acessos de ${memberForm.nickname}`}
+            description={memberForm.full_name}
+            onClose={() => setMemberForm(null)}
+            onSubmit={saveMemberAccess}
+            footer={<><button className="button button-ghost" type="button" onClick={() => setMemberForm(null)}>Cancelar</button><button className="button button-primary" type="submit">Salvar acessos</button></>}
+          >
+            <section className="form-section">
+              <FormSectionHead title="Vínculo" hint="Define o que a pessoa vê na área do membro." />
+              <div className="form-section-body">
+                <div className="field"><label htmlFor="member-kind">Nível interno</label><Select id="member-kind" value={memberForm.member_kind} options={memberKindOptions} onChange={(value) => setMemberForm({ ...memberForm, member_kind: value as MemberKind })} /></div>
+              </div>
+            </section>
+            <section className="form-section">
+              <FormSectionHead title="Patente e graduação" hint={principal ? "Alterações valem na hora." : "Somente o ADM Principal altera estes dados."} />
+              <div className="form-section-body">
+                {principal ? <>
+                  <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
+                  {graduationTracks.map((track) => <div className="field" key={track.value}><label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label><Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel })} /></div>)}
+                </> : <dl className="readonly-list">
+                  <div><dt>Patente</dt><dd>{rankLabels[memberForm.rank]}</dd></div>
+                  {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}</dd></div>)}
+                </dl>}
+              </div>
+            </section>
+            {principal && <section className="form-section">
+              <FormSectionHead title="Permissões administrativas" hint="O que esta pessoa pode gerenciar no painel." />
+              <div className="form-section-body switch-list" role="group" aria-label="Permissões administrativas">
+                {adminRoleOptions.map((item) => <label className="switch-field" key={item.value}><span><strong>{item.label}</strong></span><input type="checkbox" checked={(memberRoles[memberForm.id] || []).includes(item.value)} onChange={(event) => toggleAdminRole(memberForm.id, item.value, event.target.checked)} /></label>)}
+                <label className="switch-field"><span><strong>Ver logs</strong></span><input type="checkbox" disabled={!logViewersQuery.data} checked={logViewersQuery.data?.has(memberForm.id) ?? false} onChange={(event) => void toggleLogViewer(memberForm.id, event.target.checked)} /></label>
+              </div>
+            </section>}
+          </AdminDialog>}
         </div>}
 
         {section === "convites" && canMembers && <div>
-          <AdminTitle title="Convites" action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>} />
-          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]}>{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Copiar link" aria-label="Copiar link do convite" onClick={() => void copyInviteLink(invite.code)}><Copy /></button><button title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"} disabled={Boolean(inviteBusy) || !invite.active} onClick={() => disableInvite(invite.id)}>{inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle />}</button></td></tr>)}</AdminTable>
+          <AdminTitle eyebrow="Pessoas" title="Convites" description="Links de cadastro de uso único, válidos por 15 dias." action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>} />
+          <AdminTable headers={["Código", "Validade", "Uso", "Situação", "Ações"]} count={invites.length} empty="Nenhum convite gerado ainda.">{invites.map((invite) => <tr key={invite.id}><td><strong>{invite.code}</strong></td><td>{new Date(invite.expires_at).toLocaleDateString("pt-BR")}</td><td>{invite.current_uses}/{invite.max_uses}</td><td><span className={`badge ${invite.active ? "aprovado" : "suspenso"}`}>{invite.active ? "Ativo" : "Inativo"}</span></td><td className="row-actions"><button title="Copiar link" aria-label="Copiar link do convite" onClick={() => void copyInviteLink(invite.code)}><Copy /></button><button className="is-danger" title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"} disabled={Boolean(inviteBusy) || !invite.active} onClick={() => disableInvite(invite.id)}>{inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle />}</button></td></tr>)}</AdminTable>
         </div>}
 
         {section === "documentos" && canMembers && <DocumentManager />}
@@ -568,17 +765,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
 }
 
 function AdminNav({ icon, label, active, onClick, badge = 0, badgeLabel = "pendências" }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; badge?: number; badgeLabel?: string }) {
-  return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span><CountBadge count={badge} label={badgeLabel} /></button>;
+  return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={onClick}>{icon}<span>{label}</span><CountBadge count={badge} label={badgeLabel} /></button>;
 }
 
-function AdminTitle({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
-  return <div className="admin-title"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{action}</div>;
+function Metric({ icon, label, value, onClick, highlight = false }: { icon: React.ReactNode; label: string; value: number; onClick: () => void; highlight?: boolean }) {
+  return <button type="button" className={"metric-card" + (highlight && value > 0 ? " is-highlight" : "")} onClick={onClick}><span className="metric-icon" aria-hidden="true">{icon}</span><span className="metric-text"><strong>{value}</strong><span>{label}</span></span></button>;
 }
 
-function Metric({ label, value, onClick, highlight = false }: { label: string; value: number; onClick: () => void; highlight?: boolean }) {
-  return <button type="button" className={"metric-card" + (highlight && value > 0 ? " is-highlight" : "")} onClick={onClick}><strong>{value}</strong><span>{label}</span></button>;
-}
-
-function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
-  return <div className="table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{children}</tbody></table></div>;
+function AdminTable({ headers, count, empty, children }: { headers: string[]; count: number; empty: string; children: React.ReactNode }) {
+  return <div className="table-wrap">
+    {count === 0
+      ? <p className="table-empty">{empty}</p>
+      : <table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{children}</tbody></table>}
+  </div>;
 }

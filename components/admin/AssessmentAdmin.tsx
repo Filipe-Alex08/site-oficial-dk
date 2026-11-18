@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import AdminTitle from "@/components/admin/AdminTitle";
 import {
   assessmentAssignmentStatusLabels,
   assessmentDifficultyOptions,
@@ -428,10 +429,12 @@ export default function AssessmentAdmin() {
 
   return <div className="assessment-admin-module">
     <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
-    <div className="assessment-module-heading">
-      <div><h2>Avaliações</h2></div>
-      <button className="button button-ghost" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /> Atualizar</button>
-    </div>
+    <AdminTitle
+      eyebrow="Gestão"
+      title="Avaliações"
+      description="Questões, provas, indicações aos membros e correção das respostas abertas."
+      action={<button className="button button-ghost" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /> Atualizar</button>}
+    />
     {error && <div className="assessment-admin-error"><X /><span>{error}</span><button type="button" onClick={() => setError("")}>Fechar</button></div>}
 
     <nav className="assessment-admin-tabs" aria-label="Seções das avaliações">

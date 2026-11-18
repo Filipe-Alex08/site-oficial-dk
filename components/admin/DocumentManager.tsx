@@ -5,6 +5,8 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { graduationLabels, graduationOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
+import AdminTitle from "@/components/admin/AdminTitle";
+import FormSectionHead from "@/components/admin/FormSectionHead";
 import Select from "@/components/ui/Select";
 import type { DocumentAccessRule, DocumentTrack, InternalDocument, DkRank, GraduationLevel } from "@/lib/types";
 
@@ -110,16 +112,27 @@ export default function DocumentManager() {
   }
   return <div>
     <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
-    <div className="admin-title"><div><h2>Documentos</h2></div></div>
+    <AdminTitle eyebrow="Conteúdo" title="Documentos" description="PDFs internos, com acesso liberado por patente ou graduação." />
+    <section className="admin-panel">
+    <div className="admin-panel-head"><div><h3>Enviar documento</h3></div></div>
+    <div className="admin-panel-body">
     <form className="admin-form" onSubmit={upload} ref={formRef}>
-      <div className="form-grid">
-        <div className="field"><label htmlFor="document-title">Título</label><input id="document-title" name="title" placeholder="Ex.: Manual de combate" required /></div>
-        <div className="field"><label htmlFor="document-file">Arquivo PDF</label><label className="document-upload-zone" htmlFor="document-file"><FileUp size={23} /><span><strong>{fileName || "Selecione um arquivo PDF"}</strong><small>{fileName ? "Arquivo pronto para envio" : "PDF • máximo de 20 MB"}</small></span><span className="document-upload-action">Escolher arquivo</span><input id="document-file" name="file" type="file" accept="application/pdf,.pdf" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} required /></label></div>
-        <div className="field field-full"><label>Descrição</label><textarea name="description" /></div>
-        <div className="field field-full">{renderRules()}</div>
-      </div>
-      <button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button>
+      <section className="form-section">
+        <FormSectionHead title="Arquivo" hint="Título e PDF que os membros vão abrir." />
+        <div className="form-section-body">
+          <div className="field"><label htmlFor="document-title">Título</label><input id="document-title" name="title" placeholder="Ex.: Manual de combate" required /></div>
+          <div className="field"><span className="field-label" id="document-file-label">Arquivo PDF</span><label className="document-upload-zone" htmlFor="document-file"><FileUp size={23} /><span><strong>{fileName || "Selecione um arquivo PDF"}</strong><small>{fileName ? "Arquivo pronto para envio" : "PDF • máximo de 20 MB"}</small></span><span className="document-upload-action">Escolher arquivo</span><input id="document-file" name="file" type="file" accept="application/pdf,.pdf" aria-labelledby="document-file-label" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} required /></label></div>
+          <div className="field"><label htmlFor="document-description">Descrição<span className="opt">opcional</span></label><textarea id="document-description" className="is-short" name="description" /></div>
+        </div>
+      </section>
+      <section className="form-section">
+        <FormSectionHead title="Acesso" hint="Sem requisitos, qualquer membro aprovado pode abrir o documento." />
+        <div className="form-section-body">{renderRules()}</div>
+      </section>
+      <div className="form-actions"><button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button></div>
     </form>
+    </div>
+    </section>
     {documentsQuery.isPending && <p className="empty-state" role="status">Carregando documentos…</p>}
     {documentsQuery.isError && <p className="empty-state" role="alert">Falha ao carregar documentos. <button className="text-button" onClick={() => void documentsQuery.refetch()}>Tentar novamente</button></p>}
     {documents.length ? <div className="document-admin-list">{documents.map((document) => <article key={document.id}>
@@ -127,7 +140,7 @@ export default function DocumentManager() {
       {editing === document.id && <div className="document-edit-rules">{renderRules()}<div className="document-rule-actions"><button className="button button-primary" type="button" disabled={saveRulesMutation.isPending} onClick={() => saveRules(document.id)}>{saveRulesMutation.isPending ? "Salvando…" : "Salvar regras"}</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div></div>}</div>
       <a href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" title="Abrir"><Download /></a>
       {editing !== document.id && <button className="document-edit-access" type="button" onClick={() => { const savedRules = document.access_rules ?? []; const normalized = savedRules.map((rule, index) => index === 0 ? rule : { ...rule, join: rule.join ?? document.access_logic ?? "or" }); setRules(normalized); setEditing(document.id); }} title="Editar acesso" aria-label={`Editar acesso de ${document.title}`}><Pencil size={17} /></button>}
-      <button type="button" disabled={removeMutation.isPending} onClick={() => remove(document.id)} title="Excluir">{removeMutation.isPending && removeMutation.variables === document.id ? <span className="inline-spinner" /> : <Trash2 />}</button>
+      <button type="button" className="is-danger" disabled={removeMutation.isPending} onClick={() => remove(document.id)} title="Excluir" aria-label={`Excluir ${document.title}`}>{removeMutation.isPending && removeMutation.variables === document.id ? <span className="inline-spinner" /> : <Trash2 />}</button>
     </article>)}</div> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento enviado</h3></div> : null}
   </div>;
 }

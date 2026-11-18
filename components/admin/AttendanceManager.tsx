@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, RefreshCw, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleHelp, Edit3, RefreshCw, Save, Search, XCircle } from "lucide-react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import Select from "@/components/ui/Select";
 import type { Activity, AttendanceResponse } from "@/lib/types";
 
@@ -62,12 +63,15 @@ export default function AttendanceManager() {
   const negative = activities.filter((activity) => entries.get(activity.id)?.response === "nao_vai").length;
 
   return <section>
-    <div className="admin-title"><div><h2>Presenças</h2></div></div>
-    {!memberId ? <div className="admin-form">
-      <div className="field"><label htmlFor="attendance-search">Buscar membro</label><input id="attendance-search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Apelido" /></div>
-      {membersQuery.isPending && <p role="status">Carregando membros…</p>}
-      {membersQuery.isError && <p role="alert">{membersQuery.error.message} <button className="text-button" onClick={() => void membersQuery.refetch()}>Tentar novamente</button></p>}
-      {!membersQuery.isPending && !membersQuery.isError && !members.length && <p>Nenhum membro encontrado.</p>}
+    <AdminTitle eyebrow="Pessoas" title="Presenças" description="Consulte e corrija as respostas de presença de cada membro." />
+    {!memberId ? <section className="admin-panel">
+      <div className="admin-panel-head">
+        <div><h3>Membros</h3><p>Escolha um membro para ver o histórico de respostas.</p></div>
+        <label className="admin-search" htmlFor="attendance-search"><span className="sr-only">Buscar membro</span><Search aria-hidden="true" /><input id="attendance-search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por apelido" /></label>
+      </div>
+      {membersQuery.isPending && <p className="table-empty" role="status">Carregando membros…</p>}
+      {membersQuery.isError && <p className="table-empty" role="alert">{membersQuery.error.message} <button className="text-button" onClick={() => void membersQuery.refetch()}>Tentar novamente</button></p>}
+      {!membersQuery.isPending && !membersQuery.isError && !members.length && <p className="table-empty">Nenhum membro encontrado.</p>}
       {members.length > 0 && <>
                 <div className="table-wrap attendance-member-list"><table><thead><tr><th>Membro</th><th>Situação</th><th>Presenças</th><th>Ausências</th><th>Ação</th></tr></thead><tbody>
           {pageMembers.map((member) => <tr key={member.id}><td><strong>{member.nickname}</strong></td><td><span className={`badge ${member.status}`}>{member.status === "aprovado" ? "Aprovado" : member.status === "pendente" ? "Pendente" : member.status === "suspenso" ? "Suspenso" : member.status}</span></td><td>{member.presences}</td><td>{member.absences}</td><td className="row-actions"><button type="button" title="Corrigir presença" aria-label={`Corrigir presença de ${member.nickname}`} onClick={() => { setMemberId(member.id); setEditing(null); setNotice(""); }}><Edit3 size={16} aria-hidden="true" /></button></td></tr>)}
@@ -77,15 +81,15 @@ export default function AttendanceManager() {
           <div><button className="button button-ghost" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</button><button className="button button-ghost" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>Próxima</button></div>
         </nav>
       </>}
-    </div> : <div className="admin-title attendance-selected-member"><div><h3>{selectedMember?.nickname}</h3></div><button className="button button-ghost" disabled={mutation.isPending} onClick={() => { setMemberId(""); setEditing(null); setNotice(""); }}>Voltar aos membros</button></div>}
+    </section> : <div className="attendance-selected-member admin-toolbar"><div><span className="admin-eyebrow">Histórico de presença</span><h3>{selectedMember?.nickname}</h3></div><button className="button button-ghost" disabled={mutation.isPending} onClick={() => { setMemberId(""); setEditing(null); setNotice(""); }}><ArrowLeft size={17} /> Voltar aos membros</button></div>}
     {notice && <p className={`form-message ${mutation.isError ? "error" : "success"}`} role="status">{notice}</p>}
     {memberId && history.isPending && <p role="status">Carregando histórico…</p>}
     {memberId && history.isError && <p role="alert">{history.error.message} <button className="text-button" onClick={() => void history.refetch()}>Tentar novamente</button></p>}
     {memberId && history.data && <>
       <div className="metric-grid attendance-metrics">
-        <article className="metric-card"><strong>{positive}</strong><span>Vou</span></article>
-        <article className="metric-card"><strong>{negative}</strong><span>Não vou</span></article>
-        <article className="metric-card"><strong>{activities.length - positive - negative}</strong><span>Atividades sem resposta</span></article>
+        <article className="metric-card"><span className="metric-icon" aria-hidden="true"><CheckCircle2 /></span><span className="metric-text"><strong>{positive}</strong><span>Vou</span></span></article>
+        <article className="metric-card"><span className="metric-icon" aria-hidden="true"><XCircle /></span><span className="metric-text"><strong>{negative}</strong><span>Não vou</span></span></article>
+        <article className="metric-card"><span className="metric-icon" aria-hidden="true"><CircleHelp /></span><span className="metric-text"><strong>{activities.length - positive - negative}</strong><span>Atividades sem resposta</span></span></article>
       </div>
       <p className="attendance-admin-help">As respostas indicam intenção de participar e não comprovam comparecimento. Convidados não entram nos totais.</p>
       <button className="button button-ghost" disabled={history.isFetching || mutation.isPending} onClick={() => void history.refetch()}><RefreshCw size={17} /> {history.isFetching ? "Atualizando…" : "Atualizar histórico"}</button>
@@ -95,7 +99,7 @@ export default function AttendanceManager() {
           <div className="form-grid">
             <div className="field"><label htmlFor="attendance-response">Resposta</label><Select id="attendance-response" value={editing.response ?? "none"} options={[{ value: "vai", label: "Vou" }, { value: "nao_vai", label: "Não vou" }, { value: "none", label: "Sem resposta" }]} onChange={(value) => setEditing({ ...editing, response: value === "none" ? null : value as AttendanceResponse })} /></div>
             <div className="field"><label htmlFor="attendance-guests">Convidados</label><input id="attendance-guests" type="number" min={0} max={30} required disabled={editing.response !== "vai"} value={editing.guest_count} onChange={(event) => setEditing({ ...editing, guest_count: Number(event.target.value) })} /></div>
-            <div className="field field-full"><label htmlFor="attendance-note">Observação pública</label><input id="attendance-note" maxLength={180} disabled={editing.response === null} value={editing.note} onChange={(event) => setEditing({ ...editing, note: event.target.value })} /></div>
+            <div className="field field-full"><label htmlFor="attendance-note">Observação pública<span className="opt">opcional</span></label><input id="attendance-note" maxLength={180} disabled={editing.response === null} value={editing.note} onChange={(event) => setEditing({ ...editing, note: event.target.value })} /></div>
           </div>
           <div className="form-actions"><button className="button button-primary" type="submit"><Save size={17} /> {mutation.isPending ? "Salvando…" : "Salvar correção"}</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div>
         </fieldset>

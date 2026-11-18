@@ -1,0 +1,172 @@
+"use client";
+
+import { ArrowRight, Check, CheckCircle2, Edit3, SlidersHorizontal, X } from "lucide-react";
+import { useState } from "react";
+import BirthdayBadge from "@/components/member/BirthdayBadge";
+import Select from "@/components/ui/Select";
+import { graduationLabels, graduationOptions, graduationTracks, rankGroups, rankLabels } from "@/lib/member-access";
+import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
+
+export type RequestAdjustments = Partial<{
+  rank: DkRank;
+  graduation_cavalaria: GraduationLevel;
+  graduation_arquearia: GraduationLevel;
+}>;
+
+/** Valores que o pedido deixaria em vigor; o que o pedido não trouxe continua como está. */
+type RequestValues = { rank: DkRank; graduation_cavalaria: GraduationLevel; graduation_arquearia: GraduationLevel };
+type Draft = RequestValues & { requestId: string };
+
+type Props = {
+  members: MemberProfile[];
+  currentUserId: string;
+  principal: boolean;
+  busyId: string | null;
+  /** O painel pode mudar a situação deste membro? (nunca a própria conta nem outro ADM Principal) */
+  canManage: (member: MemberProfile) => boolean;
+  canEditAccess: (member: MemberProfile) => boolean;
+  onSetStatus: (member: MemberProfile, status: "aprovado" | "recusado") => void;
+  onReviewRequest: (member: MemberProfile, action: "approve" | "reject", adjustments?: RequestAdjustments) => void;
+  onEditAccess: (member: MemberProfile) => void;
+};
+
+const rankOptions = rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })));
+const levelOptions = graduationOptions.map((item) => ({ value: item.value, label: item.label }));
+
+function requestedValues(member: MemberProfile): RequestValues {
+  return {
+    rank: member.requested_rank ?? member.rank,
+    graduation_cavalaria: member.requested_graduation_cavalaria ?? member.graduation_cavalaria ?? "sem_graduacao",
+    graduation_arquearia: member.requested_graduation_arquearia ?? member.graduation_arquearia ?? "sem_graduacao",
+  };
+}
+
+function adjustmentsOf(requested: RequestValues, draft: RequestValues): RequestAdjustments {
+  const adjustments: RequestAdjustments = {};
+  if (draft.rank !== requested.rank) adjustments.rank = draft.rank;
+  for (const track of graduationTracks) {
+    if (draft[track.field] !== requested[track.field]) adjustments[track.field] = draft[track.field];
+  }
+  return adjustments;
+}
+
+export default function MemberQueue({ members, currentUserId, principal, busyId, canManage, canEditAccess, onSetStatus, onReviewRequest, onEditAccess }: Props) {
+  // Um rascunho vale só para o pedido em que foi criado: se o membro pedir outra coisa, ele é descartado.
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+
+  if (!members.length) {
+    return <div className="empty-state"><CheckCircle2 /><h3>Nenhuma pendência</h3><p>Novos cadastros e pedidos de alteração de dados aparecem aqui.</p></div>;
+  }
+
+  function startAdjust(member: MemberProfile) {
+    if (!member.access_request_id) return;
+    setDrafts((current) => ({ ...current, [member.id]: { ...requestedValues(member), requestId: member.access_request_id as string } }));
+  }
+  function updateDraft(memberId: string, patch: Partial<RequestValues>) {
+    setDrafts((current) => current[memberId] ? { ...current, [memberId]: { ...current[memberId], ...patch } } : current);
+  }
+  function stopAdjust(memberId: string) {
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[memberId];
+      return next;
+    });
+  }
+
+  return <div className="queue-list">
+    {members.map((member) => {
+      const isSelf = member.id === currentUserId;
+      const newRegistration = member.status === "pendente";
+      const dataRequest = Boolean(member.access_request_id);
+      const graduationReview = principal && Boolean(member.graduation_review_needed);
+      const busy = busyId === member.id;
+      const blocked = isSelf || (newRegistration && !canManage(member));
+
+      const requested = requestedValues(member);
+      const stored = drafts[member.id];
+      const draft = stored && stored.requestId === member.access_request_id ? stored : null;
+      const shown: RequestValues = draft ?? requested;
+      const adjustments = draft ? adjustmentsOf(requested, draft) : {};
+      const adjusted = Object.keys(adjustments).length > 0;
+
+      const rows = [
+        { key: "rank" as const, label: "Patente", from: rankLabels[member.rank], to: rankLabels[shown.rank], asked: rankLabels[requested.rank] },
+        ...graduationTracks.map((track) => ({
+          key: track.field,
+          label: `Graduação em ${track.label}`,
+          from: graduationLabels[member[track.field] ?? "sem_graduacao"],
+          to: graduationLabels[shown[track.field]],
+          asked: graduationLabels[requested[track.field]],
+        })),
+      ];
+
+      return <article className={`queue-card${blocked ? " is-blocked" : ""}`} key={member.id}>
+        <header className="queue-card-head">
+          <div>
+            <h3>{member.nickname} <BirthdayBadge birthDate={member.birth_date} /></h3>
+            <p>{member.full_name}{member.email ? ` · ${member.email}` : ""}</p>
+          </div>
+          <div className="queue-tags">
+            {newRegistration && <span className="badge pendente">Novo cadastro</span>}
+            {dataRequest && <span className="badge pendente">Conferência de dados</span>}
+            {graduationReview && <span className="badge pendente">Graduação a revisar</span>}
+          </div>
+        </header>
+
+        {dataRequest && <div className="queue-diff">
+          <table>
+            <thead><tr><th>Item</th><th>Atual</th><th aria-hidden="true" /><th>{draft ? "Aprovar como" : "Informado"}</th></tr></thead>
+            <tbody>{rows.map((row) => {
+              const changed = row.from !== row.to;
+              const rowAdjusted = Boolean(draft) && row.to !== row.asked;
+              const selectId = `adjust-${member.id}-${row.key}`;
+              return <tr key={row.key} className={`${changed ? "is-changed" : ""}${rowAdjusted ? " is-adjusted" : ""}`}>
+                <td>{row.label}</td>
+                <td>{row.from}</td>
+                <td className="queue-arrow">{changed && <ArrowRight aria-label="muda para" />}</td>
+                <td>{draft
+                  ? <>
+                    <Select
+                      id={selectId}
+                      value={draft[row.key]}
+                      options={row.key === "rank" ? rankOptions : levelOptions}
+                      onChange={(value) => updateDraft(member.id, { [row.key]: value } as Partial<RequestValues>)}
+                      disabled={busy}
+                    />
+                    {rowAdjusted && <small className="queue-asked">Pedido do membro: {row.asked}</small>}
+                  </>
+                  : row.to}</td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>}
+
+        {graduationReview && !dataRequest && <p className="queue-note">Tinha graduação, mas a ordem não dizia a trilha. Defina o nível em cada trilha.</p>}
+
+        <div className="queue-actions">
+          {isSelf && <p className="form-help">Sua própria solicitação precisa ser analisada por outro administrador.</p>}
+          {!isSelf && newRegistration && !canManage(member) && <p className="form-help">Esta conta só pode ser analisada pelo ADM Principal.</p>}
+
+          {graduationReview && canEditAccess(member) && <button className="button button-ghost" type="button" disabled={busy} onClick={() => onEditAccess(member)}><Edit3 size={17} /> Definir graduação</button>}
+
+          {dataRequest && !isSelf && (draft
+            ? <>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => stopAdjust(member.id)}>Cancelar ajuste</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X size={17} /> Recusar dados</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve", adjusted ? adjustments : undefined)}><Check size={17} /> {adjusted ? "Aprovar com ajustes" : "Aprovar dados"}</button>
+            </>
+            : <>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => startAdjust(member)}><SlidersHorizontal size={17} /> Ajustar</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X size={17} /> Recusar dados</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve")}><Check size={17} /> Aprovar dados</button>
+            </>)}
+
+          {newRegistration && !isSelf && canManage(member) && <>
+            <button className="button button-danger" type="button" disabled={busy} onClick={() => onSetStatus(member, "recusado")}><X size={17} /> Recusar cadastro</button>
+            <button className="button button-primary" type="button" disabled={busy} onClick={() => onSetStatus(member, "aprovado")}><Check size={17} /> Aprovar cadastro</button>
+          </>}
+        </div>
+      </article>;
+    })}
+  </div>;
+}

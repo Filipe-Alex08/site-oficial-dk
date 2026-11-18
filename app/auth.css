@@ -48,9 +48,9 @@
 
 .profile-card {
   padding: 30px;
-  background: var(--panel);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), .06), var(--surface-1) 160px);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   text-align: center
 }
 
@@ -99,7 +99,10 @@
 
 .profile-card dt {
   color: var(--muted);
-  font-size: .84rem
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase
 }
 
 .profile-card dd {
@@ -116,15 +119,86 @@
 }
 
 .member-options .card {
-  min-height: 210px
+  min-height: 190px
 }
 
-.admin-access {
-  display: block
+/* Atalho para o painel administrativo: linha inteira, com realce na cor de destaque. */
+.member-options .admin-access {
+  grid-column: 1 / -1;
+  min-height: 0;
+  height: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 18px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), .09), var(--surface-1) 70%);
+  border-color: rgba(var(--accent-rgb), .32)
+}
+
+.admin-access .card-icon {
+  grid-row: 1 / span 2;
+  margin: 0
+}
+
+.admin-access h3 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0
+}
+
+.admin-access p {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 3px
+}
+
+.admin-access .card-cta {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  margin: 0;
+  padding: 0
 }
 
 .admin-access:hover {
-  border-color: var(--accent)
+  border-color: var(--accent-bright)
+}
+
+/* Chamada no rodapé dos atalhos */
+.card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 18px;
+  color: var(--text-muted);
+  font-size: .88rem;
+  font-weight: 650;
+  transition: color .15s
+}
+
+.card-cta svg {
+  width: 16px;
+  height: 16px;
+  transition: transform .15s
+}
+
+a.card:hover .card-cta {
+  color: var(--accent-bright)
+}
+
+a.card:hover .card-cta svg {
+  transform: translateX(3px)
+}
+
+@media(max-width:560px) {
+  .member-options .admin-access {
+    grid-template-columns: auto minmax(0, 1fr)
+  }
+  .admin-access .card-cta {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    padding-top: 14px
+  }
 }
 
 @media(max-width:800px) {

@@ -1637,3 +1637,64 @@
     border-top: 1px solid var(--line)
   }
 }
+
+/* Módulo administrativo: raios, abas e cartões alinhados ao admin.css; escopado para não afetar a prova do membro. */
+.assessment-admin-module .assessment-admin-tabs {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  scrollbar-width: none;
+}
+.assessment-admin-module .assessment-admin-tabs::-webkit-scrollbar { display: none; }
+.assessment-admin-module .assessment-admin-tabs button {
+  flex: 0 0 auto;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.assessment-admin-module .assessment-admin-tabs button:hover { background: rgba(255, 255, 255, 0.05); border-color: transparent; color: var(--text); }
+.assessment-admin-module .assessment-admin-tabs button.active { background: var(--surface-3); border-color: var(--border-strong); color: var(--text); }
+.assessment-admin-module .assessment-admin-tabs button small { border-radius: 999px; background: var(--surface-3); color: var(--text-muted); }
+.assessment-admin-module .assessment-admin-tabs button small.is-alert { background: var(--danger); color: #1a0b0b; }
+
+.assessment-admin-module .assessment-metric-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.assessment-admin-module .assessment-metric-grid article,
+.assessment-admin-module .assessment-builder-form,
+.assessment-admin-module .assessment-guidance-card,
+.assessment-admin-module .assessment-question-bank-list > article,
+.assessment-admin-module .assessment-template-grid article,
+.assessment-admin-module .assessment-review-list > article,
+.assessment-admin-module .assessment-permission-list article,
+.assessment-admin-module .assessment-inline-empty,
+.assessment-admin-module .assessment-admin-error {
+  border-radius: var(--r-lg);
+  border-color: var(--border);
+  background: var(--surface-1);
+}
+.assessment-admin-module .assessment-metric-grid article > span {
+  border-radius: var(--r-md);
+  border: 0;
+  background: rgba(var(--accent-rgb), 0.1);
+}
+.assessment-admin-module .assessment-metric-grid article svg { width: 21px; }
+.assessment-admin-module .assessment-checkbox-fieldset,
+.assessment-admin-module .assessment-options-editor,
+.assessment-admin-module .assessment-member-selector,
+.assessment-admin-module .assessment-selection-mode label,
+.assessment-admin-module .assessment-question-selector > label,
+.assessment-admin-module .assessment-member-selector label,
+.assessment-admin-module .assessment-review-comparison section,
+.assessment-admin-module .assessment-search input {
+  border-radius: var(--r-md);
+}
+.assessment-admin-module .assessment-permission-avatar { border-radius: 50%; }
+.assessment-admin-module .assessment-status { border-radius: 999px; }
+.assessment-admin-module .assessment-list-heading { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+.assessment-admin-module .assessment-admin-panel > .assessment-list-heading:first-child,
+.assessment-admin-module .assessment-admin-panel > .assessment-builder-form + .assessment-list-heading { margin-top: 28px; }

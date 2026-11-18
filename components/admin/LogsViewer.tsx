@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import Select from "@/components/ui/Select";
 
 type LogItem = {
@@ -125,9 +126,9 @@ export default function LogsViewer() {
   }
 
   return <section>
-    <div className="admin-title"><div><h2>Logs</h2><p>Registros dos últimos 7 dias. Logs com mais de 7 dias são apagados automaticamente.</p></div></div>
+    <AdminTitle eyebrow="Gestão" title="Logs" description="Registros dos últimos 7 dias. Logs com mais de 7 dias são apagados automaticamente." />
 
-    <div className="log-tabs" role="tablist" aria-label="Tipo de log">
+    <div className="admin-subtabs" role="tablist" aria-label="Tipo de log">
       {sections.map((item) => <button
         key={item.value}
         id={`log-tab-${item.value}`}
@@ -142,8 +143,8 @@ export default function LogsViewer() {
 
     <div id="log-panel" role="tabpanel" aria-labelledby={`log-tab-${section}`}>
       <p className="admin-hint">{sections.find((item) => item.value === section)?.hint}</p>
-      <div className="admin-form">
-        <div className="form-grid">
+      <div className="admin-panel"><div className="admin-panel-body">
+        <div className="log-filters">
           <div className="field"><label htmlFor="log-period">Período</label><Select id="log-period" value={period} options={periodOptions} onChange={change(setPeriod)} /></div>
           {!audit && <div className="field"><label htmlFor="log-level">Nível</label><Select id="log-level" value={level} options={levelOptions} onChange={change(setLevel)} /></div>}
           {!audit && <div className="field"><label htmlFor="log-source">Origem</label><Select id="log-source" value={source} options={sourceOptions} onChange={change(setSource)} /></div>}
@@ -154,7 +155,7 @@ export default function LogsViewer() {
           <button className="button button-ghost" type="button" disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw size={17} /> {query.isFetching ? "Atualizando…" : "Atualizar"}</button>
           <label className="check-field"><input type="checkbox" checked={auto} onChange={(event) => setAuto(event.target.checked)} /> Atualizar a cada 30 s</label>
         </div>
-      </div>
+      </div></div>
 
       {query.isPending && <p role="status">Carregando logs…</p>}
       {query.isError && <p role="alert">{query.error.message} <button className="text-button" onClick={() => void query.refetch()}>Tentar novamente</button></p>}

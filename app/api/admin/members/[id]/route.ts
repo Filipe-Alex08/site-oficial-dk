@@ -9,6 +9,7 @@ const ALLOWED_STATUSES = ["pendente", "aprovado", "recusado", "suspenso", "desat
 type MemberStatus = (typeof ALLOWED_STATUSES)[number];
 
 const GRADUATION_TRACK_FIELDS = ["graduation_cavalaria", "graduation_arquearia"] as const;
+const ADJUSTABLE_FIELDS = ["rank", ...GRADUATION_TRACK_FIELDS] as const;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const caller = await requireAdmin(["principal", "membros"]);
@@ -66,15 +67,39 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
     }
 
-    const changes = {
-      ...(requestAction === "approve"
-        ? {
-            rank: target.requested_rank,
-            // Trilha sem valor pedido continua como está.
-            graduation_cavalaria: target.requested_graduation_cavalaria ?? target.graduation_cavalaria,
-            graduation_arquearia: target.requested_graduation_arquearia ?? target.graduation_arquearia,
+    // Só estas três chaves, e só dentro de `adjustments`: campos soltos no corpo continuam ignorados.
+    const adjustments: Partial<Record<(typeof ADJUSTABLE_FIELDS)[number], string>> = {};
+    if (body.adjustments !== undefined) {
+      const raw = body.adjustments;
+      if (requestAction !== "approve" || !raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+      }
+      for (const [field, value] of Object.entries(raw as Record<string, unknown>)) {
+        if (!(ADJUSTABLE_FIELDS as readonly string[]).includes(field)) {
+          return NextResponse.json({ error: "Solicitação inválida." }, { status: 400 });
+        }
+        if (field === "rank") {
+          if (!rankOptions.some((item) => item.value === value)) {
+            return NextResponse.json({ error: "Patente inválida." }, { status: 400 });
           }
-        : {}),
+        } else if (!graduationOptions.some((item) => item.value === value)) {
+          return NextResponse.json({ error: "Graduação inválida." }, { status: 400 });
+        }
+        adjustments[field as (typeof ADJUSTABLE_FIELDS)[number]] = value as string;
+      }
+    }
+
+    // O que o membro pediu; o que o pedido não trouxe continua como está.
+    const requested = {
+      rank: target.requested_rank ?? target.rank,
+      graduation_cavalaria: target.requested_graduation_cavalaria ?? target.graduation_cavalaria,
+      graduation_arquearia: target.requested_graduation_arquearia ?? target.graduation_arquearia,
+    };
+    const applied = { ...requested, ...adjustments };
+    const adjusted = ADJUSTABLE_FIELDS.some((field) => applied[field] !== requested[field]);
+
+    const changes = {
+      ...(requestAction === "approve" ? applied : {}),
       access_request_id: null,
       requested_rank: null,
       requested_graduation_cavalaria: null,
@@ -98,6 +123,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     await logAdminAudit(caller.user.id, "profiles", id, `access_request_${requestAction}`, {
       request_id: requestId,
+      ...(requestAction === "approve" ? { requested, applied, adjusted } : {}),
     });
     return NextResponse.json({ success: true });
   }

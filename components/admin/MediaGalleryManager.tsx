@@ -4,6 +4,7 @@ import { Film, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import InfoTip from "@/components/ui/InfoTip";
 import Select from "@/components/ui/Select";
 import type { MediaItem, Post } from "@/lib/types";
 
@@ -66,15 +67,16 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
   const visible = items.filter((item) => item.post_id === selectedPostId);
 
   return (
-    <section className="gallery-manager">
-      <div className="admin-title">
-        <div><h3>Fotos e vídeos da publicação</h3><p>Vincule imagens e vídeos por URL ao conteúdo selecionado.</p></div>
+    <section className="admin-panel gallery-manager">
+      <div className="admin-panel-head">
+        <div className="title-tip"><h3>Fotos e vídeos da publicação</h3><InfoTip label="Mais informações sobre a galeria">Vincule imagens e vídeos por endereço (URL) à publicação selecionada.</InfoTip></div>
       </div>
+      <div className="admin-panel-body">
       {posts.length ? (
         <>
           <form className="admin-form compact" onSubmit={add}>
-            <div className="form-grid">
-              <div className="field field-full">
+            <div className="gallery-form">
+              <div className="field gallery-form-post">
                 <label htmlFor="gallery-post-select">Publicação</label>
                 <Select id="gallery-post-select" value={selectedPostId} options={posts.map((post) => ({ value: post.id, label: post.title }))} onChange={setPostId} />
               </div>
@@ -83,15 +85,15 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
                 <Select id="gallery-media-type" value={type} options={[{ value: "image", label: "Imagem" }, { value: "video", label: "Vídeo" }]} onChange={(value) => setType(value as "image" | "video")} />
               </div>
               <div className="field">
-                <label>URL do arquivo</label>
-                <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required />
+                <label htmlFor="gallery-media-url">Endereço do arquivo</label>
+                <input id="gallery-media-url" type="url" inputMode="url" placeholder="https://" value={url} onChange={(e) => setUrl(e.target.value)} required />
               </div>
-              <div className="field field-full">
-                <label>Legenda</label>
-                <input value={caption} onChange={(e) => setCaption(e.target.value)} />
+              <div className="field gallery-form-caption">
+                <label htmlFor="gallery-media-caption">Legenda<span className="opt">opcional</span></label>
+                <input id="gallery-media-caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
               </div>
             </div>
-            <button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus size={17} /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button>
+            <div className="form-actions"><button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus size={17} /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button></div>
             {message && <p className="form-message success">{message}</p>}
           </form>
           <div className="gallery-admin-grid">
@@ -108,6 +110,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
           </div>
         </>
       ) : <p className="empty-state">Crie uma publicação antes de adicionar fotos ou vídeos.</p>}
+      </div>
     </section>
   );
 }

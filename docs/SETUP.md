@@ -290,7 +290,7 @@ npm.cmd start
 
 Aplique `supabase/migrations/011_member_access_requests.sql` após as migrações anteriores e antes de disponibilizar a nova edição de perfil. O cadastro pede somente convite, e-mail, senha, nome e apelido. Patente e graduação começam como Recruta e Sem graduação; os demais dados ficam vazios.
 
-Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros. Administradores com um papel em `user_admin_roles` podem alterar diretamente esses três campos do próprio perfil. A autorização é conferida no banco, independentemente da interface. Ser gestor de avaliações sem papel de ADM não concede essa exceção.
+Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros, na aba **Aguardando ação**. Antes de aprovar, o administrador pode usar **Ajustar** para corrigir a patente e a graduação de cada trilha pedidas; o que foi pedido e o que foi gravado ficam registrados na auditoria (aba Logs), com a indicação de que houve ajuste. Ninguém analisa a própria solicitação. Administradores com um papel em `user_admin_roles` podem alterar diretamente esses três campos do próprio perfil. A autorização é conferida no banco, independentemente da interface. Ser gestor de avaliações sem papel de ADM não concede essa exceção.
 
 ### Aniversários dos membros
 
@@ -317,7 +317,7 @@ O site não guarda credenciais do Google; o ID e o segredo do cliente ficam só 
    - **Data Access**: mantenha apenas `openid` (adicione manualmente), `.../auth/userinfo.email` e `.../auth/userinfo.profile`.
 3. Em **Clients**, crie um cliente do tipo **Web application**:
    - **Authorized JavaScript origins**: `https://death-knights.com.br` e, para desenvolvimento, `http://localhost:3000`;
-   - **Authorized redirect URIs**: `<URL_DO_SUPABASE>/auth/v1/callback`, em HTTPS. No Supabase hospedado, copie o valor mostrado na página do provedor Google. No auto-hospedado, é o valor de `API_EXTERNAL_URL` seguido de `/callback` (seção 14.3).
+   - **Authorized redirect URIs**: `<URL_DO_SUPABASE>/auth/v1/callback`, em HTTPS. No Supabase hospedado, copie o valor mostrado na página do provedor Google. No auto-hospedado, é a URL pública do Supabase seguida de `/auth/v1/callback` (seção 14.3).
 4. Copie o **Client ID** e o **Client Secret**. O segredo não vai para o Git, para o chat nem para o `.env.local` do site.
 
 ### 14.2 Supabase hospedado
@@ -344,7 +344,7 @@ O provedor é ligado por variáveis do GoTrue, o serviço `auth`. Os nomes abaix
    GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ENABLED}
    GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
    GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_SECRET}
-   GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${API_EXTERNAL_URL}/callback
+   GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${API_EXTERNAL_URL}/auth/v1/callback
    ```
 
 3. **Recrie** o serviço, porque reiniciar não relê o `.env`: `sh run.sh recreate auth` ou, em instalações sem o `run.sh`, `docker compose up -d --force-recreate auth`.
@@ -354,7 +354,7 @@ O provedor é ligado por variáveis do GoTrue, o serviço `auth`. Os nomes abaix
    curl.exe -s -H "apikey: <CHAVE_PUBLICAVEL>" "<URL_DO_SUPABASE>/auth/v1/settings"
    ```
 
-A URI autorizada no Google é `<API_EXTERNAL_URL>/callback`, por exemplo `https://<dominio-do-supabase>/auth/v1/callback`. A maioria dos provedores OAuth recusa callbacks `http://`, exceto em `localhost`.
+A URI autorizada no Google é sempre `https://<dominio-do-supabase>/auth/v1/callback`. Atenção ao `API_EXTERNAL_URL`: se ele for só o domínio (`https://<dominio-do-supabase>`, o padrão do Supabase oficial), o GoTrue monta `<dominio>/callback` sozinho, sem o `/auth/v1`, e o Google responde `redirect_uri_mismatch`. Por isso a linha `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI` acima é obrigatória e traz o caminho completo. Se o seu `API_EXTERNAL_URL` já termina em `/auth/v1`, use `${API_EXTERNAL_URL}/callback`. Para conferir o que o servidor realmente envia: `curl.exe -s -o NUL -D - "<URL_DO_SUPABASE>/auth/v1/authorize?provider=google"` e olhe o `redirect_uri` dentro do `Location`. A maioria dos provedores OAuth recusa callbacks `http://`, exceto em `localhost`.
 
 ### 14.4 URLs de redirecionamento
 

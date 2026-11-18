@@ -19,7 +19,7 @@ function loadRoute(file, mocks) {
 
 const nextServer = { NextResponse: { json: (body, init) => Response.json(body, init) } };
 const accessOptions = {
-  rankOptions: [{ value: "recruta" }], graduationOptions: [{ value: "sem_graduacao" }, { value: "bronze" }, { value: "prata" }],
+  rankOptions: [{ value: "recruta" }, { value: "cabo" }, { value: "major" }], graduationOptions: [{ value: "sem_graduacao" }, { value: "bronze" }, { value: "prata" }],
   memberKindOptions: [{ value: "membro" }],
 };
 
@@ -119,6 +119,7 @@ test("registration still requires the basic account fields", async () => {
 
 function review({ authorized = true, changed = false, principal = false } = {}) {
   let changes;
+  let audit;
   const supabase = {
     auth: { getUser: async () => ({ data: { user: authorized ? { id: "admin" } : null } }) },
     from: () => ({ select() { return this; }, eq() { return this; }, in: async () => ({ data: [{ role: "membros" }] }) }),
@@ -137,11 +138,12 @@ function review({ authorized = true, changed = false, principal = false } = {}) 
   return {
     route: loadRoute("app/api/admin/members/[id]/route.ts", {
       "next/server": nextServer, "@/lib/member-access": accessOptions,
-      "@/lib/admin-auth": adminAuth, "@/lib/admin-audit": { logAdminAudit: async () => {} },
+      "@/lib/admin-auth": adminAuth, "@/lib/admin-audit": { logAdminAudit: async (...args) => { audit = args; } },
       "@/lib/supabase/server": { createClient: async () => supabase },
       "@/lib/supabase/admin": { createAdminClient: () => admin },
     }),
     changes: () => changes,
+    audit: () => audit,
   };
 }
 
@@ -171,6 +173,67 @@ test("rejecting clears the request without changing effective permissions", asyn
 test("reviewing a replaced request returns a conflict", async () => {
   const { route } = review({ changed: true });
   assert.equal((await route.PATCH(request({ access_request_action: "approve", access_request_id: "request" }), params)).status, 409);
+});
+
+function approve(adjustments, options) {
+  const harness = review(options);
+  const body = { access_request_action: "approve", access_request_id: "request", ...(adjustments === undefined ? {} : { adjustments }) };
+  return { ...harness, send: () => harness.route.PATCH(request(body), params) };
+}
+
+test("approving can adjust what the member requested, and the rest keeps the request", async () => {
+  // Quem não é ADM Principal (aqui, ADM de Membros) também pode ajustar.
+  const { send, changes, audit } = approve({ rank: "major", graduation_arquearia: "sem_graduacao" });
+  assert.equal((await send()).status, 200);
+  assert.equal(changes().rank, "major");
+  assert.equal(changes().graduation_arquearia, "sem_graduacao");
+  // A trilha que não foi ajustada mantém o que o membro pediu.
+  assert.equal(changes().graduation_cavalaria, "bronze");
+  assert.equal(changes().access_request_id, null);
+  assert.equal(changes().requested_rank, null);
+  const details = audit()[4];
+  assert.equal(details.adjusted, true);
+  assert.equal(details.requested.rank, "cabo");
+  assert.equal(details.applied.rank, "major");
+});
+
+test("an adjustment identical to the request is not recorded as adjusted", async () => {
+  const same = approve({ rank: "cabo", graduation_cavalaria: "bronze" });
+  assert.equal((await same.send()).status, 200);
+  assert.equal(same.changes().rank, "cabo");
+  assert.equal(same.audit()[4].adjusted, false);
+
+  const empty = approve({});
+  assert.equal((await empty.send()).status, 200);
+  assert.equal(empty.changes().rank, "cabo");
+  assert.equal(empty.audit()[4].adjusted, false);
+});
+
+test("invalid adjustments are refused without changing anything", async () => {
+  for (const adjustments of [
+    { rank: "general_exercito" },
+    { graduation_cavalaria: "diamante" },
+    { rank: "cabo", status: "aprovado" },
+    "major",
+    ["major"],
+    null,
+  ]) {
+    const { send, changes } = approve(adjustments);
+    assert.equal((await send()).status, 400, JSON.stringify(adjustments));
+    assert.equal(changes(), undefined, JSON.stringify(adjustments));
+  }
+});
+
+test("rejecting a request cannot carry adjustments", async () => {
+  const { route, changes } = review();
+  const body = { access_request_action: "reject", access_request_id: "request", adjustments: { rank: "major" } };
+  assert.equal((await route.PATCH(request(body), params)).status, 400);
+  assert.equal(changes(), undefined);
+});
+
+test("adjusting still needs authorization and a current request", async () => {
+  assert.equal((await approve({ rank: "major" }, { authorized: false }).send()).status, 403);
+  assert.equal((await approve({ rank: "major" }, { changed: true }).send()).status, 409);
 });
 
 test("review requires administrator authorization", async () => {
