@@ -3,6 +3,7 @@
 import { Check, FilePenLine, LayoutTemplate, Save, Settings2, TextCursorInput, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import AdminDialog from "@/components/admin/AdminDialog";
+import { useToast } from "@/components/admin/ToastProvider";
 import type { TemplateStore } from "@/components/admin/useContentTemplates";
 import Select from "@/components/ui/Select";
 import { cleanTemplateName, templateNameMaxLength } from "@/lib/content-templates";
@@ -20,7 +21,7 @@ const copy = {
  * Barra de templates do formulário: escolher (reaplicar), salvar o que está
  * preenchido e gerenciar (renomear, editar campos, excluir).
  */
-export default function TemplateBar<K extends ContentTemplateKind>({ kind, store, currentData, hasContent, onApply, onEdit, show }: {
+export default function TemplateBar<K extends ContentTemplateKind>({ kind, store, currentData, hasContent, onApply, onEdit }: {
   kind: K;
   store: TemplateStore<K>;
   /** O formulário atual, já convertido para o formato do template. */
@@ -29,8 +30,8 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
   onApply: (template: ContentTemplate<K>) => void;
   /** Carrega o template no formulário em "modo template". */
   onEdit: (template: ContentTemplate<K>) => void;
-  show: (text: string) => void;
 }) {
+  const toast = useToast();
   const [selectedId, setSelectedId] = useState("");
   const [dialog, setDialog] = useState<"save" | "manage" | null>(null);
   const [name, setName] = useState("");
@@ -65,7 +66,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
       const created = await store.create(clean, currentData);
       setSelectedId(created.id);
       closeDialog();
-      show(`Template «${clean}» salvo.`);
+      toast.success(`Template «${clean}» salvo.`);
     } catch (reason) {
       setError((reason as Error).message);
     }
@@ -76,7 +77,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
     try {
       await store.update(applied.id, { data: currentData });
       closeDialog();
-      show(`Template «${applied.name}» atualizado.`);
+      toast.success(`Template «${applied.name}» atualizado.`);
     } catch (reason) {
       setError((reason as Error).message);
     }
@@ -91,7 +92,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
       await store.update(renaming.id, { name: clean });
       setRenaming(null);
       setError("");
-      show("Template renomeado.");
+      toast.success("Template renomeado.");
     } catch (reason) {
       setError((reason as Error).message);
     }
@@ -103,7 +104,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
       await store.remove(template.id);
       if (template.id === selectedId) setSelectedId("");
       setError("");
-      show(`Template «${template.name}» excluído.`);
+      toast.success(`Template «${template.name}» excluído.`);
     } catch (reason) {
       setError((reason as Error).message);
     }
