@@ -4,7 +4,7 @@ import { ArrowLeft, BookOpenCheck, CalendarPlus, CheckCircle2, ChevronDown, Chev
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
 import { revalidatePublicMedia } from "@/lib/revalidate-client";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
@@ -42,6 +42,7 @@ type MemberAccessForm = {
 };
 
 type MemberTab = "pendentes" | "todos";
+type DashboardSnapshot = { posts: Post[]; activities: Activity[]; members: MemberProfile[]; memberRoles: Record<string, AdminRole[]>; invites: Invite[] };
 type MemberStatusFilter = "todos" | MemberProfile["status"];
 
 const memberStatusOptions: Array<{ value: MemberStatusFilter; label: string }> = [
@@ -98,11 +99,17 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   function setSection(next: Section) {
     navigate(next === "resumo" ? pathname : `${pathname}?secao=${next}`);
   }
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [memberRoles, setMemberRoles] = useState<Record<string, AdminRole[]>>({});
-  const [invites, setInvites] = useState<Invite[]>([]);
+  // Os dados ficam em useState, mas o resultado da busca também vai para o cache da query.
+  // Ao voltar para o painel (seta do navegador) o componente monta de novo com o estado
+  // vazio; como o cache ainda é "fresco", a busca não roda, e sem isto a tela ficava vazia.
+  const queryClient = useQueryClient();
+  const dashboardKey = useMemo(() => ["admin-dashboard", roles] as const, [roles]);
+  const cached = queryClient.getQueryData<DashboardSnapshot>(dashboardKey);
+  const [posts, setPosts] = useState<Post[]>(() => cached?.posts ?? []);
+  const [activities, setActivities] = useState<Activity[]>(() => cached?.activities ?? []);
+  const [members, setMembers] = useState<MemberProfile[]>(() => cached?.members ?? []);
+  const [memberRoles, setMemberRoles] = useState<Record<string, AdminRole[]>>(() => cached?.memberRoles ?? {});
+  const [invites, setInvites] = useState<Invite[]>(() => cached?.invites ?? []);
   const [postForm, setPostForm] = useState<PostFormState>(emptyPost);
   const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivity);
   // "Modo template": o formulário edita um template em vez de criar/editar uma publicação ou atividade.
@@ -127,14 +134,15 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const [memberSearch, setMemberSearch] = useState("");
   const [memberStatus, setMemberStatus] = useState<MemberStatusFilter>("todos");
 
-  const load = useCallback(async () => {
-    if (!supabase) return;
+  const load = useCallback(async (): Promise<DashboardSnapshot> => {
+    const snapshot: DashboardSnapshot = { posts: [], activities: [], members: [], memberRoles: {}, invites: [] };
+    if (!supabase) return snapshot;
     const jobs: Array<PromiseLike<unknown>> = [];
-    if (canMedia) jobs.push(supabase.from("posts").select("*").order("created_at", { ascending: false }).then(({ data }) => setPosts((data || []) as Post[])));
-    if (canCalendar) jobs.push(supabase.from("activities").select("*").order("starts_at").then(({ data }) => setActivities((data || []) as Activity[])));
+    if (canMedia) jobs.push(supabase.from("posts").select("*").order("created_at", { ascending: false }).then(({ data }) => { snapshot.posts = (data || []) as Post[]; setPosts(snapshot.posts); }));
+    if (canCalendar) jobs.push(supabase.from("activities").select("*").order("starts_at").then(({ data }) => { snapshot.activities = (data || []) as Activity[]; setActivities(snapshot.activities); }));
     if (canMembers) {
-      jobs.push(supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(({ data }) => setMembers((data || []) as MemberProfile[])));
-      jobs.push(supabase.from("invites").select("*").order("created_at", { ascending: false }).then(({ data }) => setInvites((data || []) as Invite[])));
+      jobs.push(supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(({ data }) => { snapshot.members = (data || []) as MemberProfile[]; setMembers(snapshot.members); }));
+      jobs.push(supabase.from("invites").select("*").order("created_at", { ascending: false }).then(({ data }) => { snapshot.invites = (data || []) as Invite[]; setInvites(snapshot.invites); }));
     }
     if (principal) {
       jobs.push(supabase.from("user_admin_roles").select("user_id, role").then(({ data }) => {
@@ -143,13 +151,15 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           const role = item.role as AdminRole;
           grouped[item.user_id] = [...(grouped[item.user_id] || []), role];
         });
+        snapshot.memberRoles = grouped;
         setMemberRoles(grouped);
       }));
     }
     await Promise.all(jobs);
+    return snapshot;
   }, [supabase, canMedia, canCalendar, canMembers, principal]);
 
-  const dashboardQuery = useQuery({ queryKey: ["admin-dashboard", roles], queryFn: async () => { await load(); return true; }, enabled: Boolean(supabase) });
+  const dashboardQuery = useQuery({ queryKey: dashboardKey, queryFn: load, enabled: Boolean(supabase) });
 
   // Badges das abas: só contam o que exige ação e some quando a ação é feita.
   // Membros: cadastro pendente, dados a conferir ou (ADM Principal) graduação a revisar.
