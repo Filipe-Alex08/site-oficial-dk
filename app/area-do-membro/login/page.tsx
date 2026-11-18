@@ -47,7 +47,7 @@ export default async function LoginPage({
       notice={notice}
     >
       {saved.length > 0 && <SavedAccounts accounts={saved} />}
-      <LoginForm googleAvailable={googleAvailable} />
+      <LoginForm googleAvailable={googleAvailable} addingAccount={adding && Boolean(activeId)} />
       {adding && activeId && <p className="form-help"><Link href="/membro">Voltar para a área do membro</Link></p>}
     </AuthShell>
   );

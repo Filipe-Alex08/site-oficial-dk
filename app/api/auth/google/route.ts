@@ -24,9 +24,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível iniciar o login com o Google." }, { status: 500 });
   }
 
+  // "Adicionar outra conta": sem prompt=select_account o Google entra direto na conta que
+  // já está aberta no navegador em vez de mostrar a escolha de contas.
+  const body = await request.json().catch(() => null);
+  const selectAccount = body?.selectAccount === true;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${origin}/auth/callback`, skipBrowserRedirect: true },
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+      skipBrowserRedirect: true,
+      ...(selectAccount ? { queryParams: { prompt: "select_account" } } : {}),
+    },
   });
 
   if (error || !data.url) {

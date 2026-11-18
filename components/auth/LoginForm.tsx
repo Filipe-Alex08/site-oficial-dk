@@ -18,7 +18,7 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginForm({ googleAvailable = false }: { googleAvailable?: boolean }) {
+export default function LoginForm({ googleAvailable = false, addingAccount = false }: { googleAvailable?: boolean; addingAccount?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function LoginForm({ googleAvailable = false }: { googleAvailable
     try {
       // A URL de autorização vem pronta do servidor, que também guarda o
       // comprovante PKCE num cookie. Esta página nunca toca no token.
-      const response = await jsonApiFetch("/api/auth/google", {});
+      const response = await jsonApiFetch("/api/auth/google", { selectAccount: addingAccount });
       const data = await response.json().catch(() => null);
       // Só http(s): a URL vem do Supabase, mas o navegador obedece qualquer
       // esquema, e um "javascript:" aqui seria execução de script.
