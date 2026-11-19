@@ -1,4 +1,5 @@
-import { LOGIN_PATH, callbackFailureCode, decideGoogleLogin, safeNextPath, type LoginErrorCode } from "@/lib/auth-callback";
+import { LOGIN_PATH, RESET_PASSWORD_PATH, callbackFailureCode, decideGoogleLogin, safeNextPath, type LoginErrorCode } from "@/lib/auth-callback";
+import { amrFromAccessToken, hasFreshRecovery, hasRecoveryCookie } from "@/lib/password-recovery";
 import { restoreSnapshot, snapshotCurrent, stashPrevious, type ActiveSnapshot } from "@/lib/account-switch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +60,12 @@ export async function GET(request: Request) {
 
     if (decision.action === "allow") {
       await stashPrevious(previous, user.id);
+      // Link de "esqueci minha senha": token recente de link de e-mail E a marca que o
+      // pedido deixou neste navegador. O membro vai direto definir a senha nova, em
+      // vez de cair na área do membro.
+      if (hasRecoveryCookie(request.headers.get("cookie")) && hasFreshRecovery(amrFromAccessToken(data.session?.access_token))) {
+        return relativeRedirect(RESET_PASSWORD_PATH);
+      }
       return relativeRedirect(safeNextPath(searchParams.get("next")));
     }
 

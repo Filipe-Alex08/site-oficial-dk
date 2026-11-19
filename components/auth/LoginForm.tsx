@@ -103,6 +103,7 @@ export default function LoginForm({ googleAvailable = false, addingAccount = fal
       <div className="field">
         <label htmlFor="password">Senha</label>
         <input id="password" name="password" type="password" autoComplete="current-password" required minLength={8} />
+        <Link className="login-forgot" href="/area-do-membro/esqueci-senha">Esqueci minha senha</Link>
       </div>
       <button className="button button-primary" type="submit" disabled={loading || googleLoading}>
         <LogIn size={18} /> {loading ? "Entrando…" : "Entrar"}

@@ -2,11 +2,14 @@
 
 import { Dispatch, FormEvent, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Eye, EyeOff, Info, KeyRound, Lock, Medal, Save, Swords, UserRound, X, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Info, KeyRound, Lock, Mail, Medal, Save, ShieldCheck, Swords, UserRound, X, type LucideIcon } from "lucide-react";
 import Select from "@/components/ui/Select";
 import TrackGroup from "@/components/member/TrackGroup";
+import EmailChangeFields from "@/components/member/EmailChangeFields";
+import SecurityPhraseFields from "@/components/member/SecurityPhraseFields";
 import { BuildInsignia, GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
 import { buildOptions, getBuildIcon, normalizeBuildName } from "@/lib/insignias";
+import { jsonApiFetch } from "@/lib/api-client";
 import { PASSWORD_MAX, PASSWORD_MIN } from "@/lib/account-password";
 import { graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
 import { getZodiacSign } from "@/lib/zodiac";
@@ -68,6 +71,9 @@ const rankOptions = rankGroups.flatMap((group) => group.ranks.map((rank) => ({ .
 
 type Props = {
   profile: MemberProfile;
+  /** false para quem entra só pelo Google: não há senha atual, então a senha nasce pelo link do e-mail. */
+  hasPassword: boolean;
+  securityPhrase: string;
   canEditAccessDirectly: boolean;
   form: ProfileFormState;
   setForm: Dispatch<SetStateAction<ProfileFormState>>;
@@ -85,12 +91,15 @@ type Props = {
 };
 
 export default function ProfileEditDialog({
-  profile, canEditAccessDirectly, form, setForm, password, setPassword, passwordOpen, setPasswordOpen,
+  profile, hasPassword, securityPhrase, canEditAccessDirectly, form, setForm, password, setPassword, passwordOpen, setPasswordOpen,
   errors, clearError, changes, saving, closing, onSubmit, onClose,
 }: Props) {
   const [active, setActive] = useState(SECTIONS[0].id);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [reveal, setReveal] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [phraseOpen, setPhraseOpen] = useState(false);
+  const [resetLink, setResetLink] = useState<{ status: "idle" | "sending" | "sent"; error: string }>({ status: "idle", error: "" });
   const dialogRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const nicknameRef = useRef<HTMLInputElement>(null);
@@ -169,11 +178,26 @@ export default function ProfileEditDialog({
     setActive(id);
   }
 
+  // Manda o link de redefinição para o e-mail da própria conta (a rota usa a sessão).
+  async function sendResetLink() {
+    setResetLink({ status: "sending", error: "" });
+    try {
+      const response = await jsonApiFetch("/api/auth/password-reset", {});
+      const data = await response.json().catch(() => null);
+      setResetLink(response.ok
+        ? { status: "sent", error: "" }
+        : { status: "idle", error: data?.error ?? "Não foi possível enviar o e-mail agora. Tente novamente." });
+    } catch {
+      setResetLink({ status: "idle", error: "Sem conexão com o servidor. Tente novamente." });
+    }
+  }
+
   function togglePassword() {
     if (passwordOpen) {
       setPassword(EMPTY_PASSWORD);
       clearError("password");
       setReveal(false);
+      setResetLink({ status: "idle", error: "" });
     }
     setPasswordOpen(!passwordOpen);
   }
@@ -334,33 +358,72 @@ export default function ProfileEditDialog({
 
             <section className="profile-dialog-section" data-section="seguranca" aria-labelledby="profile-section-seguranca">
               <h3 id="profile-section-seguranca">Segurança</h3>
-              <button className="button button-ghost button-small" type="button" aria-expanded={passwordOpen} aria-controls="profile-password-fields" onClick={togglePassword}>
-                <KeyRound aria-hidden="true" /> {passwordOpen ? "Cancelar" : "Alterar senha"}
-              </button>
-              {passwordOpen && (
-                <div id="profile-password-fields" className="profile-dialog-password">
-                  <div className="form-grid profile-dialog-grid">
-                    <div className="field field-full">
-                      <label htmlFor="member-current-password">Senha atual</label>
-                      <input id="member-current-password" type={passwordType} autoComplete="current-password" value={password.current} onChange={(event) => updatePassword("current", event.target.value)} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="member-new-password">Nova senha</label>
-                      <input id="member-new-password" type={passwordType} autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.next} aria-describedby="member-new-password-hint" onChange={(event) => updatePassword("next", event.target.value)} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="member-confirm-password">Confirmar nova senha</label>
-                      <input id="member-confirm-password" type={passwordType} autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.confirm} onChange={(event) => updatePassword("confirm", event.target.value)} />
-                    </div>
-                  </div>
-                  <div className="profile-dialog-password-foot">
-                    <small id="member-new-password-hint" className="profile-dialog-hint">Mínimo de {PASSWORD_MIN} caracteres.</small>
-                    <button className="icon-button" type="button" aria-pressed={reveal} onClick={() => setReveal((current) => !current)} title={reveal ? "Ocultar senhas" : "Mostrar senhas"} aria-label={reveal ? "Ocultar senhas" : "Mostrar senhas"}>
-                      {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              {!hasPassword ? (
+                <div className="profile-dialog-security-actions">
+                  {resetLink.status === "sent" ? (
+                    <p className="profile-dialog-sent" role="status"><CheckCircle2 size={16} aria-hidden="true" /> Link enviado para o seu e-mail. Abra-o neste navegador para criar a senha.</p>
+                  ) : (
+                    <button className="button button-ghost button-small" type="button" onClick={sendResetLink} disabled={resetLink.status === "sending"}>
+                      <KeyRound aria-hidden="true" /> {resetLink.status === "sending" ? "Enviando…" : "Criar uma senha"}
                     </button>
-                  </div>
+                  )}
+                  {resetLink.error && <p className="profile-dialog-error" role="alert">{resetLink.error}</p>}
                 </div>
+              ) : (
+                <>
+                <div className="profile-dialog-security-actions">
+                  <button className="button button-ghost button-small" type="button" aria-expanded={passwordOpen} aria-controls="profile-password-fields" onClick={togglePassword}>
+                    <KeyRound aria-hidden="true" /> {passwordOpen ? "Cancelar" : "Alterar senha"}
+                  </button>
+                  {profile.email && (
+                    <button className="button button-ghost button-small" type="button" aria-expanded={emailOpen} aria-controls="profile-email-fields" onClick={() => setEmailOpen((open) => !open)}>
+                      <Mail aria-hidden="true" /> {emailOpen ? "Cancelar" : "Alterar e-mail"}
+                    </button>
+                  )}
+                </div>
+                {emailOpen && profile.email && <div id="profile-email-fields"><EmailChangeFields currentEmail={profile.email} /></div>}
+                {passwordOpen && (
+                  <div id="profile-password-fields" className="profile-dialog-password">
+                    <div className="form-grid profile-dialog-grid">
+                      <div className="field field-full">
+                        <label htmlFor="member-current-password">Senha atual</label>
+                        <input id="member-current-password" type={passwordType} autoComplete="current-password" value={password.current} onChange={(event) => updatePassword("current", event.target.value)} />
+                        <div className="profile-dialog-forgot">
+                          {resetLink.status === "sent" ? (
+                            <p className="profile-dialog-sent" role="status"><CheckCircle2 size={16} aria-hidden="true" /> Link enviado para o seu e-mail. Abra-o neste navegador.</p>
+                          ) : (
+                            <button className="button button-ghost button-small" type="button" onClick={sendResetLink} disabled={resetLink.status === "sending"}>
+                              <Mail aria-hidden="true" /> {resetLink.status === "sending" ? "Enviando…" : "Esqueci minha senha"}
+                            </button>
+                          )}
+                        </div>
+                        {resetLink.error && <p className="profile-dialog-error" role="alert">{resetLink.error}</p>}
+                      </div>
+                      <div className="field">
+                        <label htmlFor="member-new-password">Nova senha</label>
+                        <input id="member-new-password" type={passwordType} autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.next} aria-describedby="member-new-password-hint" onChange={(event) => updatePassword("next", event.target.value)} />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="member-confirm-password">Confirmar nova senha</label>
+                        <input id="member-confirm-password" type={passwordType} autoComplete="new-password" minLength={PASSWORD_MIN} maxLength={PASSWORD_MAX} value={password.confirm} onChange={(event) => updatePassword("confirm", event.target.value)} />
+                      </div>
+                    </div>
+                    <div className="profile-dialog-password-foot">
+                      <small id="member-new-password-hint" className="profile-dialog-hint">Mínimo de {PASSWORD_MIN} caracteres.</small>
+                      <button className="icon-button" type="button" aria-pressed={reveal} onClick={() => setReveal((current) => !current)} title={reveal ? "Ocultar senhas" : "Mostrar senhas"} aria-label={reveal ? "Ocultar senhas" : "Mostrar senhas"}>
+                        {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
+              <div className="profile-dialog-security-actions">
+                <button className="button button-ghost button-small" type="button" aria-expanded={phraseOpen} aria-controls="profile-phrase-fields" onClick={() => setPhraseOpen((open) => !open)}>
+                  <ShieldCheck aria-hidden="true" /> {phraseOpen ? "Fechar" : securityPhrase ? "Frase de segurança" : "Definir frase de segurança"}
+                </button>
+              </div>
+              {phraseOpen && <div id="profile-phrase-fields"><SecurityPhraseFields initial={securityPhrase} /></div>}
               {errors.password && <p ref={passwordErrorRef} className="profile-dialog-error" role="alert">{errors.password}</p>}
             </section>
           </div>

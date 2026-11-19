@@ -1489,3 +1489,45 @@ a.card:hover .card-cta svg {
   .avatar-cropper-zoom button { width: 36px; height: 36px; }
   .profile-dialog-chip { min-height: 40px; }
 }
+
+/* Esqueci minha senha. */
+.login-forgot {
+  justify-self: end;
+  margin-top: 6px;
+  color: var(--accent-bright);
+  font-size: .88rem;
+  font-weight: 800
+}
+
+.reset-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px
+}
+
+.reset-actions .button {
+  flex: 1;
+  margin-top: 0
+}
+
+.profile-dialog-forgot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px
+}
+
+.profile-dialog-sent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ok);
+  font-size: .88rem
+}
+
+.profile-dialog-security-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px
+}

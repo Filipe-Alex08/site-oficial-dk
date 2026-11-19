@@ -1,17 +1,19 @@
 export const LOGIN_PATH = "/area-do-membro/login";
 export const MEMBER_HOME = "/membro";
+export const RESET_PASSWORD_PATH = "/area-do-membro/redefinir-senha";
 
 // Uma conta sem perfil só é apagada se o próprio login com Google a acabou de criar.
 export const NEW_ACCOUNT_WINDOW_MS = 5 * 60 * 1000;
 
-export const loginErrorCodes = ["pendente", "nao-liberado", "sem-cadastro", "google"] as const;
+export const loginErrorCodes = ["pendente", "nao-liberado", "sem-cadastro", "google", "link"] as const;
 export type LoginErrorCode = (typeof loginErrorCodes)[number];
 
 const loginErrorMessages: Record<LoginErrorCode, string> = {
   pendente: "Seu cadastro ainda está aguardando aprovação.",
   "nao-liberado": "Seu acesso ainda não está liberado.",
   "sem-cadastro": "Não encontramos um cadastro de membro para esta conta Google. Use o e-mail do seu cadastro ou entre com e-mail e senha.",
-  google: "Não foi possível entrar com o Google. Tente novamente ou entre com e-mail e senha.",
+  google: "Não foi possível concluir o acesso. Tente novamente ou entre com e-mail e senha. Se veio de um link de redefinição de senha, abra-o no mesmo navegador em que o pediu ou peça outro.",
+  link: "Este link de redefinição de senha venceu ou já foi usado. Peça um novo em Esqueci minha senha.",
 };
 
 // Só devolve textos fixos: nada que venha da URL é exibido.
@@ -25,6 +27,7 @@ export function loginErrorMessage(code: string | string[] | undefined) {
 // error_code=signup_disabled quando o cadastro público está desligado e o e-mail
 // do Google não pertence a nenhum usuário.
 export function callbackFailureCode(params: { get(name: string): string | null }): LoginErrorCode {
+  if (params.get("error_code") === "otp_expired") return "link";
   return params.get("error_code") === "signup_disabled" ? "sem-cadastro" : "google";
 }
 

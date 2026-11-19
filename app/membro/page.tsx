@@ -4,6 +4,8 @@ import MemberHomeView, { type UpcomingActivity } from "@/components/member/Membe
 import Unavailable from "@/components/member/Unavailable";
 import { getMemberBadges } from "@/lib/member-badges";
 import LiveRefresh from "@/components/LiveRefresh";
+import { usesPasswordLogin } from "@/lib/password-recovery";
+import { readSecurityPhrase } from "@/lib/security-phrase";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Painel do Membro" };
@@ -37,6 +39,8 @@ export default async function MemberPage() {
         profile={profile}
         profileAvatarUrl={profileAvatarUrl}
         userId={user.id}
+        hasPassword={usesPasswordLogin(user)}
+        securityPhrase={readSecurityPhrase(user.user_metadata)}
         canEditAccessDirectly={roleList.length > 0}
         isAdmin={isAdmin}
         counts={counts}

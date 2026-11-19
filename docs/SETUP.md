@@ -375,6 +375,8 @@ O Google devolve o usuário ao Supabase e o Supabase o devolve ao site em `/auth
 - **Hospedado:** **Authentication > URL Configuration**, campos *Site URL* e *Redirect URLs*.
 - **Auto-hospedado:** no `.env` do Supabase, `SITE_URL=https://death-knights.com.br` e `ADDITIONAL_REDIRECT_URLS=https://death-knights.com.br/auth/callback,http://localhost:3000/auth/callback`, separadas por vírgula. Depois recrie o serviço `auth`. Elas chegam ao GoTrue como `GOTRUE_SITE_URL` e `GOTRUE_URI_ALLOW_LIST`.
 
+O "Esqueci minha senha" usa a mesma URL: o e-mail só chega com SMTP real configurado no Supabase, e o link precisa ser aberto no mesmo navegador em que foi pedido (PKCE).
+
 O botão envia `redirectTo` exatamente igual a `<origem>/auth/callback`, sem parâmetros. Se o site passar a enviar `?next=` nessa URL, use curinga na lista (por exemplo `http://localhost:3000/**`), porque a comparação considera a URL inteira, com a query.
 
 ### 14.5 Bloquear cadastros públicos no Supabase (recomendado)

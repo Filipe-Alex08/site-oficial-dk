@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "check:migrations": "node scripts/check-migrations.mjs",
-    "sync:instagram": "node scripts/sync-instagram.cjs",
+    "apply:email-templates": "node --env-file=.env.local scripts/apply-email-templates.mjs",
+    "sync:instagram":"node scripts/sync-instagram.cjs",
     "check:realtime": "node --env-file=.env.local scripts/check-realtime-db.mjs",
     "prepare:emblems": "node scripts/prepare-build-emblems.mjs"
   },

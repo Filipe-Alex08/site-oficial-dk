@@ -150,6 +150,7 @@ function callback({ user = approvedByPassword, profile = null, profileError = nu
   };
   const route = load("app/auth/callback/route.ts", {
     "@/lib/auth-callback": logic,
+    "@/lib/password-recovery": load("lib/password-recovery.ts"),
     "@/lib/account-switch": {
       snapshotCurrent: async () => previous,
       stashPrevious: async (_previous, newUserId) => { events.push(`stash:${newUserId}`); },

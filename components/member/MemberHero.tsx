@@ -13,10 +13,12 @@ import type { MemberProfile } from "@/lib/types";
  * builds) e as ações pessoais (editar perfil, aparência, sair). É onde o tema da
  * graduação aparece com mais força.
  */
-export default function MemberHero({ profile, avatarUrl, userId, canEditAccessDirectly, allClear }: {
+export default function MemberHero({ profile, avatarUrl, userId, hasPassword, securityPhrase, canEditAccessDirectly, allClear }: {
   profile: MemberProfile;
   avatarUrl: string | null;
   userId: string;
+  hasPassword: boolean;
+  securityPhrase: string;
   canEditAccessDirectly: boolean;
   /** Nenhuma pendência para o membro: mostra a linha "Tudo em dia". */
   allClear: boolean;
@@ -44,7 +46,7 @@ export default function MemberHero({ profile, avatarUrl, userId, canEditAccessDi
       </div>
 
       <div className="m-hero-actions">
-        <EditMemberProfile profile={profile} canEditAccessDirectly={canEditAccessDirectly} />
+        <EditMemberProfile profile={profile} hasPassword={hasPassword} securityPhrase={securityPhrase} canEditAccessDirectly={canEditAccessDirectly} />
         <MemberStyleToggle />
       </div>
 
