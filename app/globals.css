@@ -84,24 +84,34 @@
   --dur-2: 0.25s;
 }
 
-/* Destaques pessoais seguem a graduação do membro aprovado */
-:root[data-member-theme]:not([data-member-theme="padrao"]) {
+/* Acabamento metálico da área do membro. Usa a cor de destaque do momento, então
+   acompanha o tema da graduação e fica prata-neutro no padrão. */
+:root {
+  --grad-sheen: linear-gradient(90deg, var(--accent) 0%, var(--accent-bright) 50%, var(--accent) 100%);
+  --grad-glow: radial-gradient(ellipse 80% 120% at 12% 0%, rgba(var(--accent-rgb), 0.16), transparent 62%);
+}
+
+/* Destaques pessoais seguem a graduação do membro aprovado. O tema vive na casca
+   da área do membro (decidido no servidor, com a preferência do cookie); :has()
+   deixa o cabeçalho do site e os modais, que ficam fora dela, herdarem a cor. */
+:root:has(.member-shell[data-member-theme]:not([data-member-theme="padrao"])) {
   --line: rgba(var(--accent-rgb), 0.3);
   --border: rgba(var(--accent-rgb), 0.22);
 }
-:root[data-member-theme="bronze"] {
+:root:has(.member-shell[data-member-theme="bronze"]) {
   --accent: #925b3e;
   --accent-bright: #ce8b66;
   --accent-dark: #382219;
   --accent-rgb: 206, 139, 102;
 }
-:root[data-member-theme="prata"] {
-  --accent: #757575;
-  --accent-bright: #eeeeee;
-  --accent-dark: #383838;
-  --accent-rgb: 238, 238, 238;
+/* Aço frio: distinguível do prata neutro do tema padrão. */
+:root:has(.member-shell[data-member-theme="prata"]) {
+  --accent: #6c7a89;
+  --accent-bright: #dce5ef;
+  --accent-dark: #2a3139;
+  --accent-rgb: 220, 229, 239;
 }
-:root[data-member-theme="ouro"] {
+:root:has(.member-shell[data-member-theme="ouro"]) {
   --accent: #786324;
   --accent-bright: #e8c568;
   --accent-dark: #352d19;

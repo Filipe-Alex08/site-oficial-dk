@@ -639,33 +639,6 @@ a.card:hover .card-cta svg {
   font-size: .85rem
 }
 
-/* Make graduation accents visible without changing the site's primary palette. */
-:root[data-member-theme]:not([data-member-theme="padrao"]) .profile-card {
-  border: 1px solid var(--accent);
-  border-top-width: 3px;
-  box-shadow: 0 0 28px rgba(var(--accent-rgb), .08);
-}
-
-:root[data-member-theme]:not([data-member-theme="padrao"]) .member-options .card {
-  border-color: var(--accent);
-  border-top: 2px solid var(--accent);
-}
-
-:root[data-member-theme]:not([data-member-theme="padrao"]) .member-options .card:hover {
-  border-color: var(--accent-bright);
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), .1), var(--panel));
-}
-
-:root[data-member-theme]:not([data-member-theme="padrao"]) .document-card,
-:root[data-member-theme]:not([data-member-theme="padrao"]) .attendance-card {
-  border-color: var(--accent);
-  border-top: 2px solid var(--accent);
-}
-
-.attendance-card {
-  scroll-margin-top: 96px;
-}
-
 .member-avatar-control .profile-avatar {
   margin: 0
 }
@@ -1070,6 +1043,13 @@ a.card:hover .card-cta svg {
 .track-group[data-tier="ouro"] {
   --tier: #d4a73c;
   --tier-line: rgba(212, 167, 60, 0.3)
+}
+
+/* Aparência "Padrão": o bloco deixa de ter a cor do próprio nível. A medalha dentro
+   dele continua mostrando o nível, porque isso é informação, não estilo. */
+.member-shell[data-member-style="padrao"] .track-group[data-tier] {
+  --tier: rgba(255, 255, 255, 0.2);
+  --tier-line: rgba(255, 255, 255, 0.1)
 }
 
 .track-group-title {

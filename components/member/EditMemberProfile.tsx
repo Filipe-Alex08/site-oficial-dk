@@ -15,10 +15,10 @@ import type { MemberProfile } from "@/lib/types";
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
 /**
- * Perfil do membro: `children` é a visão somente leitura (renderizada no
- * servidor) e fica sempre no card; a edição acontece num modal.
+ * Botão "Editar perfil" e o modal de edição. `children` (opcional) é a visão
+ * somente leitura renderizada no servidor, mostrada acima do botão.
  */
-export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children: ReactNode }) {
+export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children?: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -175,7 +175,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
 
   return (
     <div className="profile-edit">
-      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente, graduação ou comando aguardando aprovação.</p>}
       {children}
       <button ref={triggerRef} className="button button-ghost button-small profile-edit-open" type="button" aria-haspopup="dialog" onClick={openDialog}>
         <Edit3 size={16} aria-hidden="true" /> Editar perfil

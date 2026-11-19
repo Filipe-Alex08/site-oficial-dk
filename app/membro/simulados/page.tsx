@@ -54,7 +54,7 @@ export default async function MemberAssessmentsPage() {
       <AppPageHeader title="Avaliações" crumbs={[{ label: "Painel", href: "/membro" }]} />
       <section className="section assessment-list-section">
         <div className="container">
-          {assignments.length ? groups.map((group) => <section className="m-assessment-group" key={group.title} aria-label={group.title}>
+          {assignments.length ? groups.map((group) => <section className={`m-assessment-group${group.title === "Para fazer" ? " is-todo" : ""}`} key={group.title} aria-label={group.title}>
             <h2 className="m-group-title">{group.title}<span className="count-pill">{group.items.length}</span></h2>
             <div className="assessment-assignment-grid">
             {group.items.map((assignment) => {

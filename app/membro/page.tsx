@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { LogOut } from "lucide-react";
-import AppPageHeader from "@/components/member/AppPageHeader";
 import MemberHomeView, { type UpcomingActivity } from "@/components/member/MemberHomeView";
 import Unavailable from "@/components/member/Unavailable";
 import { getMemberBadges } from "@/lib/member-badges";
@@ -35,10 +33,6 @@ export default async function MemberPage() {
   return (
     <>
       <LiveRefresh tables={["activities", "activity_attendance", "assessment_assignments", "profiles", "user_admin_roles"]} />
-      <AppPageHeader
-        title={`Salve, ${profile.nickname}!`}
-        action={<form action="/auth/signout" method="post"><button className="button button-ghost" type="submit"><LogOut size={18} /> Sair</button></form>}
-      />
       <MemberHomeView
         profile={profile}
         profileAvatarUrl={profileAvatarUrl}

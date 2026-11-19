@@ -9,15 +9,16 @@ import type { Activity } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Atividades e presença" };
 
-export default async function MemberActivitiesPage() {
+export default async function MemberActivitiesPage({ searchParams }: { searchParams: Promise<{ filtro?: string }> }) {
   const { supabase, user } = await getAuth();
   if (!supabase) return <Unavailable />;
   if (!user) redirect("/area-do-membro/login");
 
   // Perfil e atividades não dependem um do outro.
-  const [{ profile }, { data: activityData }] = await Promise.all([
+  const [{ profile }, { data: activityData }, { filtro }] = await Promise.all([
     getMember(),
     supabase.from("activities").select("*").gte("starts_at", new Date().toISOString()).order("starts_at"),
+    searchParams,
   ]);
   if (!profile || profile.status !== "aprovado") redirect("/area-do-membro/login");
 
@@ -25,7 +26,7 @@ export default async function MemberActivitiesPage() {
     <>
       <LiveRefresh tables={["activities"]} />
       <AppPageHeader title="Atividades e presença" crumbs={[{ label: "Painel", href: "/membro" }]} />
-      <section className="section"><div className="container"><AttendancePanel activities={(activityData ?? []) as Activity[]} userId={user.id} /></div></section>
+      <section className="section"><div className="container"><AttendancePanel activities={(activityData ?? []) as Activity[]} userId={user.id} initialFilter={filtro === "pendentes" ? "pendentes" : "todas"} /></div></section>
     </>
   );
 }

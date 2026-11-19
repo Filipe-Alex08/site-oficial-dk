@@ -71,8 +71,18 @@ function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: 
   return lines.join("\n");
 }
 
-export default function AttendancePanel({ activities, userId }: { activities: Activity[]; userId: string }) {
+type Filter = "todas" | "pendentes" | "vou";
+
+const filterLabels: Record<Filter, string> = { todas: "Todas", pendentes: "Sem resposta", vou: "Eu vou" };
+
+const monthTitle = (activity: Activity) =>
+  new Date(activity.starts_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
+
+const isActivityClosed = (activity: Activity) => !activity.attendance_open || activity.status === "cancelado" || activity.status === "finalizado";
+
+export default function AttendancePanel({ activities, userId, initialFilter = "todas" }: { activities: Activity[]; userId: string; initialFilter?: Filter }) {
   const supabase = useMemo(() => createClient(), []);
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [forms, setForms] = useState<Record<string, ResponseForm>>({});
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -169,27 +179,54 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
 
   if (isPending) return <div className="empty-state" role="status">Carregando presenças…</div>;
 
+  const ownResponse = (activity: Activity) => entries[activity.id]?.find((entry) => entry.user_id === userId)?.response;
+  const matches = (activity: Activity, wanted: Filter) =>
+    wanted === "todas" || (wanted === "pendentes" ? !isActivityClosed(activity) && !ownResponse(activity) : ownResponse(activity) === "vai");
+  const filterCounts: Record<Filter, number> = {
+    todas: activities.length,
+    pendentes: activities.filter((activity) => matches(activity, "pendentes")).length,
+    vou: activities.filter((activity) => matches(activity, "vou")).length,
+  };
+  // As atividades já chegam em ordem de data: cada mês vira um bloco com título.
+  const groups: Array<{ title: string; items: Activity[] }> = [];
+  for (const activity of activities.filter((item) => matches(item, filter))) {
+    const title = monthTitle(activity);
+    const last = groups[groups.length - 1];
+    if (last?.title === title) last.items.push(activity);
+    else groups.push({ title, items: [activity] });
+  }
+
   return (
     <div className="m-activities">
       {isError && <div className="empty-state" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
-      {activities.map((activity) => {
+      <div className="m-filters" role="group" aria-label="Filtrar atividades">
+        {(Object.keys(filterLabels) as Filter[]).map((key) => (
+          <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)}>
+            {filterLabels[key]}<span className="count-pill">{filterCounts[key]}</span>
+          </button>
+        ))}
+      </div>
+      {!groups.length && <div className="empty-state" role="status"><Users /><h2>{filter === "pendentes" ? "Nada sem resposta" : "Nenhuma atividade aqui"}</h2><p>{filter === "pendentes" ? "Você já respondeu todas as atividades abertas." : "Quando você confirmar presença, as atividades aparecem aqui."}</p></div>}
+      {groups.map((group) => <section className="m-month" key={group.title} aria-label={group.title}>
+        <h2 className="m-month-title">{group.title}</h2>
+      {group.items.map((activity) => {
         const activityEntries = entries[activity.id] ?? [];
         const own = activityEntries.find((entry) => entry.user_id === userId);
         const attending = activityEntries.filter((entry) => entry.response === "vai");
         const absent = activityEntries.filter((entry) => entry.response === "nao_vai");
-        const isClosed = !activity.attendance_open || activity.status === "cancelado" || activity.status === "finalizado";
+        const isClosed = isActivityClosed(activity);
         const start = new Date(activity.starts_at);
         const confirmed = attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0);
         const form = formFor(activity.id);
         const closedReason = activity.status === "cancelado" ? "Atividade cancelada." : activity.status === "finalizado" ? "Atividade finalizada." : "A lista de presença está fechada.";
 
         return (
-          <article className="m-activity" id={`activity-${activity.id}`} key={activity.id}>
+          <article className="m-activity" id={`activity-${activity.id}`} key={activity.id} data-answer={own?.response ?? (isClosed ? "closed" : "open")}>
             <header>
               <span className="date-chip" aria-hidden="true"><strong>{start.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: "America/Sao_Paulo" })}</strong><small>{start.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" }).replace(".", "")}</small></span>
               <div className="m-activity-title">
                 <div className="m-activity-tags"><span>{activity.type}</span>{activity.status !== "confirmado" && <StatusBadge status={activity.status} />}{own && <StatusBadge status={own.response === "vai" ? "aprovado" : "suspenso"} label={own.response === "vai" ? "Você vai" : "Você não vai"} />}</div>
-                <h2>{activity.title}</h2>
+                <h3>{activity.title}</h3>
                 <p><span>{start.toLocaleDateString("pt-BR", dateOptions)} · {activityTime(activity)}</span><span>{activity.location}</span></p>
               </div>
               <div className="m-activity-count"><strong>{confirmed}</strong><small>confirmados</small></div>
@@ -233,6 +270,7 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
           </article>
         );
       })}
+      </section>)}
     </div>
   );
 }

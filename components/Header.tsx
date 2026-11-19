@@ -8,7 +8,7 @@ import { ChevronDown, LogIn, LogOut, Menu, Shield, UserPlus, UserRound, X } from
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import type { ClientAccount } from "@/lib/account-switch";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { adminRoleOptions, getMemberTheme } from "@/lib/member-access";
+import { adminRoleOptions } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
@@ -53,12 +53,6 @@ export default function Header() {
   const reloadAccount = useRef<(() => void) | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
   const activitiesRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const isMemberArea = pathname === "/membro" || pathname.startsWith("/membro/");
-    document.documentElement.dataset.memberTheme = isMemberArea ? getMemberTheme(account?.profile) : "padrao";
-    return () => { delete document.documentElement.dataset.memberTheme; };
-  }, [account?.profile, pathname]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
