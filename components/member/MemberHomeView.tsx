@@ -2,10 +2,11 @@ import Link from "next/link";
 import { CalendarCheck, CalendarX, ChevronRight, ClipboardCheck, MapPin, NotebookPen, UserCheck } from "lucide-react";
 import Panel from "@/components/admin/ui/Panel";
 import StatusBadge from "@/components/admin/ui/StatusBadge";
-import { BuildInsignia, GraduationInsignia } from "@/components/member/Insignia";
+import { GraduationInsignia } from "@/components/member/Insignia";
 import MemberHero from "@/components/member/MemberHero";
 import TrackGroup from "@/components/member/TrackGroup";
 import { graduationLabels, graduationTracks, houseFor, isCommander, memberKindLabels, rankLabels } from "@/lib/member-access";
+import { normalizeBuildName } from "@/lib/insignias";
 import { relativeDayLabel } from "@/lib/relative-day";
 import { getZodiacSign } from "@/lib/zodiac";
 import type { MemberProfile } from "@/lib/types";
@@ -56,7 +57,7 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, canE
         <div className="m-home-grid">
           <div className="m-home-main">
             {attention.length > 0 && (
-              <Panel title="Precisa da sua atenção" description="O que está esperando por você." flush>
+              <Panel title="Precisa da sua atenção" flush>
                 <ul className="m-attention">{attention.map((item) => <li key={item.href}>
                   <Link href={item.href}><span className="m-attention-icon" aria-hidden="true">{item.icon}</span><span className="m-attention-text"><strong>{item.title}</strong><small>{item.text}</small></span><ChevronRight aria-hidden="true" /></Link>
                 </li>)}</ul>
@@ -67,7 +68,6 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, canE
               <section className="m-next" aria-labelledby="m-next-title">
                 <header>
                   <h2 id="m-next-title">Próxima atividade</h2>
-                  <Link className="text-button" href="/membro/atividades">Ver todas</Link>
                 </header>
                 <Link className="m-next-card" href={`/membro/atividades#activity-${next.id}`} data-answer={responses[next.id] ?? (!next.attendance_open || next.status === "finalizado" ? "closed" : "open")}>
                   <span className="m-next-date" aria-hidden="true"><strong>{day(next.starts_at)}</strong><small>{month(next.starts_at)}</small></span>
@@ -93,7 +93,7 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, canE
                 )}
               </section>
             ) : (
-              <div className="empty-state m-no-activity"><CalendarX /><h2>Nenhuma atividade marcada</h2><p>Quando houver uma nova atividade, ela aparece aqui.</p></div>
+              <div className="empty-state m-no-activity"><CalendarX /><h2>Nenhuma atividade marcada</h2></div>
             )}
           </div>
 
@@ -103,8 +103,8 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, canE
                 <div><dt>Vínculo</dt><dd>{memberKindLabels[profile.member_kind]}</dd></div>
                 <div><dt>Patente</dt><dd>{rankLabels[profile.rank]}</dd></div>
                 <div><dt>Camisa</dt><dd>{profile.shirt_number ?? "—"}</dd></div>
-                <div><dt>Build principal</dt><dd><BuildInsignia build={profile.primary_build} /></dd></div>
-                <div><dt>Build secundária</dt><dd><BuildInsignia build={profile.secondary_build} /></dd></div>
+                <div><dt>Build principal</dt><dd>{normalizeBuildName(profile.primary_build) || "Não informada"}</dd></div>
+                <div><dt>Build secundária</dt><dd>{normalizeBuildName(profile.secondary_build) || "Não informada"}</dd></div>
                 <div><dt>Signo</dt><dd>{getZodiacSign(profile.birth_date ?? "") || "—"}</dd></div>
               </dl>
             </Panel>

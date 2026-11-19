@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Bookmark, Check, ChevronLeft, ChevronRight, Clock3, LoaderCircle, LockKeyhole, Send, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bookmark, Check, ChevronLeft, ChevronRight, Clock3, LoaderCircle, LockKeyhole, Play, Send, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
@@ -211,7 +211,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
     </div>
     <div className="assessment-warning"><LockKeyhole /><p><strong>Tentativa única.</strong> Se fechar a página, você continua de onde parou enquanto houver prazo.</p></div>
     {error && <p className="assessment-error">{error}</p>}
-    <button className="button button-primary assessment-start" type="button" onClick={() => requestAction("start")} disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ClipboardIcon />} Iniciar avaliação</button>
+    <button className="button button-primary assessment-start" type="button" onClick={() => requestAction("start")} disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <Play aria-hidden="true" />} Iniciar</button>
   </article>;
 
   if (payload.assignment.status !== "em_andamento") return <article className={`assessment-result-card ${payload.assignment.passed ? "passed" : payload.assignment.status === "corrigido" ? "failed" : "pending"}`}>
@@ -223,7 +223,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
       <p>{payload.assignment.correct_count ?? 0} acertos · {payload.assignment.incorrect_count ?? 0} erros</p>
       <span className="assessment-decision">{payload.assignment.passed ? "Aprovado" : "Não aprovado"}</span>
     </> : <p>Esta indicação está {assessmentAssignmentStatusLabels[payload.assignment.status].toLocaleLowerCase("pt-BR")} e não pode ser respondida.</p>}
-    <Link className="button button-primary" href="/membro/simulados">Voltar ao histórico</Link>
+    <Link className="button button-primary" href="/membro/simulados">Voltar</Link>
   </article>;
 
   return <div className="assessment-exam-shell">
@@ -241,7 +241,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
         })}
       </aside>
       {current && <article className="assessment-question-card">
-        <header><div><span>Questão {currentIndex + 1} de {questions.length}</span><strong>{current.question_type === "objetiva" ? "Escolha uma alternativa" : "Resposta aberta"}</strong></div><button type="button" className={marked.has(current.id) ? "active" : ""} onClick={() => setMarked((currentMarked) => { const next = new Set(currentMarked); if (next.has(current.id)) next.delete(current.id); else next.add(current.id); return next; })}><Bookmark /> {marked.has(current.id) ? "Marcada" : "Revisar depois"}</button></header>
+        <header><div><span>Questão {currentIndex + 1} de {questions.length}</span><strong>{current.question_type === "objetiva" ? "Escolha uma alternativa" : "Resposta aberta"}</strong></div><button type="button" className={marked.has(current.id) ? "active" : ""} aria-pressed={marked.has(current.id)} title={marked.has(current.id) ? "Marcada para revisar" : "Revisar depois"} aria-label={marked.has(current.id) ? "Desmarcar revisão" : "Marcar para revisar depois"} onClick={() => setMarked((currentMarked) => { const next = new Set(currentMarked); if (next.has(current.id)) next.delete(current.id); else next.add(current.id); return next; })}><Bookmark fill={marked.has(current.id) ? "currentColor" : "none"} aria-hidden="true" /></button></header>
         <h3>{current.prompt}</h3>
         {current.question_type === "objetiva" ? <div className="assessment-options">
           {current.options.map((option, index) => <label className={answers[current.id]?.selected_option === index ? "selected" : ""} key={`${current.id}-${index}`}><input type="radio" name={`question-${current.id}`} checked={answers[current.id]?.selected_option === index} onChange={() => void saveAnswer(current, { item_id: current.id, selected_option: index })} /><span className="assessment-option-letter">{String.fromCharCode(65 + index)}</span><span>{option}</span>{answers[current.id]?.selected_option === index && <Check />}</label>)}
@@ -254,11 +254,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
       <button className="button button-ghost" type="button" onClick={() => void navigate(currentIndex - 1)} disabled={currentIndex === 0 || busy}><ChevronLeft /> Anterior</button>
       {currentIndex < questions.length - 1
         ? <button className="button button-primary" type="button" onClick={() => void navigate(currentIndex + 1)} disabled={busy}>Próxima <ChevronRight /></button>
-        : <button className="button button-primary" type="button" onClick={() => void submit()} disabled={busy || saving}>{busy ? <LoaderCircle className="spin" /> : <Send />} Entregar avaliação</button>}
+        : <button className="button button-primary" type="button" onClick={() => void submit()} disabled={busy || saving}>{busy ? <LoaderCircle className="spin" /> : <Send aria-hidden="true" />} Entregar</button>}
     </nav>
   </div>;
-}
-
-function ClipboardIcon() {
-  return <ShieldCheck />;
 }

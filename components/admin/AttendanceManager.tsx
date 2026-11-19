@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CircleHelp, Edit3, RefreshCw, Save, UserRound, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, Pencil, RefreshCw, Save, UserRound, XCircle } from "lucide-react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { useToast } from "@/components/admin/ToastProvider";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
@@ -83,9 +83,9 @@ export default function AttendanceManager() {
   }
 
   return <section>
-    <AdminTitle eyebrow="Pessoas" title="Presenças" description="Consulte e corrija as respostas de presença de cada membro." />
+    <AdminTitle eyebrow="Pessoas" title="Presenças" />
     <div className="attendance-layout">
-      <Panel title="Membros" description="Escolha um membro para ver o histórico." flush>
+      <Panel title="Membros" flush>
         <div className="attendance-search"><SearchField value={search} onChange={setSearch} placeholder="Buscar por apelido" label="Buscar membro" /></div>
         {membersQuery.isPending && <p className="table-empty" role="status">Carregando membros…</p>}
         {membersQuery.isError && <p className="table-empty" role="alert">{membersQuery.error.message} <button className="text-button" type="button" onClick={() => void membersQuery.refetch()}>Tentar novamente</button></p>}
@@ -99,12 +99,12 @@ export default function AttendanceManager() {
       </Panel>
 
       <div className="attendance-detail" ref={detailRef}>
-        {!memberId && <div className="attendance-empty-detail"><UserRound aria-hidden="true" /><strong>Nenhum membro selecionado</strong><span>Escolha alguém na lista para ver e corrigir as respostas.</span></div>}
+        {!memberId && <div className="attendance-empty-detail"><UserRound aria-hidden="true" /><strong>Nenhum membro selecionado</strong></div>}
         {memberId && <>
           <Panel
             title={selectedMember?.nickname ?? "Membro"}
             description="As respostas indicam intenção de participar e não comprovam comparecimento. Convidados não entram nos totais."
-            actions={<button className="button button-ghost button-small" type="button" disabled={history.isFetching || mutation.isPending} onClick={() => void history.refetch()}><RefreshCw size={16} className={history.isFetching ? "spin" : ""} /> {history.isFetching ? "Atualizando…" : "Atualizar"}</button>}
+            actions={<button className="icon-button" type="button" disabled={history.isFetching || mutation.isPending} onClick={() => void history.refetch()} title={history.isFetching ? "Atualizando…" : "Atualizar"} aria-label="Atualizar histórico"><RefreshCw className={history.isFetching ? "spin" : ""} aria-hidden="true" /></button>}
           >
             {history.isPending && <p role="status">Carregando histórico…</p>}
             {history.isError && <p role="alert">{history.error.message} <button className="text-button" type="button" onClick={() => void history.refetch()}>Tentar novamente</button></p>}
@@ -135,7 +135,7 @@ export default function AttendanceManager() {
                 { key: "guests", header: "Convidados", render: (activity) => entries.get(activity.id)?.guest_count ?? 0 },
                 {
                   key: "actions", header: "Ação", srOnlyHeader: true, className: "row-actions",
-                  render: (activity) => <button type="button" title="Corrigir presença" aria-label={`Corrigir presença em ${activity.title}`} disabled={mutation.isPending} onClick={() => startEdit(activity)}><Edit3 size={16} aria-hidden="true" /></button>,
+                  render: (activity) => <button type="button" title="Corrigir presença" aria-label={`Corrigir presença em ${activity.title}`} disabled={mutation.isPending} onClick={() => startEdit(activity)}><Pencil aria-hidden="true" /></button>,
                 },
               ]}
               rowClassName={(activity) => editing?.activityId === activity.id ? "is-selected" : undefined}
@@ -149,7 +149,7 @@ export default function AttendanceManager() {
                         <div className="field"><label htmlFor="attendance-guests">Convidados</label><input id="attendance-guests" type="number" min={0} max={30} required disabled={editing.response !== "vai"} value={editing.guest_count} onChange={(event) => setEditing({ ...editing, guest_count: Number(event.target.value) })} /></div>
                         <div className="field is-full"><label htmlFor="attendance-note">Observação pública<span className="opt">opcional</span></label><input id="attendance-note" maxLength={180} disabled={editing.response === null} value={editing.note} onChange={(event) => setEditing({ ...editing, note: event.target.value })} /></div>
                       </div>
-                      <div className="form-actions"><button className="button button-primary" type="submit"><Save size={17} /> {mutation.isPending ? "Salvando…" : "Salvar correção"}</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div>
+                      <div className="form-actions"><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button><button className="button button-primary" type="submit"><Save aria-hidden="true" /> {mutation.isPending ? "Salvando…" : "Salvar"}</button></div>
                     </fieldset>
                   </form>
                 </td></tr>

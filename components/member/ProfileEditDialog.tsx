@@ -199,15 +199,15 @@ export default function ProfileEditDialog({
             <span className="eyebrow">Área do membro</span>
             <h2 id="profile-dialog-title">Editar perfil</h2>
           </div>
-          <button className="game-modal-close" type="button" onClick={requestClose} disabled={saving} aria-label="Fechar">
-            <X size={22} aria-hidden="true" />
+          <button className="icon-button" type="button" onClick={requestClose} disabled={saving} aria-label="Fechar" title="Fechar">
+            <X aria-hidden="true" />
           </button>
         </header>
 
         <nav className="profile-dialog-nav" aria-label="Seções do formulário">
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button key={id} type="button" className="profile-dialog-chip" aria-current={active === id ? "true" : undefined} onClick={() => goTo(id)}>
-              <Icon size={15} aria-hidden="true" /> {label}
+              <Icon aria-hidden="true" /> {label}
             </button>
           ))}
         </nav>
@@ -335,7 +335,7 @@ export default function ProfileEditDialog({
             <section className="profile-dialog-section" data-section="seguranca" aria-labelledby="profile-section-seguranca">
               <h3 id="profile-section-seguranca">Segurança</h3>
               <button className="button button-ghost button-small" type="button" aria-expanded={passwordOpen} aria-controls="profile-password-fields" onClick={togglePassword}>
-                <KeyRound size={16} aria-hidden="true" /> {passwordOpen ? "Cancelar troca de senha" : "Alterar senha"}
+                <KeyRound aria-hidden="true" /> {passwordOpen ? "Cancelar" : "Alterar senha"}
               </button>
               {passwordOpen && (
                 <div id="profile-password-fields" className="profile-dialog-password">
@@ -355,8 +355,8 @@ export default function ProfileEditDialog({
                   </div>
                   <div className="profile-dialog-password-foot">
                     <small id="member-new-password-hint" className="profile-dialog-hint">Mínimo de {PASSWORD_MIN} caracteres.</small>
-                    <button className="text-button" type="button" aria-pressed={reveal} onClick={() => setReveal((current) => !current)}>
-                      {reveal ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />} {reveal ? "Ocultar senhas" : "Mostrar senhas"}
+                    <button className="icon-button" type="button" aria-pressed={reveal} onClick={() => setReveal((current) => !current)} title={reveal ? "Ocultar senhas" : "Mostrar senhas"} aria-label={reveal ? "Ocultar senhas" : "Mostrar senhas"}>
+                      {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
@@ -373,13 +373,13 @@ export default function ProfileEditDialog({
             <div className="profile-dialog-actions">
               {showConfirm ? (
                 <>
-                  <button className="button button-ghost button-small" type="button" onClick={() => setConfirmDiscard(false)}>Continuar editando</button>
+                  <button className="button button-ghost button-small" type="button" onClick={() => setConfirmDiscard(false)}>Voltar</button>
                   <button className="button button-danger button-small" type="button" onClick={onClose}>Descartar</button>
                 </>
               ) : (
                 <>
                   <button className="button button-ghost button-small" type="button" onClick={requestClose} disabled={saving}>Cancelar</button>
-                  <button className="button button-primary button-small" type="submit" disabled={saving || changes === 0}><Save size={16} aria-hidden="true" /> {saving ? "Salvando…" : "Salvar"}</button>
+                  <button className="button button-primary button-small" type="submit" disabled={saving || changes === 0}><Save aria-hidden="true" /> {saving ? "Salvando…" : "Salvar"}</button>
                 </>
               )}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, ShieldCheck, Trash2, UserX } from "lucide-react";
+import { Pencil, ShieldCheck, Trash2, UserX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -242,10 +242,10 @@ export default function MembersSection() {
   }
 
   return <div>
-    <AdminTitle eyebrow="Pessoas" title="Membros" description="Aprove cadastros e pedidos de alteração de dados, ou consulte e gerencie todos os membros." />
+    <AdminTitle eyebrow="Pessoas" title="Membros" />
     <div className="admin-subtabs" role="tablist" aria-label="Seções de membros" onKeyDown={onTabListKeyDown}>
       <button type="button" role="tab" id="member-tab-pendentes" aria-controls="member-panel" tabIndex={memberTab === "pendentes" ? 0 : -1} aria-selected={memberTab === "pendentes"} className={memberTab === "pendentes" ? "active" : ""} onClick={() => setMemberTab("pendentes")}>Aguardando ação <CountBadge count={membersNeedingAction} label="membros aguardando ação" /></button>
-      <button type="button" role="tab" id="member-tab-todos" aria-controls="member-panel" tabIndex={memberTab === "todos" ? 0 : -1} aria-selected={memberTab === "todos"} className={memberTab === "todos" ? "active" : ""} onClick={() => setMemberTab("todos")}>Todos os membros</button>
+      <button type="button" role="tab" id="member-tab-todos" aria-controls="member-panel" tabIndex={memberTab === "todos" ? 0 : -1} aria-selected={memberTab === "todos"} className={memberTab === "todos" ? "active" : ""} onClick={() => setMemberTab("todos")}>Todos</button>
     </div>
 
     {memberTab === "pendentes" && <div role="tabpanel" id="member-panel" aria-labelledby="member-tab-pendentes">
@@ -321,7 +321,7 @@ export default function MembersSection() {
                 if (!canEditAccess(member) && !canManageMember(member)) return <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>;
                 const manage = canManageMember(member);
                 return <RowMenu label={`Ações de ${member.nickname}`} items={[
-                  { label: "Editar acessos", icon: <Edit3 />, hidden: !canEditAccess(member), onSelect: () => editMember(member) },
+                  { label: "Editar acessos", icon: <Pencil />, hidden: !canEditAccess(member), onSelect: () => editMember(member) },
                   { label: "Aprovar", icon: <ShieldCheck />, hidden: !manage || member.status === "aprovado", disabled: busyMemberId === member.id, onSelect: () => void updateMemberStatus(member.id, "aprovado", `${member.nickname} aprovado.`) },
                   { label: "Suspender", icon: <UserX />, danger: true, hidden: !manage || member.status === "suspenso", onSelect: () => void suspendMember(member) },
                   { label: "Excluir", icon: <Trash2 />, danger: true, hidden: !manage, onSelect: () => void deleteMember(member) },

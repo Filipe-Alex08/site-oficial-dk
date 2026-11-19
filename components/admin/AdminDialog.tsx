@@ -9,7 +9,7 @@ export default function AdminDialog({ title, description, onClose, footer, child
   title: string;
   description?: string;
   onClose: () => void;
-  footer: ReactNode;
+  footer?: ReactNode;
   children?: ReactNode;
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
   size?: "sm" | "md";
@@ -24,7 +24,7 @@ export default function AdminDialog({ title, description, onClose, footer, child
       <button className="admin-dialog-close" type="button" onClick={onClose} aria-label="Fechar"><X size={18} aria-hidden="true" /></button>
     </header>
     {children != null && <div className="admin-dialog-body">{children}</div>}
-    <footer className="admin-dialog-foot">{footer}</footer>
+    {footer && <footer className="admin-dialog-foot">{footer}</footer>}
   </>;
 
   return <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>

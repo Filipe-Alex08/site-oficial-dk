@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Download, Edit3, ExternalLink, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { ChevronDown, Download, ExternalLink, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAdminData } from "@/components/admin/AdminDataContext";
@@ -194,8 +194,7 @@ export default function MediaSection({ active }: { active: boolean }) {
     <AdminTitle
       eyebrow="Conteúdo"
       title="Mídias"
-      description="Publicações do site, importação do Instagram e galerias de fotos e vídeos."
-      action={<button className="button button-primary" type="button" onClick={openNew}><Plus size={18} /> Nova publicação</button>}
+      action={<button className="button button-primary" type="button" onClick={openNew}><Plus aria-hidden="true" /> Nova publicação</button>}
     />
 
     <details className="import-strip">
@@ -210,8 +209,7 @@ export default function MediaSection({ active }: { active: boolean }) {
       <div className="admin-panel-grid import-strip-body">
         <Panel
           title="Cota de importação"
-          description="Consumo mensal da importação do Instagram."
-          actions={<button className="apify-quota-refresh" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota}><RefreshCw size={14} className={loadingQuota ? "spin" : ""} />{loadingQuota ? "Consultando…" : "Atualizar"}</button>}
+          actions={<button className="icon-button" type="button" onClick={() => void refreshQuota()} disabled={loadingQuota} title={loadingQuota ? "Consultando…" : "Atualizar cota"} aria-label="Atualizar cota"><RefreshCw className={loadingQuota ? "spin" : ""} aria-hidden="true" /></button>}
         >
           {quotaError && <p className="apify-quota-error" role="alert">{quotaError}</p>}
           {quota
@@ -227,8 +225,8 @@ export default function MediaSection({ active }: { active: boolean }) {
             <div className="field"><label htmlFor="instagram-start-date">De</label><input id="instagram-start-date" type="date" value={instagramDateRange.start} max={instagramDateRange.end} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, start: event.target.value })} /></div>
             <div className="field"><label htmlFor="instagram-end-date">Até</label><input id="instagram-end-date" type="date" value={instagramDateRange.end} min={instagramDateRange.start} onChange={(event) => setInstagramDateRange({ ...instagramDateRange, end: event.target.value })} /></div>
             <button className="button button-ghost" type="button" onClick={() => void syncInstagram()} disabled={syncingInstagram}>
-              <RefreshCw size={17} className={syncingInstagram ? "spin" : ""} />
-              {syncingInstagram ? "Buscando publicações…" : "Importar do Instagram"}
+              {syncingInstagram ? <span className="inline-spinner" aria-hidden="true" /> : <Download aria-hidden="true" />}
+              {syncingInstagram ? "Importando…" : "Importar"}
             </button>
           </div>
         </Panel>
@@ -255,7 +253,7 @@ export default function MediaSection({ active }: { active: boolean }) {
           {
             key: "actions", header: "Ações", srOnlyHeader: true, className: "row-actions",
             render: (post) => <RowMenu label={`Ações de ${post.title}`} items={[
-              { label: "Editar", icon: <Edit3 />, onSelect: () => openEdit(post) },
+              { label: "Editar", icon: <Pencil />, onSelect: () => openEdit(post) },
               { label: "Ver no site", icon: <ExternalLink />, hidden: !post.published, onSelect: () => { window.open(`/midias/${post.slug}`, "_blank", "noopener"); } },
               { label: "Excluir", icon: <Trash2 />, danger: true, onSelect: () => void removePost(post) },
             ]} />,
@@ -268,17 +266,16 @@ export default function MediaSection({ active }: { active: boolean }) {
 
     {selectedPostIds.size > 0 && active && <div className="bulk-bar" role="region" aria-label="Ações em lote">
       <strong>{selectedPostIds.size} {selectedPostIds.size === 1 ? "selecionada" : "selecionadas"}</strong>
-      <button className="button button-ghost button-small" type="button" onClick={() => setSelectedPostIds(new Set())}><X size={16} /> Limpar</button>
+      <button className="icon-button" type="button" onClick={() => setSelectedPostIds(new Set())} title="Limpar seleção" aria-label="Limpar seleção"><X aria-hidden="true" /></button>
       <button className="button button-danger button-small" type="button" onClick={() => void removeSelectedPosts()}><Trash2 size={16} /> Excluir</button>
     </div>}
 
     {drawerOpen && active && <Drawer
       title={drawerTitle}
-      description={editingPostTemplate ? undefined : "Texto, categoria e capa da publicação."}
       onClose={closeDrawer}
       onSubmit={savePost}
       headerExtra={editingPostTemplate
-        ? <p className="template-mode-note" role="status">Você está editando um template: nada aqui cria ou altera uma publicação. Os campos podem ficar em branco.</p>
+        ? <p className="template-mode-note" role="status">Editando template: os campos podem ficar em branco.</p>
         : <TemplateBar
           kind="post"
           store={postTemplates}
@@ -294,7 +291,7 @@ export default function MediaSection({ active }: { active: boolean }) {
         />}
       footer={<>
         <button className="button button-ghost" type="button" onClick={() => { loadPostForm(emptyPost); closeDrawer(); }}>Cancelar</button>
-        <button className="button button-primary" type="submit">{editingPostTemplate ? "Salvar template" : editingPost ? "Salvar alterações" : "Criar publicação"}</button>
+        <button className="button button-primary" type="submit">{editingPostTemplate ? "Salvar template" : editingPost ? "Salvar" : "Criar"}</button>
       </>}
     >
       <div className="admin-form">
@@ -320,7 +317,7 @@ export default function MediaSection({ active }: { active: boolean }) {
                 <div className="field"><label htmlFor="post-cover">Imagem de capa<span className="opt">URL</span></label><input id="post-cover" type="url" inputMode="url" placeholder="https://" value={postForm.cover_url} onChange={(event) => setPostForm({ ...postForm, cover_url: event.target.value })} /></div>
                 <div className="field"><label htmlFor="post-youtube">YouTube<span className="opt">URL</span></label><input id="post-youtube" type="url" inputMode="url" placeholder="https://" value={postForm.youtube_url} onChange={(event) => setPostForm({ ...postForm, youtube_url: event.target.value })} /></div>
                 <div className="field"><label htmlFor="post-tiktok">TikTok<span className="opt">URL</span></label><input id="post-tiktok" type="url" inputMode="url" placeholder="https://" value={postForm.tiktok_url} onChange={(event) => setPostForm({ ...postForm, tiktok_url: event.target.value })} /></div>
-                {!editingPostTemplate && <div className="field"><label htmlFor="post-slug">Endereço personalizado</label><input id="post-slug" value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} /><p className="field-hint">Gerado a partir do título. Só altere se precisar.</p></div>}
+                {!editingPostTemplate && <div className="field"><label htmlFor="post-slug">Endereço personalizado</label><input id="post-slug" value={postForm.slug} onChange={(event) => setPostForm({ ...postForm, slug: event.target.value })} /><p className="field-hint">Gerado a partir do título.</p></div>}
               </div>
             </details>
           </div>

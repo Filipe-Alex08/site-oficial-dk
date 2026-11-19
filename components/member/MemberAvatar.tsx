@@ -142,8 +142,8 @@ export default function MemberAvatar({ avatarUrl, avatarPath, nickname, userId }
         {avatarUrl ? <Image src={avatarUrl} alt={`Foto de ${nickname}`} width={84} height={84} unoptimized /> : <UserRound />}
       </button>
       {menuOpen && <div className="profile-avatar-menu" style={menuPosition} role="group" aria-label="Opções da foto de perfil">
-        <button type="button" onClick={() => inputRef.current?.click()}><ImagePlus size={16} /> Mudar foto</button>
-        <button type="button" disabled={!avatarPath} onClick={removePhoto}><Trash2 size={16} /> Remover foto</button>
+        <button type="button" onClick={() => inputRef.current?.click()}><ImagePlus aria-hidden="true" /> Mudar foto</button>
+        <button type="button" disabled={!avatarPath} onClick={removePhoto}><Trash2 aria-hidden="true" /> Remover foto</button>
       </div>}
       <input ref={inputRef} className="member-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Escolher nova foto de perfil" onChange={(event) => {
         const file = event.target.files?.[0];

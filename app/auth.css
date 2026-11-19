@@ -343,20 +343,8 @@ a.card:hover .card-cta svg {
 }
 
 .attendance-actions .button {
-  min-height: 42px;
-  padding-inline: 17px
-}
-
-.text-button {
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  text-decoration: underline
-}
-
-.text-button:hover {
-  color: white
+  min-height: 36px;
+  padding-inline: 15px
 }
 
 .attendance-columns {
@@ -421,8 +409,8 @@ a.card:hover .card-cta svg {
 }
 
 .attendance-card>footer .button {
-  min-height: 42px;
-  padding-inline: 16px
+  min-height: 34px;
+  padding-inline: 14px
 }
 
 @media(max-width:800px) {
@@ -790,12 +778,6 @@ a.card:hover .card-cta svg {
   font-size: 1.05rem
 }
 
-.avatar-cropper p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: .8rem
-}
-
 .avatar-cropper-stage {
   position: relative;
   max-width: 100%;
@@ -885,7 +867,7 @@ a.card:hover .card-cta svg {
 
 .avatar-cropper-actions button {
   flex: 1;
-  min-height: 40px;
+  min-height: 36px;
   border: 1px solid var(--line);
   background: transparent;
   color: var(--text-muted);
@@ -894,10 +876,15 @@ a.card:hover .card-cta svg {
 }
 
 .avatar-cropper-actions .avatar-cropper-save {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.34), rgba(var(--accent-rgb), 0.14));
+  color: var(--text);
+  font-weight: 700
+}
+
+.avatar-cropper-actions .avatar-cropper-save:hover:not(:disabled) {
   border-color: var(--accent-bright);
-  background: var(--accent-bright);
-  color: #0b0b0b;
-  font-weight: 600
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.46), rgba(var(--accent-rgb), 0.22))
 }
 
 .avatar-cropper-actions button:disabled {
@@ -1296,6 +1283,7 @@ a.card:hover .card-cta svg {
 }
 
 .profile-dialog-password {
+  animation: fade-down var(--dur-2) var(--ease-out);
   margin-top: 16px;
   padding: 18px;
   background: var(--surface-2);
@@ -1309,13 +1297,6 @@ a.card:hover .card-cta svg {
   justify-content: space-between;
   gap: 12px;
   margin-top: 12px
-}
-
-.profile-dialog-password-foot .text-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: .85rem
 }
 
 .profile-dialog-footer {
@@ -1493,4 +1474,18 @@ a.card:hover .card-cta svg {
 
 .saved-accounts + .login-form {
   margin-top: 0
+}
+
+/* =========================================================
+   Movimento dos botões do perfil e das contas: transição, press e aberturas animadas.
+   ========================================================= */
+.profile-avatar-menu button, .avatar-cropper-zoom button, .avatar-cropper-actions button, .saved-account, .saved-account-forget, .document-access-trigger, .document-access-close {
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.avatar-cropper-zoom button, .avatar-cropper-actions button { border-radius: var(--r-sm); }
+.avatar-cropper-zoom button:active:not(:disabled), .avatar-cropper-actions button:active:not(:disabled), .profile-avatar-menu button:active:not(:disabled), .saved-account-forget:active:not(:disabled), .document-access-trigger:active { transform: scale(0.95); transition-duration: 0.06s; }
+.profile-avatar-menu, .document-access-popover { animation: pop-in var(--dur-1) var(--ease-out); transform-origin: top left; }
+@media (pointer: coarse) {
+  .avatar-cropper-zoom button { width: 36px; height: 36px; }
+  .profile-dialog-chip { min-height: 40px; }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clipboard, MessageCircle, Users, X } from "lucide-react";
+import { Check, Copy, MessageCircle, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rankLabels, rankOptions } from "@/lib/member-access";
@@ -174,7 +174,7 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
   }
 
   if (!activities.length) {
-    return <div className="empty-state"><Users /><h2>Nenhuma atividade aberta</h2><p>Quando houver uma nova atividade, ela aparece aqui.</p></div>;
+    return <div className="empty-state"><Users /><h2>Nenhuma atividade aberta</h2></div>;
   }
 
   if (isPending) return <div className="empty-state" role="status">Carregando presenças…</div>;
@@ -237,8 +237,8 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
                 ? <p className="m-activity-note" role="status">{closedReason}</p>
                 : <>
                   <div className="m-answer-buttons" role="group" aria-label={`Sua resposta para ${activity.title}`}>
-                    <button type="button" className={own?.response === "vai" ? "is-yes" : ""} aria-pressed={own?.response === "vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "vai")}>{busy === activity.id ? <span className="inline-spinner" aria-label="Salvando" /> : <Check size={18} />} Vou</button>
-                    <button type="button" className={own?.response === "nao_vai" ? "is-no" : ""} aria-pressed={own?.response === "nao_vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "nao_vai")}><X size={18} /> Não vou</button>
+                    <button type="button" className={own?.response === "vai" ? "is-yes" : ""} aria-pressed={own?.response === "vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "vai")}>{busy === activity.id ? <span className="inline-spinner" aria-label="Salvando" /> : <Check aria-hidden="true" />} Vou</button>
+                    <button type="button" className={own?.response === "nao_vai" ? "is-no" : ""} aria-pressed={own?.response === "nao_vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "nao_vai")}><X aria-hidden="true" /> Não vou</button>
                   </div>
                   <details className="m-answer-more" open={Boolean(form.guest_count || form.note)}>
                     <summary>Convidados e observação</summary>
@@ -248,7 +248,7 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
                     </div>
                     <p className="field-hint">Depois de alterar, toque em Vou ou Não vou para salvar.</p>
                   </details>
-                  {own && <button className="text-button" type="button" disabled={busy === activity.id} onClick={() => removeResponse(activity.id)}>{busy === activity.id ? "Salvando…" : "Remover minha resposta"}</button>}
+                  {own && <button className="text-button" type="button" disabled={busy === activity.id} onClick={() => removeResponse(activity.id)}>{busy === activity.id ? "Salvando…" : "Desfazer"}</button>}
                 </>}
             </div>
 
@@ -264,8 +264,8 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
             </div>
 
             <footer>
-              <button className="button button-ghost button-small" type="button" onClick={() => copyList(activity)}><Clipboard size={16} /> Copiar lista</button>
-              <button className="button button-ghost button-small" type="button" onClick={() => shareOnWhatsApp(activity)}><MessageCircle size={16} /> WhatsApp</button>
+              <button className="icon-button" type="button" onClick={() => copyList(activity)} title="Copiar lista" aria-label="Copiar lista de presença"><Copy aria-hidden="true" /></button>
+              <button className="icon-button" type="button" onClick={() => shareOnWhatsApp(activity)} title="Enviar no WhatsApp" aria-label="Enviar lista no WhatsApp"><MessageCircle aria-hidden="true" /></button>
             </footer>
           </article>
         );

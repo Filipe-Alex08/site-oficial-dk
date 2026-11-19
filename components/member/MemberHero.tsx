@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock3, LogOut } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import BuildEmblem from "@/components/member/BuildEmblem";
 import EditMemberProfile from "@/components/member/EditMemberProfile";
@@ -46,16 +46,13 @@ export default function MemberHero({ profile, avatarUrl, userId, canEditAccessDi
       <div className="m-hero-actions">
         <EditMemberProfile profile={profile} canEditAccessDirectly={canEditAccessDirectly} />
         <MemberStyleToggle />
-        <form action="/auth/signout" method="post">
-          <button className="text-button m-hero-signout" type="submit"><LogOut size={16} aria-hidden="true" /> Sair da conta</button>
-        </form>
       </div>
 
       {(profile.access_request_id || profile.graduation_review_needed || allClear) && (
         <div className="m-hero-notes">
           {profile.access_request_id && <p className="m-note is-warn" role="status"><Clock3 aria-hidden="true" /> Alteração de patente, graduação ou comando aguardando aprovação.</p>}
           {profile.graduation_review_needed && <p className="m-note is-warn" role="status"><AlertTriangle aria-hidden="true" /> Sua graduação está em revisão: um administrador vai definir o nível em cada trilha.</p>}
-          {allClear && <p className="m-note is-ok"><CheckCircle2 aria-hidden="true" /> Tudo em dia. Nada esperando por você agora.</p>}
+          {allClear && <p className="m-note is-ok"><CheckCircle2 aria-hidden="true" /> Tudo em dia.</p>}
         </div>
       )}
     </section>

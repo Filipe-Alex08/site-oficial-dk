@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, CircleHelp, Download, FileText, FileUp, Pencil, Plus, Shield, Trash2, Upload, X } from "lucide-react";
+import { Award, CircleHelp, ExternalLink, FileText, FileUp, Pencil, Plus, Shield, Trash2, Upload, X } from "lucide-react";
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { graduationLabels, graduationOptions, rankGroups, rankLabels } from "@/lib/member-access";
@@ -105,7 +105,7 @@ export default function DocumentManager() {
           </div>
         </section>
       </div>)}
-      <button className="button button-ghost document-add-rule" type="button" onClick={addRule}><Plus size={16} /> Adicionar requisito</button>
+      <button className="button button-ghost document-add-rule" type="button" onClick={addRule}><Plus aria-hidden="true" /> Adicionar requisito</button>
     </div>;
   }
   async function upload(event: FormEvent<HTMLFormElement>) {
@@ -128,8 +128,8 @@ export default function DocumentManager() {
   }
   const editingDocument = documents.find((document) => document.id === editing);
   return <div>
-    <AdminTitle eyebrow="Conteúdo" title="Documentos" description="PDFs internos, com acesso liberado por patente ou graduação." />
-    <Panel title="Enviar documento" description="PDF de até 20 MB, com acesso opcional por patente ou graduação.">
+    <AdminTitle eyebrow="Conteúdo" title="Documentos" />
+    <Panel title="Enviar documento" description="PDF de até 20 MB.">
     <form className="admin-form" onSubmit={upload} ref={formRef}>
       <section className="form-section">
         <FormSectionHead title="Arquivo" hint="Título e PDF que os membros vão abrir." />
@@ -143,7 +143,7 @@ export default function DocumentManager() {
         <FormSectionHead title="Acesso" hint="Sem requisitos, qualquer membro aprovado pode abrir o documento." />
         <div className="form-section-body">{renderRules(uploadRules)}</div>
       </section>
-      <div className="form-actions"><button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button></div>
+      <div className="form-actions"><button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload aria-hidden="true" /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button></div>
     </form>
     </Panel>
     {documentsQuery.isPending && <p className="empty-state" role="status">Carregando documentos…</p>}
@@ -152,7 +152,7 @@ export default function DocumentManager() {
       <ul className="document-admin-list">{documents.map((document) => <li key={document.id}>
         <FileText aria-hidden="true" />
         <div className="document-admin-text"><strong>{document.title}</strong><span>{accessLabel(document)}</span><small>{document.file_name}</small></div>
-        <a className="button button-ghost button-small" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" aria-label={`Abrir ${document.title}`}><Download size={16} /> Abrir</a>
+        <a className="icon-button" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" title="Abrir" aria-label={`Abrir ${document.title}`}><ExternalLink aria-hidden="true" /></a>
         <RowMenu label={`Ações de ${document.title}`} items={[
           { label: "Editar acesso", icon: <Pencil />, onSelect: () => startEdit(document) },
           { label: "Excluir", icon: <Trash2 />, danger: true, disabled: removeMutation.isPending, onSelect: () => void remove(document) },

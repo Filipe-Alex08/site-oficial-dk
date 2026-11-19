@@ -165,7 +165,6 @@ export default function AvatarCropper({ file, onCancel, onConfirm }: { file: Fil
     <div className="avatar-cropper-backdrop" role="presentation" onPointerDown={(event) => { if (event.target === event.currentTarget && !saving) onCancel(); }}>
       <div className="avatar-cropper" role="dialog" aria-modal="true" aria-label="Ajustar foto de perfil">
         <h2>Ajustar foto</h2>
-        <p>Arraste para posicionar e use o zoom para enquadrar.</p>
         <div
           ref={stageRef}
           className="avatar-cropper-stage"
@@ -203,7 +202,7 @@ export default function AvatarCropper({ file, onCancel, onConfirm }: { file: Fil
         </div>
         <div className="avatar-cropper-actions">
           <button type="button" className="avatar-cropper-cancel" onClick={onCancel} disabled={saving}>Cancelar</button>
-          <button type="button" className="avatar-cropper-save" onClick={confirm} disabled={saving || !natural || failed}>{saving ? "Salvando…" : "Salvar foto"}</button>
+          <button type="button" className="avatar-cropper-save" onClick={confirm} disabled={saving || !natural || failed}>{saving ? "Salvando…" : "Salvar"}</button>
         </div>
       </div>
     </div>,

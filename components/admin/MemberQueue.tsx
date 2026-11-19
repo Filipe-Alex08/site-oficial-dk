@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, CheckCircle2, Edit3, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2, Medal, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import Avatar from "@/components/admin/ui/Avatar";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
@@ -84,7 +84,7 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
   if (!members.length) {
-    return <div className="empty-state"><CheckCircle2 /><h3>Nenhuma pendência</h3><p>Novos cadastros e pedidos de alteração de dados aparecem aqui.</p></div>;
+    return <div className="empty-state"><CheckCircle2 /><h3>Nenhuma pendência</h3></div>;
   }
 
   function startAdjust(member: MemberProfile) {
@@ -216,23 +216,23 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
           {isSelf && <p className="form-help">Sua própria solicitação precisa ser analisada por outro administrador.</p>}
           {!isSelf && newRegistration && !canManage(member) && <p className="form-help">Esta conta só pode ser analisada pelo ADM Principal.</p>}
 
-          {graduationReview && canEditAccess(member) && <button className="button button-ghost" type="button" disabled={busy} onClick={() => onEditAccess(member)}><Edit3 size={17} /> Definir graduação</button>}
+          {graduationReview && canEditAccess(member) && <button className="button button-ghost" type="button" disabled={busy} onClick={() => onEditAccess(member)}><Medal aria-hidden="true" /> Definir graduação</button>}
 
           {dataRequest && !isSelf && (draft
             ? <>
-              <button className="button button-ghost" type="button" disabled={busy} onClick={() => stopAdjust(member.id)}>Cancelar ajuste</button>
-              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X size={17} /> Recusar dados</button>
-              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve", adjusted ? adjustments : undefined)}><Check size={17} /> {adjusted ? "Aprovar com ajustes" : "Aprovar dados"}</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => stopAdjust(member.id)}>Cancelar</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X aria-hidden="true" /> Recusar</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve", adjusted ? adjustments : undefined)}><Check aria-hidden="true" /> {adjusted ? "Aprovar ajustado" : "Aprovar"}</button>
             </>
             : <>
-              <button className="button button-ghost" type="button" disabled={busy} onClick={() => startAdjust(member)}><SlidersHorizontal size={17} /> Ajustar</button>
-              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X size={17} /> Recusar dados</button>
-              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve")}><Check size={17} /> Aprovar dados</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => startAdjust(member)}><SlidersHorizontal aria-hidden="true" /> Ajustar</button>
+              <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X aria-hidden="true" /> Recusar</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve")}><Check aria-hidden="true" /> Aprovar</button>
             </>)}
 
           {newRegistration && !isSelf && canManage(member) && <>
-            <button className="button button-danger" type="button" disabled={busy} onClick={() => onSetStatus(member, "recusado")}><X size={17} /> Recusar cadastro</button>
-            <button className="button button-primary" type="button" disabled={busy} onClick={() => onSetStatus(member, "aprovado")}><Check size={17} /> Aprovar cadastro</button>
+            <button className="button button-danger" type="button" disabled={busy} onClick={() => onSetStatus(member, "recusado")}><X aria-hidden="true" /> Recusar</button>
+            <button className="button button-primary" type="button" disabled={busy} onClick={() => onSetStatus(member, "aprovado")}><Check aria-hidden="true" /> Aprovar</button>
           </>}
         </div>
       </article>;

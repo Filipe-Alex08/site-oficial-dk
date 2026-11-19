@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Edit3 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useToast } from "@/components/admin/ToastProvider";
 import { createClient } from "@/lib/supabase/client";
 import { jsonApiFetch } from "@/lib/api-client";
@@ -177,7 +177,7 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     <div className="profile-edit">
       {children}
       <button ref={triggerRef} className="button button-ghost button-small profile-edit-open" type="button" aria-haspopup="dialog" onClick={openDialog}>
-        <Edit3 size={16} aria-hidden="true" /> Editar perfil
+        <Pencil aria-hidden="true" /> Editar perfil
       </button>
       {open && (
         <ProfileEditDialog

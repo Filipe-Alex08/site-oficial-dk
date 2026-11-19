@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Download, FileText } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import Panel from "@/components/admin/ui/Panel";
 import AppPageHeader from "@/components/member/AppPageHeader";
@@ -24,7 +24,7 @@ export default async function MemberDocumentsPage() {
 
   return (
     <>
-      <AppPageHeader title="Documentos" crumbs={[{ label: "Painel", href: "/membro" }]} />
+      <AppPageHeader title="Documentos" crumbs={[{ label: "Início", href: "/membro" }]} />
       <section className="section">
         <div className="container">
           {documents.length ? (
@@ -39,13 +39,13 @@ export default async function MemberDocumentsPage() {
                       <small>{document.file_name}</small>
                       <DocumentAccessBadge rules={document.access_rules ?? []} logic={document.access_logic ?? "or"} />
                     </div>
-                    <a className="button button-primary" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" aria-label={`Abrir PDF: ${document.title}`}><Download size={17} /> Abrir</a>
+                    <a className="button button-primary" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" aria-label={`Abrir PDF: ${document.title}`}><ExternalLink aria-hidden="true" /> Abrir</a>
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : (
-            <div className="empty-state"><FileText /><h2>Nenhum documento disponível</h2><p>Os materiais liberados para o seu perfil aparecem aqui.</p></div>
+            <div className="empty-state"><FileText /><h2>Nenhum documento disponível</h2></div>
           )}
         </div>
       </section>

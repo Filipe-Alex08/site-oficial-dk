@@ -57,13 +57,14 @@ export default async function MemberNotesPage({ searchParams }: { searchParams: 
       <LiveRefresh tables={["member_notes"]} />
       <AppPageHeader
         title="Anotações"
-        crumbs={[{ label: "Painel", href: "/membro" }]}
-        description={canWrite ? "Anotações privadas: só você e o outro membro podem lê-las." : "Anotações deixadas para você. Só você e quem as escreveu podem lê-las."}
+        crumbs={[{ label: "Início", href: "/membro" }]}
       />
       <section className="section">
         <div className="container m-notes-page">
-          {canWrite && <NoteComposer author={profile} recipients={recipients} restriction={recipientRestriction(profile, settings)} />}
-          <NoteList received={received} sent={sent} canWrite={canWrite} initialTab={aba === "enviadas" ? "enviadas" : "recebidas"} />
+          {canWrite && <NoteComposer author={profile} recipients={recipients} restriction={recipientRestriction(profile, settings)} startOpen={sent.length === 0} />}
+          <div className="m-notes-main">
+            <NoteList received={received} sent={sent} canWrite={canWrite} initialTab={aba === "enviadas" ? "enviadas" : "recebidas"} />
+          </div>
         </div>
       </section>
     </>

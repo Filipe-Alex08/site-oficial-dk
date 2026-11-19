@@ -129,7 +129,7 @@ export default function MemberFilters<S extends string>({
     <div className="member-filters-summary">
       <span className="mf-result" role="status" aria-live="polite"><strong>{shown}</strong> {filtersActive && total !== shown ? `de ${total} ` : ""}{shown === 1 ? "membro" : "membros"}</span>
       {pills.map((pill) => <span className="mf-pill" key={pill.key}>{pill.label}<button type="button" aria-label={`Remover filtro ${pill.label}`} onClick={pill.clear}><X aria-hidden="true" /></button></span>)}
-      {filtersActive && <button type="button" className="mf-clear" onClick={onClear}><RotateCcw aria-hidden="true" /> Limpar filtros</button>}
+      {filtersActive && <button type="button" className="mf-clear" onClick={onClear}><RotateCcw aria-hidden="true" /> Limpar</button>}
     </div>
   </section>;
 }

@@ -527,8 +527,7 @@ body:has(.admin-shell) .site-footer { display: none; }
 @media (max-width: 760px) {
   .invite-list > li { flex-wrap: wrap; padding-inline: var(--space-4); }
   .invite-main { flex-basis: 100%; }
-  .invite-actions { flex-basis: 100%; }
-  .invite-actions .button { flex: 1; }
+  .invite-actions { flex-basis: 100%; justify-content: flex-end; }
 }
 
 /* Presenças: mestre-detalhe */
@@ -597,9 +596,14 @@ div.kpi:hover { background: var(--surface-1); }
 @media (pointer: coarse), (max-width: 900px) {
   .admin-shell .button, .admin-shell .admin-subtabs button, .admin-shell .filter-chips button,
   .admin-shell .row-menu-trigger, .admin-shell .row-menu-item, .admin-shell .agenda-main { min-height: 44px; }
-  .admin-shell .button-small { min-height: 44px; padding-inline: 14px; }
+  .admin-shell .button { min-height: 38px; }
+  .admin-shell .button-small { min-height: 34px; padding-inline: 13px; }
   .admin-shell .row-menu-trigger { min-width: 44px; }
-  .admin-shell .data-table td.row-actions button { min-width: 44px; min-height: 44px; }
+  .admin-shell .data-table td.row-actions button { min-width: 36px; min-height: 36px; }
+}
+@media (pointer: coarse) {
+  .member-shell .button { min-height: 38px; }
+  .member-shell .button-small { min-height: 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -739,7 +743,7 @@ div.kpi:hover { background: var(--surface-1); }
 .mf-toggle svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .mf-toggle:hover, .mf-toggle.is-open { color: var(--text); background: var(--hover-veil); }
 .mf-toggle.has-filters { color: var(--text); border-color: var(--accent-bright); }
-.mf-toggle-count { min-width: 20px; padding: 1px 6px; color: #0a0a0b; background: var(--accent-bright); border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-align: center; }
+.mf-toggle-count { min-width: 20px; padding: 1px 6px; color: var(--text); background: rgba(var(--accent-rgb), 0.32); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-align: center; }
 .mf-toggle-chevron { transition: rotate var(--dur-1); }
 .mf-toggle.is-open .mf-toggle-chevron { rotate: 180deg; }
 
@@ -788,7 +792,7 @@ div.kpi:hover { background: var(--surface-1); }
   transition: color var(--dur-1), background var(--dur-1);
 }
 .mf-segment button:hover:not(:disabled) { color: var(--text); }
-.mf-segment button.is-active { color: #0a0a0b; background: var(--accent-bright); }
+.mf-segment button.is-active { color: var(--text); background: rgba(var(--accent-rgb), 0.28); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.6); }
 .mf-segment button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .member-filters-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); color: var(--text-muted); font-size: 0.88rem; }
@@ -810,3 +814,28 @@ div.kpi:hover { background: var(--surface-1); }
   .mf-segment { width: 100%; }
   .mf-segment button { flex: 1 1 0; padding-inline: var(--space-2); }
 }
+
+/* =========================================================
+   Movimento dos botões: transição, hover e press para os que ainda não tinham.
+   ========================================================= */
+.row-menu-item, .sheet-grid button, .palette-list li button, .admin-bottombar button, .admin-sidebar-back,
+.agenda-main, .mf-pill button, .mf-clear, .json-copy, .gallery-admin-grid article button, .document-rule-remove,
+.document-join-toggle button {
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.sheet-grid button:hover, .palette-list li button:hover { background: var(--surface-3); }
+.sheet-grid button:active, .palette-list li button:active, .admin-bottombar button:active,
+.gallery-admin-grid article button:active, .document-rule-remove:active, .json-copy:active, .mf-clear:active { transform: scale(0.96); transition-duration: 0.06s; }
+.admin-bottombar button:hover { color: var(--text); }
+.json-copy:hover { background: var(--surface-3); border-color: var(--border-strong); }
+.document-rule-remove { border-radius: var(--r-sm); }
+.gallery-admin-grid article button { border-radius: var(--r-sm); }
+.row-menu-item svg, .sheet-grid button svg { transition: color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.row-menu-item:hover svg { color: var(--text); transform: scale(1.08); }
+.row-menu-item.is-danger:hover svg { color: var(--danger); }
+.admin-sidebar-back:hover svg { transform: translateX(-2px); }
+.admin-sidebar-back svg { transition: transform var(--dur-1) var(--ease-out); }
+
+/* Ícone "Atualizar" gira enquanto carrega; botões de ícone dentro do admin. */
+.admin-shell .icon-button { border-color: var(--border); background: var(--surface-2); }
+.admin-shell .icon-button:hover:not(:disabled) { background: var(--surface-3); }

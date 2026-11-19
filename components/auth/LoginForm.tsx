@@ -117,7 +117,7 @@ export default function LoginForm({ googleAvailable = false, addingAccount = fal
       >
         <GoogleIcon /> {googleLoading ? "Redirecionando…" : "Continuar com Google"}
       </button>
-      {!googleAvailable && <p className="form-help" id="google-unavailable">Login com Google em breve. Por enquanto, entre com e-mail e senha.</p>}
+      {!googleAvailable && <p className="form-help" id="google-unavailable">Login com Google em breve.</p>}
       {message && <p className={"form-message " + message.type}>{message.text}</p>}
       <p className="form-help">
         Tem um convite? <Link href="/area-do-membro/cadastro">Criar conta</Link>

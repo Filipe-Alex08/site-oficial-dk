@@ -63,7 +63,7 @@ export default function SettingsSection() {
   const scopeHint = notesScopeOptions.find((option) => option.value === current?.commanderScope)?.description;
 
   return <div>
-    <AdminTitle eyebrow="Gestão" title="Configurações" description="Ajustes que valem para o site inteiro. Só o ADM Principal vê esta seção." />
+    <AdminTitle eyebrow="Gestão" title="Configurações" />
     {settingsQuery.isPending && <p className="empty-state" role="status">Carregando…</p>}
     {settingsQuery.isError && <p className="empty-state" role="alert">{settingsQuery.error.message} <button className="text-button" type="button" onClick={() => void settingsQuery.refetch()}>Tentar novamente</button></p>}
 
@@ -73,7 +73,7 @@ export default function SettingsSection() {
       </div>
 
       {tab === "sistemas" && <div role="tabpanel" id="settings-panel" aria-labelledby="settings-tab-sistemas">
-      <Panel title="Sistemas" description="Liga ou desliga partes da área do membro. Desligar não apaga nada: os dados voltam quando o sistema é religado.">
+      <Panel title="Sistemas" description="Desligar não apaga nada: os dados voltam ao religar.">
         <div className="switch-list">
           <label className="switch-field">
             <span><strong>Anotações entre membros</strong><small>{saved.enabled ? "Ligado: aparece no menu e comandantes e oficiais podem escrever." : "Desligado: some do menu e ninguém lê nem escreve anotações."}</small></span>
@@ -84,7 +84,7 @@ export default function SettingsSection() {
       </div>}
 
       {tab === "regras" && <div role="tabpanel" id="settings-panel" aria-labelledby="settings-tab-regras">
-      <Panel title="Anotações entre membros" description={saved.enabled ? "Quem pode escrever e para quem." : "O sistema está desligado: estas regras passam a valer quando ele for ligado, na aba Sistemas."}>
+      <Panel title="Anotações entre membros" description={saved.enabled ? undefined : "O sistema está desligado: estas regras passam a valer quando ele for ligado, na aba Sistemas."}>
         <form className="admin-form" onSubmit={(event) => { event.preventDefault(); if (dirty) saveMutation.mutate(draft); }}>
           <section className="form-section">
             <FormSectionHead title="Quem pode escrever" hint="A anotação só é lida pelo autor e pelo destinatário, seja qual for a regra." />

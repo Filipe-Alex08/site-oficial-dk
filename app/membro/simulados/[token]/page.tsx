@@ -15,7 +15,7 @@ export default async function AssessmentAttemptPage({ params }: { params: Promis
 
   return (
     <>
-      <AppPageHeader title="Avaliação" crumbs={[{ label: "Painel", href: "/membro" }, { label: "Avaliações", href: "/membro/simulados" }]} />
+      <AppPageHeader title="Avaliação" crumbs={[{ label: "Início", href: "/membro" }, { label: "Avaliações", href: "/membro/simulados" }]} />
       <section className="section assessment-runner-section"><div className="container"><AssessmentRunner token={token} /></div></section>
     </>
   );

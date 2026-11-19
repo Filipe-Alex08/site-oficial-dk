@@ -51,7 +51,7 @@ export default async function MemberAssessmentsPage() {
   return (
     <>
       <LiveRefresh tables={["assessment_assignments"]} />
-      <AppPageHeader title="Avaliações" crumbs={[{ label: "Painel", href: "/membro" }]} />
+      <AppPageHeader title="Avaliações" crumbs={[{ label: "Início", href: "/membro" }]} />
       <section className="section assessment-list-section">
         <div className="container">
           {assignments.length ? groups.map((group) => <section className={`m-assessment-group${group.title === "Para fazer" ? " is-todo" : ""}`} key={group.title} aria-label={group.title}>
@@ -90,12 +90,12 @@ export default async function MemberAssessmentsPage() {
                 </div>}
                 {assignment.status === "aguardando_correcao" && <div className="assessment-result-strip pending"><Clock3 /><div><strong>Correção pendente</strong><span>{assignment.pending_open_count} resposta(s) aberta(s)</span></div></div>}
                 {canOpen
-                  ? <Link className="button button-primary" href={`/membro/simulados/${assignment.access_token}`}>{assignment.status === "convidado" ? "Abrir indicação" : assignment.status === "em_andamento" ? "Continuar avaliação" : "Consultar resultado"}</Link>
+                  ? <Link className="button button-primary" href={`/membro/simulados/${assignment.access_token}`}>{assignment.status === "convidado" ? "Abrir" : assignment.status === "em_andamento" ? "Continuar" : "Resultado"}</Link>
                   : <span className="assessment-locked"><LockKeyhole size={16} /> Indisponível</span>}
               </article>;
             })}
             </div>
-          </section>) : <div className="empty-state"><ClipboardCheck /><h2>Nenhuma avaliação para você</h2><p>Quando um administrador indicar uma avaliação, ela aparece aqui.</p></div>}
+          </section>) : <div className="empty-state"><ClipboardCheck /><h2>Nenhuma avaliação para você</h2></div>}
         </div>
       </section>
     </>

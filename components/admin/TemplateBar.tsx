@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FilePenLine, LayoutTemplate, Save, Settings2, TextCursorInput, Trash2, X } from "lucide-react";
+import { Check, LayoutTemplate, Save, Pencil, Settings2, TextCursorInput, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import AdminDialog from "@/components/admin/AdminDialog";
 import { useToast } from "@/components/admin/ToastProvider";
@@ -119,11 +119,11 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
         <Select id={`template-select-${kind}`} value={selectedId} options={options} disabled={!templates.length} onChange={(value) => { if (value) apply(value); else setSelectedId(""); }} />
       </div>
       <div className="template-bar-actions">
-        <button className="button button-ghost button-small" type="button" onClick={() => setDialog("save")} disabled={!hasContent} title={hasContent ? undefined : "Preencha o formulário para salvar como template."}>
-          <Save size={16} aria-hidden="true" /> Salvar como template
+        <button className="icon-button" type="button" onClick={() => setDialog("save")} disabled={!hasContent} title={hasContent ? "Salvar como template" : "Preencha o formulário para salvar como template."} aria-label="Salvar como template">
+          <Save aria-hidden="true" />
         </button>
-        <button className="button button-ghost button-small" type="button" onClick={() => setDialog("manage")}>
-          <Settings2 size={16} aria-hidden="true" /> Gerenciar
+        <button className="icon-button" type="button" onClick={() => setDialog("manage")} title="Gerenciar templates" aria-label="Gerenciar templates">
+          <Settings2 aria-hidden="true" />
         </button>
       </div>
       {store.isError && <p className="template-bar-note" role="alert">Não foi possível carregar os templates. <button className="text-button" type="button" onClick={store.reload}>Tentar novamente</button></p>}
@@ -131,7 +131,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
       {dialog === "save" && (
         <AdminDialog
           title="Salvar como template"
-          description={`Guarda os campos preenchidos para reaplicar em novas ${labels.plural}.${kind === "activity" ? " A data não é guardada, só o horário e a duração." : " O template nunca publica a publicação."}`}
+          description={kind === "activity" ? "A data não é guardada, só o horário e a duração." : "Salvar o template não publica nada."}
           onClose={closeDialog}
           onSubmit={saveNew}
           footer={<>
@@ -151,9 +151,8 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
       {dialog === "manage" && (
         <AdminDialog
           title="Gerenciar templates"
-          description={`Templates de ${labels.plural}, compartilhados com quem administra esta área.`}
+          description="Compartilhados com quem administra esta área."
           onClose={closeDialog}
-          footer={<button className="button button-primary" type="button" onClick={closeDialog}>Fechar</button>}
         >
           {templates.length ? (
             <ul className="template-list">
@@ -172,7 +171,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
                       <div className="template-list-info"><strong>{template.name}</strong>{summarize(template) && <small>{summarize(template)}</small>}</div>
                       <span className="row-actions">
                         <button type="button" title="Renomear" aria-label={`Renomear ${template.name}`} onClick={() => { setRenaming({ id: template.id, name: template.name }); setError(""); }}><TextCursorInput /></button>
-                        <button type="button" title="Editar campos" aria-label={`Editar campos de ${template.name}`} onClick={() => { closeDialog(); setSelectedId(template.id); onEdit(template); }}><FilePenLine /></button>
+                        <button type="button" title="Editar campos" aria-label={`Editar campos de ${template.name}`} onClick={() => { closeDialog(); setSelectedId(template.id); onEdit(template); }}><Pencil /></button>
                         <button type="button" className="is-danger" title="Excluir" aria-label={`Excluir ${template.name}`} disabled={store.isBusy} onClick={() => void remove(template)}><Trash2 /></button>
                       </span>
                     </>
@@ -181,7 +180,7 @@ export default function TemplateBar<K extends ContentTemplateKind>({ kind, store
               ))}
             </ul>
           ) : (
-            <p className="empty-state">Nenhum template ainda. Preencha o formulário e use <strong>Salvar como template</strong>.</p>
+            <p className="empty-state">Nenhum template ainda.</p>
           )}
           {error && <p className="form-message error" role="alert">{error}</p>}
         </AdminDialog>

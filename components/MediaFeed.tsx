@@ -62,7 +62,6 @@ export default function MediaFeed({ posts }: { posts: MediaCardData[] }) {
     return <div className="empty-state">
       <ImageIcon />
       <h2>Nenhuma publicação disponível</h2>
-      <p>Assim que o grupo publicar fotos e vídeos, eles aparecem aqui.</p>
     </div>;
   }
 

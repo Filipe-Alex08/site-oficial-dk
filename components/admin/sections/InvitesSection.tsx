@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, TicketPlus, XCircle } from "lucide-react";
+import { Archive, Check, Copy, TicketPlus } from "lucide-react";
 import { useState } from "react";
 import { useAdminData, type Invite } from "@/components/admin/AdminDataContext";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -80,10 +80,10 @@ export default function InvitesSection() {
       eyebrow="Pessoas"
       title="Convites"
       description={`Links de cadastro de uso único, válidos por ${VALIDITY_DAYS} dias.`}
-      action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus size={18} />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>}
+      action={<button className="button button-primary" disabled={Boolean(inviteBusy)} onClick={createInvite}>{inviteBusy === "create" ? <span className="inline-spinner" aria-hidden="true" /> : <TicketPlus aria-hidden="true" />} {inviteBusy === "create" ? "Gerando…" : "Gerar convite"}</button>}
     />
     {invites.length === 0
-      ? <div className="empty-state"><TicketPlus /><h3>Nenhum convite gerado ainda</h3><p>Gere um link para convidar alguém a se cadastrar.</p></div>
+      ? <div className="empty-state"><TicketPlus /><h3>Nenhum convite gerado ainda</h3></div>
       : <Panel flush>
         <ul className="invite-list">{invites.map((invite) => {
           const state = inviteState(invite, now);
@@ -98,11 +98,11 @@ export default function InvitesSection() {
             </div>
             <StatusBadge status={state.status} label={state.label} />
             <div className="invite-actions">
-              <button className={`button button-ghost button-small${copiedId === invite.id ? " is-copied" : ""}`} type="button" onClick={() => void copyInviteLink(invite)} aria-label="Copiar link do convite">
-                {copiedId === invite.id ? <><Check size={16} /> Copiado</> : <><Copy size={16} /> Copiar link</>}
+              <button className={`icon-button${copiedId === invite.id ? " is-ok" : ""}`} type="button" onClick={() => void copyInviteLink(invite)} title={copiedId === invite.id ? "Copiado" : "Copiar link"} aria-label="Copiar link do convite">
+                {copiedId === invite.id ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               </button>
-              <button className="button button-ghost button-small" type="button" disabled={Boolean(inviteBusy) || !invite.active} onClick={() => void disableInvite(invite)} aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"}>
-                {inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <XCircle size={16} />} Desativar
+              <button className="icon-button is-danger" type="button" disabled={Boolean(inviteBusy) || !invite.active} onClick={() => void disableInvite(invite)} title="Desativar" aria-label={inviteBusy === invite.id ? "Desativando convite" : "Desativar convite"}>
+                {inviteBusy === invite.id ? <span className="inline-spinner" aria-hidden="true" /> : <Archive aria-hidden="true" />}
               </button>
             </div>
           </li>;

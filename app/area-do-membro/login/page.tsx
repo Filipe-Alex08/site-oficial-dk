@@ -43,7 +43,7 @@ export default async function LoginPage({
   return (
     <AuthShell
       title={adding && activeId ? "Adicionar conta" : "Entrar"}
-      description={adding && activeId ? `Você continua conectado como ${activeName}. Entre com outra conta para alternar entre elas.` : "Acesse a área do membro."}
+      description={adding && activeId ? `Você continua conectado como ${activeName}. Entre com outra conta para alternar entre elas.` : undefined}
       notice={notice}
     >
       {saved.length > 0 && <SavedAccounts accounts={saved} />}

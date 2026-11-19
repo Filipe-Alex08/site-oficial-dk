@@ -98,7 +98,7 @@ export default function MediaGalleryManager({ posts }: { posts: Post[] }) {
                 <input id="gallery-media-caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
               </div>
             </div>
-            <div className="form-actions"><button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus size={17} /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button></div>
+            <div className="form-actions"><button className="button button-primary" type="submit" disabled={addMutation.isPending}><Plus aria-hidden="true" /> {addMutation.isPending ? "Adicionando…" : "Adicionar mídia"}</button></div>
           </form>
           <div className="gallery-admin-grid">
             {visible.map((item) => (

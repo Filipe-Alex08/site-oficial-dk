@@ -25,7 +25,7 @@ export default async function MemberActivitiesPage({ searchParams }: { searchPar
   return (
     <>
       <LiveRefresh tables={["activities"]} />
-      <AppPageHeader title="Atividades e presença" crumbs={[{ label: "Painel", href: "/membro" }]} />
+      <AppPageHeader title="Atividades e presença" crumbs={[{ label: "Início", href: "/membro" }]} />
       <section className="section"><div className="container"><AttendancePanel activities={(activityData ?? []) as Activity[]} userId={user.id} initialFilter={filtro === "pendentes" ? "pendentes" : "todas"} /></div></section>
     </>
   );

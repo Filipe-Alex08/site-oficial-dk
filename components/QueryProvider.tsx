@@ -22,7 +22,7 @@ function QueryActivityFeedback() {
   return (
     <div className="query-activity-feedback" role="status" aria-live="polite">
       <span className="query-activity-spinner" aria-hidden="true" />
-      <span><strong>{message}</strong><small>O site está processando sua solicitação.</small></span>
+      <span><strong>{message}</strong></span>
     </div>
   );
 }

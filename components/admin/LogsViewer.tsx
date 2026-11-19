@@ -28,9 +28,9 @@ type LogItem = {
 type LogPage = { items: LogItem[]; hasMore: boolean };
 type Section = "servidor" | "auditoria";
 
-const sections: { value: Section; label: string; hint: string }[] = [
-  { value: "servidor", label: "Servidor e eventos", hint: "O que o site fez: logins, cadastros, erros e mensagens do servidor." },
-  { value: "auditoria", label: "Auditoria", hint: "Quem alterou o quê: cargos, convites, permissões e avaliações." },
+const sections: { value: Section; label: string }[] = [
+  { value: "servidor", label: "Servidor e eventos" },
+  { value: "auditoria", label: "Auditoria" },
 ];
 
 const periodOptions = [
@@ -131,7 +131,7 @@ export default function LogsViewer() {
   }
 
   return <section>
-    <AdminTitle eyebrow="Gestão" title="Logs" description="Registros dos últimos 7 dias. Logs com mais de 7 dias são apagados automaticamente." />
+    <AdminTitle eyebrow="Gestão" title="Logs" description="Mantidos por 7 dias." />
 
     <div className="admin-subtabs" role="tablist" aria-label="Tipo de log" onKeyDown={onTabListKeyDown}>
       {sections.map((item) => <button
@@ -148,7 +148,6 @@ export default function LogsViewer() {
     </div>
 
     <div id="log-panel" role="tabpanel" aria-labelledby={`log-tab-${section}`}>
-      <p className="admin-hint">{sections.find((item) => item.value === section)?.hint}</p>
       <Panel>
         <div className="log-filters">
           <div className="field"><label htmlFor="log-period">Período</label><Select id="log-period" value={period} options={periodOptions} onChange={change(setPeriod)} /></div>
@@ -158,7 +157,7 @@ export default function LogsViewer() {
         </div>
         {!audit && <FilterChips label="Nível" value={level} options={levelOptions} onChange={change(setLevel)} />}
         <div className="form-actions">
-          <button className="button button-ghost" type="button" disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw size={17} /> {query.isFetching ? "Atualizando…" : "Atualizar"}</button>
+          <button className="icon-button" type="button" disabled={query.isFetching} onClick={() => void query.refetch()} title={query.isFetching ? "Atualizando…" : "Atualizar"} aria-label="Atualizar logs"><RefreshCw className={query.isFetching ? "spin" : ""} aria-hidden="true" /></button>
           <label className="check-field"><input type="checkbox" checked={auto} onChange={(event) => setAuto(event.target.checked)} /> Atualizar a cada 30 s</label>
         </div>
       </Panel>
@@ -252,11 +251,11 @@ function JsonBlock({ value }: { value: unknown }) {
     }
   }
   return <div className="json-block">
-    <button type="button" className="json-copy" onClick={() => void copy()} aria-label="Copiar JSON">{copied ? <><Check size={14} /> Copiado</> : <><Copy size={14} /> Copiar</>}</button>
+    <button type="button" className="json-copy" onClick={() => void copy()} title={copied ? "Copiado" : "Copiar JSON"} aria-label="Copiar JSON">{copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}</button>
     <pre>{text}</pre>
   </div>;
 }
 
 function ToggleButton({ expanded, onClick }: { expanded: boolean; onClick: () => void }) {
-  return <button type="button" className="text-button" aria-expanded={expanded} aria-label={expanded ? "Ocultar detalhes" : "Ver detalhes"} onClick={onClick}>{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>;
+  return <button type="button" className="icon-button" aria-expanded={expanded} aria-label={expanded ? "Ocultar detalhes" : "Ver detalhes"} onClick={onClick}>{expanded ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}</button>;
 }

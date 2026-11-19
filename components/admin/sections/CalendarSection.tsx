@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, Edit3, Trash2 } from "lucide-react";
+import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useAdminData } from "@/components/admin/AdminDataContext";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -116,8 +116,7 @@ export default function CalendarSection({ active }: { active: boolean }) {
     <AdminTitle
       eyebrow="Conteúdo"
       title="Calendário"
-      description="Treinos, eventos e encontros que aparecem no site e na lista de presença."
-      action={<button className="button button-primary" type="button" onClick={openNew}><CalendarPlus size={18} /> Nova atividade</button>}
+      action={<button className="button button-primary" type="button" onClick={openNew}><CalendarPlus aria-hidden="true" /> Nova atividade</button>}
     />
 
     <div className="admin-toolbar">
@@ -144,7 +143,7 @@ export default function CalendarSection({ active }: { active: boolean }) {
               <span className={`agenda-list-state${item.attendance_open ? " is-open" : ""}`}>Lista {item.attendance_open ? "aberta" : "fechada"}</span>
             </span>
             <RowMenu label={`Ações de ${item.title}`} items={[
-              { label: "Editar", icon: <Edit3 />, onSelect: () => openEdit(item) },
+              { label: "Editar", icon: <Pencil />, onSelect: () => openEdit(item) },
               { label: "Excluir", icon: <Trash2 />, danger: true, onSelect: () => void removeActivity(item) },
             ]} />
           </li>;
@@ -154,11 +153,10 @@ export default function CalendarSection({ active }: { active: boolean }) {
 
     {drawerOpen && active && <Drawer
       title={drawerTitle}
-      description={editingActivityTemplate ? undefined : "Nome, horário, local e lista de presença."}
       onClose={() => setDrawerOpen(false)}
       onSubmit={saveActivity}
       headerExtra={editingActivityTemplate
-        ? <p className="template-mode-note" role="status">Você está editando um template: nada aqui cria ou altera uma atividade. Só o horário de início e a duração (início até término) são guardados; a data é ignorada.</p>
+        ? <p className="template-mode-note" role="status">Editando template: a data é ignorada, só horário e duração são guardados.</p>
         : <TemplateBar
           kind="activity"
           store={activityTemplates}
@@ -174,7 +172,7 @@ export default function CalendarSection({ active }: { active: boolean }) {
         />}
       footer={<>
         <button className="button button-ghost" type="button" onClick={() => { loadActivityForm(emptyActivity); setDrawerOpen(false); }}>Cancelar</button>
-        <button className="button button-primary" type="submit">{editingActivityTemplate ? "Salvar template" : editingActivity ? "Salvar alterações" : "Adicionar ao calendário"}</button>
+        <button className="button button-primary" type="submit">{editingActivityTemplate ? "Salvar template" : editingActivity ? "Salvar" : "Criar"}</button>
       </>}
     >
       <div className="admin-form">
