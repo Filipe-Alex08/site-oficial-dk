@@ -8,6 +8,7 @@ import { useAdminData, type MemberTab } from "@/components/admin/AdminDataContex
 import AdminTitle from "@/components/admin/AdminTitle";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import FormSectionHead from "@/components/admin/FormSectionHead";
+import MemberFilters from "@/components/admin/MemberFilters";
 import MemberQueue, { type RequestAdjustments } from "@/components/admin/MemberQueue";
 import { useToast } from "@/components/admin/ToastProvider";
 import Avatar from "@/components/admin/ui/Avatar";
@@ -17,13 +18,13 @@ import Panel from "@/components/admin/ui/Panel";
 import { onTabListKeyDown } from "@/components/admin/ui/tabKeys";
 import RowMenu from "@/components/admin/ui/RowMenu";
 import StatusBadge from "@/components/admin/ui/StatusBadge";
-import { FilterChips, SearchField, Toolbar } from "@/components/admin/ui/Toolbar";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import CountBadge from "@/components/ui/CountBadge";
 import Select from "@/components/ui/Select";
 import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, isCommander, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { friendlyError } from "@/lib/friendly-error";
+import { matchesGraduation, matchesRank, matchesSearch, type GraduationFilter, type RankFilter, type TrackFilter } from "@/lib/member-filters";
 import type { AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile } from "@/lib/types";
 
 type MemberAccessForm = {
@@ -63,15 +64,30 @@ export default function MembersSection() {
     setMemberSearch(urlSearch);
   }
   const [memberStatus, setMemberStatus] = useState<MemberStatusFilter>("todos");
+  const [rankFilter, setRankFilter] = useState<RankFilter>("todas");
+  const [graduationFilter, setGraduationFilter] = useState<GraduationFilter>("todas");
+  const [trackFilter, setTrackFilter] = useState<TrackFilter>("qualquer");
+  const [commanderOnly, setCommanderOnly] = useState(false);
+  const filtersActive = Boolean(memberSearch.trim()) || memberStatus !== "todos" || rankFilter !== "todas" || graduationFilter !== "todas" || commanderOnly;
+
+  function clearFilters() {
+    setMemberSearch("");
+    setMemberStatus("todos");
+    setRankFilter("todas");
+    setGraduationFilter("todas");
+    setTrackFilter("qualquer");
+    setCommanderOnly(false);
+  }
 
   // Inclui a própria solicitação do admin: aparece só como aviso e não entra no selo.
   const membersQueue = useMemo(() => members.filter((member) =>
     member.status === "pendente" || Boolean(member.access_request_id) || (principal && Boolean(member.graduation_review_needed)),
   ), [members, principal]);
-  const searched = useMemo(() => {
-    const term = memberSearch.trim().toLocaleLowerCase("pt-BR");
-    return members.filter((member) => !term || [member.nickname, member.full_name, member.email ?? ""].some((value) => value.toLocaleLowerCase("pt-BR").includes(term)));
-  }, [members, memberSearch]);
+  // Busca, patente e graduação valem para a lista e para os contadores da situação.
+  const searched = useMemo(
+    () => members.filter((member) => matchesSearch(member, memberSearch) && matchesRank(member, rankFilter) && matchesGraduation(member, graduationFilter, trackFilter, commanderOnly)),
+    [members, memberSearch, rankFilter, graduationFilter, trackFilter, commanderOnly],
+  );
   const filteredMembers = useMemo(() => searched.filter((member) => memberStatus === "todos" || member.status === memberStatus), [searched, memberStatus]);
   const statusOptions = statusFilters.map((option) => ({ ...option, count: option.value === "todos" ? searched.length : searched.filter((member) => member.status === option.value).length }));
   const requestedTab = searchParams.get("aba");
@@ -249,11 +265,25 @@ export default function MembersSection() {
     </div>}
 
     {memberTab === "todos" && <div role="tabpanel" id="member-panel" aria-labelledby="member-tab-todos">
-      <Toolbar
-        filters={<>
-          <SearchField value={memberSearch} onChange={setMemberSearch} placeholder="Buscar por apelido, nome ou e-mail" label="Buscar membro" />
-          <FilterChips label="Situação" value={memberStatus} options={statusOptions} onChange={setMemberStatus} />
-        </>}
+      <MemberFilters
+        search={memberSearch}
+        onSearch={setMemberSearch}
+        status={memberStatus}
+        statusOptions={statusOptions}
+        onStatus={setMemberStatus}
+        statusAll="todos"
+        rank={rankFilter}
+        onRank={setRankFilter}
+        graduation={graduationFilter}
+        onGraduation={setGraduationFilter}
+        track={trackFilter}
+        onTrack={setTrackFilter}
+        commanderOnly={commanderOnly}
+        onCommanderOnly={setCommanderOnly}
+        shown={filteredMembers.length}
+        total={members.length}
+        filtersActive={filtersActive}
+        onClear={clearFilters}
       />
       <Panel flush>
         <DataTable
