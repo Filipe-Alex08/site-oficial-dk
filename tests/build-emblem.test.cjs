@@ -10,7 +10,7 @@ function load(file) {
   return exports;
 }
 
-const { getBuildKey, getBuildIcon, buildOptions } = load("lib/insignias.ts");
+const { getBuildKey, getBuildIcon, buildOptions, normalizeBuildName } = load("lib/insignias.ts");
 const { wreathLeaves, leafTip, leafPath, wreathStemPath, defaultWreath } = load("lib/wreath.ts");
 
 test("as quatro opções de build do cadastro viram a chave certa", () => {
@@ -22,6 +22,26 @@ test("a chave ignora acento, caixa e gênero, e texto livre sem build conhecida 
     assert.equal(getBuildKey(text), key, text);
   }
   for (const text of [null, undefined, "", "   ", "Mago", "Curandeiro"]) assert.equal(getBuildKey(text), null, String(text));
+});
+
+test("as opções de build não trazem parênteses nem o complemento 'de Ofício'", () => {
+  assert.deepEqual(Array.from(buildOptions), ["Arqueiro", "Dual", "Escudeiro Tank ou Pontuador", "Lanceiro"]);
+  for (const option of buildOptions) assert.equal(normalizeBuildName(option), option);
+});
+
+test("nomes antigos salvos nos perfis são normalizados na exibição e no formulário", () => {
+  for (const [saved, shown] of [
+    ["Dual (Espadas, Adagas)", "Dual"], ["dual (espadas)", "dual"], ["Dual  (Espadas, Adagas) ", "Dual"],
+    ["Lanceiro de Ofício", "Lanceiro"], ["lanceiro de oficio", "Lanceiro"], ["LANCEIRA DE OFICIO", "Lanceiro"],
+    ["Escudeiro Tank ou Pontuador", "Escudeiro Tank ou Pontuador"], ["Mago (arcano)", "Mago"], ["  Arqueiro ", "Arqueiro"],
+  ]) assert.equal(normalizeBuildName(saved), shown, saved);
+  for (const empty of [null, undefined, "", "   "]) assert.equal(normalizeBuildName(empty), "");
+});
+
+test("a normalização não muda qual ícone e qual emblema a build recebe", () => {
+  for (const saved of ["Dual (Espadas, Adagas)", "Lanceiro de Ofício", "Escudeiro Tank ou Pontuador", "Arqueiro"]) {
+    assert.equal(getBuildKey(normalizeBuildName(saved)), getBuildKey(saved), saved);
+  }
 });
 
 test("o ícone da build continua saindo da mesma regra da chave", () => {

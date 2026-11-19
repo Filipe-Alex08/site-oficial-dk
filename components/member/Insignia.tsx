@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Award, Shield } from "lucide-react";
 import { graduationLabels, rankLabels } from "@/lib/member-access";
-import { getBuildIcon, getGraduationIcon, getGraduationTrack, rankIcons } from "@/lib/insignias";
+import { getBuildIcon, getGraduationIcon, getGraduationTrack, normalizeBuildName, rankIcons } from "@/lib/insignias";
 import type { DkRank, DocumentTrack, GraduationLevel } from "@/lib/types";
 import InsigniaBadge from "@/components/member/InsigniaBadge";
 
@@ -84,6 +84,7 @@ export function GraduationInsignias({ profile, variant }: {
 export function BuildInsignia({ build, variant, caption }: { build?: string | null; variant?: Variant; caption?: string }) {
   if (!build) return <>Não informada</>;
   const src = getBuildIcon(build);
-  if (!src) return <span>{build}</span>;
-  return <Insignia src={src} label={build} variant={variant} kind="build" caption={caption} />;
+  const name = normalizeBuildName(build) || build;
+  if (!src) return <span>{name}</span>;
+  return <Insignia src={src} label={name} variant={variant} kind="build" caption={caption} />;
 }

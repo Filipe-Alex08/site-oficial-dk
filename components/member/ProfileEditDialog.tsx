@@ -6,7 +6,7 @@ import { Eye, EyeOff, Info, KeyRound, Lock, Medal, Save, Swords, UserRound, X, t
 import Select from "@/components/ui/Select";
 import TrackGroup from "@/components/member/TrackGroup";
 import { BuildInsignia, GraduationInsignia, RankInsignia } from "@/components/member/Insignia";
-import { buildOptions, getBuildIcon } from "@/lib/insignias";
+import { buildOptions, getBuildIcon, normalizeBuildName } from "@/lib/insignias";
 import { PASSWORD_MAX, PASSWORD_MIN } from "@/lib/account-password";
 import { graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
 import { getZodiacSign } from "@/lib/zodiac";
@@ -46,8 +46,8 @@ export function profileFormFrom(profile: MemberProfile): ProfileFormState {
     house_cavalaria: houseFor(profile, "cavalaria"),
     house_arquearia: houseFor(profile, "arquearia"),
     shirt_number: profile.shirt_number?.toString() || "",
-    primary_build: profile.primary_build || "",
-    secondary_build: profile.secondary_build || "",
+    primary_build: normalizeBuildName(profile.primary_build),
+    secondary_build: normalizeBuildName(profile.secondary_build),
   };
 }
 

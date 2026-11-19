@@ -38,9 +38,19 @@ export function getGraduationIcon(level: GraduationLevel, track: DocumentTrack |
   return `${base}/graduacoes/${track}-${level}.webp`;
 }
 
-export const buildOptions = ["Arqueiro", "Dual (Espadas, Adagas)", "Escudeiro Tank ou Pontuador", "Lanceiro de Ofício"];
+export const buildOptions = ["Arqueiro", "Dual", "Escudeiro Tank ou Pontuador", "Lanceiro"];
 
 export type BuildKey = "arqueiro" | "dual" | "escudeiro" | "lanceiro";
+
+/**
+ * Nome de build para exibir e salvar. Perfis antigos guardaram "Dual (Espadas, Adagas)" e
+ * "Lanceiro de Ofício": o que vem entre parênteses cai e "Lanceiro de Ofício" vira "Lanceiro".
+ * Texto livre de outra build passa como está (só sem parênteses e espaços sobrando).
+ */
+export function normalizeBuildName(build?: string | null): string {
+  const text = (build ?? "").replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+  return /^lanceir[oa] de oficio$/.test(normalize(text)) ? "Lanceiro" : text;
+}
 
 /** Build reconhecida a partir do texto livre do perfil, ou null se não casa com nenhuma. */
 export function getBuildKey(build?: string | null): BuildKey | null {
