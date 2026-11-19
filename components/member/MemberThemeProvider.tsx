@@ -7,6 +7,17 @@ import { effectiveMemberTheme, isMemberStyle, type MemberStyle, type MemberTheme
 
 const CHANNEL = "dk-member-style";
 
+/**
+ * Última escolha feita (ou recebida de outra aba) neste navegador. Só existe no cliente: o
+ * servidor nunca chama setStyle, então o módulo não guarda nada entre requisições lá.
+ *
+ * Existe porque, ao voltar à área do membro por navegação interna (Voltar, ou um link vindo
+ * do site público), o Next reaproveita do cache o layout antigo, com o `initialStyle` lido no
+ * primeiro carregamento. Sem isto a tela voltava no estilo velho, e escolher a opção que já
+ * aparecia marcada não gravava nada: ao recarregar, o cookie antigo voltava.
+ */
+let chosenInBrowser: MemberStyle | null = null;
+
 type MemberThemeContextValue = {
   style: MemberStyle;
   setStyle: (style: MemberStyle) => void;
@@ -34,7 +45,10 @@ export default function MemberThemeProvider({ initialStyle, graduationTheme, chi
   graduationTheme: MemberTheme;
   children: ReactNode;
 }) {
-  const [style, setStyleState] = useState<MemberStyle>(initialStyle);
+  // Na hidratação de uma carga completa `chosenInBrowser` ainda é null, então o HTML do servidor bate.
+  const [style, setStyleState] = useState<MemberStyle>(() => chosenInBrowser ?? initialStyle);
+  const current = useRef(style);
+  useEffect(() => { current.current = style; }, [style]);
   const channel = useRef<BroadcastChannel | null>(null);
 
   const apply = useCallback((next: MemberStyle) => {
@@ -47,7 +61,9 @@ export default function MemberThemeProvider({ initialStyle, graduationTheme, chi
   }, []);
 
   const setStyle = useCallback((next: MemberStyle) => {
-    apply(next);
+    chosenInBrowser = next;
+    // Escolher a opção que já está ativa não muda a tela, mas ainda grava: o cookie pode estar defasado.
+    if (next !== current.current) apply(next);
     channel.current?.postMessage(next);
     // Se não gravar, a escolha vale até recarregar; não vale incomodar o membro com erro.
     void jsonApiFetch("/api/member/style", { style: next }).catch(() => undefined);
@@ -58,7 +74,11 @@ export default function MemberThemeProvider({ initialStyle, graduationTheme, chi
     if (typeof BroadcastChannel === "undefined") return;
     const bc = new BroadcastChannel(CHANNEL);
     channel.current = bc;
-    bc.onmessage = (event) => { if (isMemberStyle(event.data)) setStyleState(event.data); };
+    bc.onmessage = (event) => {
+      if (!isMemberStyle(event.data)) return;
+      chosenInBrowser = event.data;
+      setStyleState(event.data);
+    };
     return () => { bc.close(); channel.current = null; };
   }, []);
 

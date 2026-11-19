@@ -26,7 +26,8 @@ export default function MemberStyleToggle() {
       <div className="m-style-options">
         {options.map((option) => (
           <label key={option.value} data-style={option.value} title={option.value === "graduacao" ? `Cores da sua graduação (${tierName})` : "Cores padrão do site"}>
-            <input type="radio" name={name} value={option.value} checked={style === option.value} onChange={() => setStyle(option.value)} />
+            {/* onClick (e não só onChange) para que escolher a opção já marcada também grave a preferência. */}
+            <input type="radio" name={name} value={option.value} checked={style === option.value} onChange={() => setStyle(option.value)} onClick={() => { if (style === option.value) setStyle(option.value); }} />
             <span className="m-style-swatch" aria-hidden="true" />
             <span>{option.label}</span>
           </label>
