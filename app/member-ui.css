@@ -644,6 +644,14 @@ body:has(.member-shell) .site-footer { display: none; }
 .m-picker-text strong { overflow: hidden; font-size: var(--fs-md); text-overflow: ellipsis; white-space: nowrap; }
 .m-picker-text small { display: inline-flex; align-items: center; gap: var(--space-2); overflow: hidden; color: var(--text-muted); font-size: var(--fs-xs); white-space: nowrap; }
 .m-picker-text .insignia-art { width: 14px; height: 18px; }
+/* Patente + graduações + builds numa linha só: o nome da patente encolhe com reticências, os ícones não. */
+.m-insignias { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; max-width: 100%; }
+.m-insignias > .insignia { flex: 0 0 auto; }
+.m-insignias-rank { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.m-insignias-rank > .insignia { flex: 0 0 auto; }
+.m-insignias-rank > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.m-composer-to-rank .m-insignias, .m-memo-rank .m-insignias { flex-wrap: wrap; row-gap: var(--space-1); }
+.m-composer-to-rank .insignia-art { width: 16px; height: 20px; }
 .m-picker-check { flex: 0 0 auto; width: 18px; height: 18px; color: var(--accent-bright); }
 .m-picker-empty { display: grid; justify-items: center; gap: var(--space-2); margin: 0; padding: var(--space-6) var(--space-4); color: var(--text-muted); font-size: var(--fs-sm); text-align: center; background: var(--surface-2); border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
 .m-picker-empty svg { width: 26px; height: 26px; color: var(--text-subtle); }

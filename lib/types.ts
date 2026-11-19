@@ -277,7 +277,7 @@ export type MemberNote = {
 /** O outro lado de uma anotação (ou um possível destinatário): só o que a tela precisa mostrar. */
 export type NoteCounterpart = Pick<
   MemberProfile,
-  "id" | "full_name" | "nickname" | "avatar_path" | "rank" | "graduation_cavalaria" | "graduation_arquearia" | "commander_cavalaria" | "commander_arquearia"
+  "id" | "full_name" | "nickname" | "avatar_path" | "rank" | "graduation_cavalaria" | "graduation_arquearia" | "commander_cavalaria" | "commander_arquearia" | "primary_build" | "secondary_build"
 >;
 
 export type ContentTemplateKind = "post" | "activity";

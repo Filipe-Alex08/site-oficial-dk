@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { assessmentAssignmentStatusLabels, assessmentTrackOptions } from "@/lib/assessments";
-import { graduationLabels, rankLabels } from "@/lib/member-access";
+import { graduationLabels, rankLabels, rankShortLabels } from "@/lib/member-access";
 import type { AssessmentAssignmentStatus, AssessmentQuestionType, AssessmentScopeType, AssessmentTrack, DkRank, GraduationLevel } from "@/lib/types";
 
 type SafeQuestion = {
@@ -193,7 +193,7 @@ function AssessmentRunnerLoaded({ token, initialPayload }: { token: string; init
     ? rankLabels[payload.assessment.target_rank!]
     : graduationLabels[payload.assessment.target_graduation!];
   const content = payload.assessment.content_type === "patente"
-    ? payload.assessment.content_rank_scopes.map((rank) => rankLabels[rank]).join(", ")
+    ? payload.assessment.content_rank_scopes.map((rank) => rankShortLabels[rank]).join(", ")
     : payload.assessment.content_graduation_scopes.map((level) => graduationLabels[level]).join(", ");
   const track = assessmentTrackOptions.find((item) => item.value === payload.assessment.track)?.label ?? payload.assessment.track;
 

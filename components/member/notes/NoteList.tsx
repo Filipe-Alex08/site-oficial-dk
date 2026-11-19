@@ -8,7 +8,7 @@ import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { useToast } from "@/components/admin/ToastProvider";
 import Avatar from "@/components/admin/ui/Avatar";
 import { SearchField } from "@/components/admin/ui/Toolbar";
-import { RankInsignia } from "@/components/member/Insignia";
+import MemberInsignias from "@/components/member/MemberInsignias";
 import NoteSeal from "@/components/member/notes/NoteSeal";
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import { friendlyError } from "@/lib/friendly-error";
@@ -201,7 +201,7 @@ export default function NoteList({ received, sent, canWrite, initialTab }: { rec
                         <div className="m-memo-who">
                           <span className="m-memo-dir">{tab === "recebidas" ? "De" : "Para"}</span>
                           <strong>{name}</strong>
-                          {counterpart && <span className="m-memo-rank"><RankInsignia rank={counterpart.rank} variant="icon" />{rankLabels[counterpart.rank]}</span>}
+                          {counterpart && <span className="m-memo-rank"><MemberInsignias member={counterpart} short /></span>}
                         </div>
                         <div className="m-memo-meta">
                           {unreadNote && <span className="m-memo-new">Nova</span>}

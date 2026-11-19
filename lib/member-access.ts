@@ -107,6 +107,25 @@ export const rankGroups: Array<{ category: string; ranks: Array<{ value: DkRank;
 
 export const rankOptions = rankGroups.flatMap((group) => group.ranks);
 
+/** Patente abreviada para listas apertadas. O nome completo continua em rankLabels. */
+export const rankShortLabels: Record<DkRank, string> = {
+  recruta: "Recruta",
+  soldado: "Soldado",
+  cabo: "Cabo",
+  terceiro_sargento: "3º Sgt.",
+  segundo_sargento: "2º Sgt.",
+  primeiro_sargento: "1º Sgt.",
+  subtenente: "Subten.",
+  tenente: "Tenente",
+  capitao: "Capitão",
+  major: "Major",
+  tenente_coronel: "Ten.-Cel.",
+  coronel: "Coronel",
+  general_brigada: "Gen. Brigada",
+  general_divisao: "Gen. Divisão",
+  general_exercito: "Gen. Exército",
+};
+
 export const rankLabels = Object.fromEntries(rankOptions.map((rank) => [rank.value, rank.label])) as Record<DkRank, string>;
 export const graduationLabels = Object.fromEntries(graduationOptions.map((item) => [item.value, item.label])) as Record<GraduationLevel, string>;
 export const memberKindLabels = Object.fromEntries(memberKindOptions.map((item) => [item.value, item.label])) as Record<MemberKind, string>;

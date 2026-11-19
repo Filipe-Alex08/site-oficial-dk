@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useMemo, useState } from "react";
 import { useToast } from "@/components/admin/ToastProvider";
 import Avatar from "@/components/admin/ui/Avatar";
-import { RankInsignia } from "@/components/member/Insignia";
+import MemberInsignias from "@/components/member/MemberInsignias";
 import NoteSeal from "@/components/member/notes/NoteSeal";
 import { jsonApiFetch } from "@/lib/api-client";
 import { friendlyError } from "@/lib/friendly-error";
-import { rankLabels } from "@/lib/member-access";
 import { NOTE_MAX, noteDisplayName, noteSealsFor } from "@/lib/member-notes";
 import type { NoteCounterpart } from "@/lib/types";
 
@@ -111,7 +110,7 @@ export default function NoteComposer({ author, recipients, restriction = null, s
                         <Avatar name={noteDisplayName(member)} path={member.avatar_path} size={38} />
                         <span className="m-picker-text">
                           <strong>{noteDisplayName(member)}</strong>
-                          <small><RankInsignia rank={member.rank} variant="icon" />{rankLabels[member.rank]}</small>
+                          <small><MemberInsignias member={member} short /></small>
                         </span>
                         {selected && <Check className="m-picker-check" aria-hidden="true" />}
                       </button>
@@ -132,7 +131,7 @@ export default function NoteComposer({ author, recipients, restriction = null, s
                 <div>
                   <small>Para</small>
                   <strong>{noteDisplayName(recipient)}</strong>
-                  <span className="m-composer-to-rank"><RankInsignia rank={recipient.rank} variant="icon" />{rankLabels[recipient.rank]}</span>
+                  <span className="m-composer-to-rank"><MemberInsignias member={recipient} /></span>
                 </div>
                 <button type="button" className="button button-ghost button-small m-composer-change" onClick={() => setPicking(true)}>Trocar</button>
               </div>

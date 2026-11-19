@@ -6,7 +6,7 @@ import type { DkRank, DocumentTrack, GraduationLevel, MemberProfile } from "@/li
 export const NOTE_MAX = 2000;
 
 /** Colunas do perfil que as telas de anotação podem mostrar do outro membro. */
-export const NOTE_COUNTERPART_COLUMNS = "id,full_name,nickname,avatar_path,rank,graduation_cavalaria,graduation_arquearia,commander_cavalaria,commander_arquearia";
+export const NOTE_COUNTERPART_COLUMNS = "id,full_name,nickname,avatar_path,rank,graduation_cavalaria,graduation_arquearia,commander_cavalaria,commander_arquearia,primary_build,secondary_build";
 
 /** Posição na hierarquia: a mesma ordem de rank_weight() no banco. */
 const rankIndex = (rank: DkRank) => rankOptions.findIndex((option) => option.value === rank);

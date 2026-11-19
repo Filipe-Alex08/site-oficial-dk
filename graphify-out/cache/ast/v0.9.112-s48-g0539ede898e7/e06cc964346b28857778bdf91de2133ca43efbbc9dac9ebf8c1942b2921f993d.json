@@ -1,0 +1,1 @@
+{"nodes": [{"id": "supabase_migrations_003_service_role_table_access_sql", "label": "003_service_role_table_access.sql", "file_type": "code", "source_file": "supabase\\migrations\\003_service_role_table_access.sql", "source_location": null}], "edges": []}
