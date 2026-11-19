@@ -1,10 +1,10 @@
-import { fetchInstagramPosts } from "./instagram-apify";
+import { fetchInstagramPosts, isLegacyInstagramTitle } from "./instagram-apify";
 import { createAdminClient } from "./supabase/admin";
 import { archiveInstagramPost, ensureInstagramBucket, InstagramMediaArchiveError } from "./instagram-storage";
 
 type ScrapedPost = Awaited<ReturnType<typeof fetchInstagramPosts>>[number];
 
-async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAdminClient>>, postId: string, currentPost: { cover_url: string | null; excerpt: string; youtube_url: string | null; tiktok_url: string | null }, item: ScrapedPost, hasVideoLinks: boolean) {
+async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAdminClient>>, postId: string, currentPost: { title: string; cover_url: string | null; excerpt: string; youtube_url: string | null; tiktok_url: string | null }, item: ScrapedPost, hasVideoLinks: boolean) {
   const { data: currentMedia, error: readError } = await admin.from("media_items")
     .select("type,url,caption,sort_order")
     .eq("post_id", postId)
@@ -16,6 +16,8 @@ async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAd
   const mediaChanged = currentKey !== nextKey;
   const coverChanged = Boolean(item.coverUrl && item.coverUrl !== currentPost.cover_url);
   const excerptChanged = currentPost.excerpt !== item.excerpt;
+  // Só o título antigo do importador ("Instagram — data") é trocado; um título editado no painel fica como está.
+  const titleChanged = isLegacyInstagramTitle(currentPost.title) && currentPost.title !== item.title;
   const linksChanged = hasVideoLinks && Boolean((item.youtubeUrl && currentPost.youtube_url !== item.youtubeUrl) || (item.tiktokUrl && currentPost.tiktok_url !== item.tiktokUrl));
 
   if (mediaChanged) {
@@ -34,16 +36,17 @@ async function refreshExistingPost(admin: NonNullable<ReturnType<typeof createAd
     }
   }
 
-  if (coverChanged || excerptChanged || linksChanged) {
-    const updates: { cover_url?: string; excerpt?: string; youtube_url?: string | null; tiktok_url?: string | null } = {};
+  if (coverChanged || excerptChanged || titleChanged || linksChanged) {
+    const updates: { title?: string; cover_url?: string; excerpt?: string; youtube_url?: string | null; tiktok_url?: string | null } = {};
     if (coverChanged && item.coverUrl) updates.cover_url = item.coverUrl;
     if (excerptChanged) updates.excerpt = item.excerpt;
+    if (titleChanged) updates.title = item.title;
     if (hasVideoLinks && item.youtubeUrl && currentPost.youtube_url !== item.youtubeUrl) updates.youtube_url = item.youtubeUrl;
     if (hasVideoLinks && item.tiktokUrl && currentPost.tiktok_url !== item.tiktokUrl) updates.tiktok_url = item.tiktokUrl;
     const { error } = await admin.from("posts").update(updates).eq("id", postId);
     if (error) throw new Error(error.message);
   }
-  return mediaChanged || coverChanged || excerptChanged || linksChanged;
+  return mediaChanged || coverChanged || excerptChanged || titleChanged || linksChanged;
 }
 
 function saoPauloDate(value: string) {

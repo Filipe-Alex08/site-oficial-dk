@@ -64,6 +64,76 @@ function normalizePermalink(value: string | null, shortcode: string) {
   }
 }
 
+const TITLE_MAX = 72;
+/** Quando a primeira linha é só um gancho curto ("terapia em dia"), a linha seguinte entra como complemento. */
+const TITLE_SHORT_LINE = 16;
+/** Formato do título antigo do importador; só ele é trocado em publicações já existentes. */
+const LEGACY_TITLE = /^Instagram — \d{2}\/\d{2}\/\d{2,4}$/;
+
+export const isLegacyInstagramTitle = (title: string) => LEGACY_TITLE.test(title.trim());
+
+/** Tira link, hashtag, emoji e pontuação de borda: o que sobra é texto que cabe num título. */
+function titleText(line: string) {
+  return line
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/#[\p{L}\p{N}_]+/gu, " ")
+    .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}‍️]/gu, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[^\p{L}\p{N}@]+/u, "")
+    .replace(/[\s,;:\-–—•|/]+$/u, "")
+    .trim();
+}
+
+const hasWords = (text: string) => /[\p{L}\p{N}]{3,}/u.test(text);
+
+function fallbackTitle(publishedAtIso: string, media: ScrapedMedia[]) {
+  const images = media.filter((item) => item.type === "image").length;
+  const videos = media.length - images;
+  const label = images && videos ? "Fotos e vídeos" : videos ? (videos > 1 ? "Vídeos" : "Vídeo") : images > 1 ? "Fotos" : "Foto";
+  const date = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "America/Sao_Paulo" }).format(new Date(publishedAtIso));
+  return `${label} de ${date}`;
+}
+
+/**
+ * Título da publicação a partir da legenda: a primeira frase com texto de verdade
+ * (sem hashtags, links nem emojis), cortada em uma palavra inteira. Sem legenda
+ * aproveitável, descreve a mídia e a data ("Vídeo de 10 de outubro de 2026").
+ * `rest` é o que sobrou da legenda depois do título, para o resumo não repeti-lo
+ * (vazio quando o título já é a legenda toda); `null` quando o título foi cortado
+ * no meio de uma linha e o resumo precisa da legenda inteira.
+ */
+export function buildInstagramTitle(caption: string, publishedAtIso: string, media: ScrapedMedia[]) {
+  const lines = caption.split(/\r?\n/).map((line) => line.trim());
+  const cleaned = lines.map(titleText);
+  const first = cleaned.findIndex(hasWords);
+  if (first === -1) return { title: fallbackTitle(publishedAtIso, media), rest: null };
+
+  let last = first;
+  let text = cleaned[first];
+  if (text.length < TITLE_SHORT_LINE) {
+    const next = cleaned.findIndex((line, index) => index > first && hasWords(line));
+    if (next !== -1) { last = next; text = `${text} — ${cleaned[next]}`; }
+  }
+
+  let title = text;
+  const stop = title.search(/[.!?](?=\s|$)/);
+  if (stop >= 12 && stop < TITLE_MAX) title = title.slice(0, stop + (title[stop] === "." ? 0 : 1));
+  // Só o corte no meio de uma frase leva reticências; terminar numa frase completa não.
+  let wordCut = false;
+  if (title.length > TITLE_MAX) {
+    const cut = title.slice(0, TITLE_MAX);
+    const space = cut.lastIndexOf(" ");
+    title = `${cut.slice(0, space > TITLE_MAX / 2 ? space : TITLE_MAX).replace(/[\s,;:.\-–—(]+$/u, "")}…`;
+    wordCut = true;
+  }
+  title = title.charAt(0).toLocaleUpperCase("pt-BR") + title.slice(1);
+
+  if (wordCut) return { title, rest: null };
+  const tail = text.slice(title.length).replace(/^[\s.]+/, "");
+  const later = lines.slice(last + 1).filter((line) => hasWords(titleText(line)));
+  return { title, rest: [tail, ...later].filter(Boolean).join(" ") };
+}
+
 function isVideo(item: { type?: string; videoUrl?: string; isVideo?: boolean }) {
   return Boolean(item.isVideo || item.videoUrl || item.type?.toLowerCase().includes("video"));
 }
@@ -117,7 +187,9 @@ export function normalizeInstagramPost(raw: InstagramScrapedPost, expectedUserna
   }
   const parsedDate = publishedAt ? new Date(publishedAt) : new Date();
   const publishedAtIso = Number.isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
-  const cardCaption = caption.replace(/\s+/g, " ").trim();
+  const { title, rest } = buildInstagramTitle(caption, publishedAtIso, media);
+  // O resumo continua de onde o título parou, sem repeti-lo.
+  const cardCaption = (rest ?? caption).replace(/\s+/g, " ").trim();
   const excerpt = cardCaption.length > 180
     ? `${cardCaption.slice(0, 177).trimEnd()}…`
     : cardCaption || "Publicação compartilhada no Instagram.";
@@ -130,7 +202,7 @@ export function normalizeInstagramPost(raw: InstagramScrapedPost, expectedUserna
   return {
     sourceId: shortcode,
     sourceUrl: permalink,
-    title: `Instagram — ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(publishedAtIso))}`,
+    title,
     excerpt,
     content: caption || "Publicação importada automaticamente do Instagram.",
     youtubeUrl: socialVideoUrl(caption, "youtube"),
