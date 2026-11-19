@@ -430,31 +430,46 @@ textarea { min-height: 120px; resize: vertical; }
   transition: opacity 0.18s, transform 0.18s, visibility 0s linear 0.18s;
 }
 .account-dropdown.is-open { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-.account-summary { display: grid; gap: 3px; padding: 12px; border-bottom: 1px solid var(--border); }
-.account-summary strong { font-size: 0.98rem; }
-.account-summary span, .account-summary small { overflow-wrap: anywhere; color: var(--text-muted); font-size: 0.82rem; line-height: 1.45; }
-.account-summary small { margin-top: 4px; }
+.account-summary { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 12px; padding: 8px 8px 12px; }
+.account-summary-avatar { width: 44px; height: 44px; }
+.account-summary-text { display: grid; min-width: 0; gap: 1px; }
+.account-summary-text strong { overflow: hidden; font-size: 0.98rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-summary-text span { overflow: hidden; color: var(--text-muted); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-summary .account-insignias { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 6px; }
+.account-summary small { grid-column: 1 / -1; color: var(--text-muted); font-size: 0.82rem; }
 .account-summary .account-status { color: var(--warn); }
-.account-switcher { display: grid; gap: 2px; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
-.account-switcher .account-links-heading { margin-top: 8px; padding-top: 0; border-top: 0; }
+.account-links, .account-footer { display: grid; gap: 2px; padding: 6px 0; border-top: 1px solid var(--border); }
+.account-footer { padding-bottom: 0; }
+.account-links a, .account-row, .account-switch-add {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 10px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+.account-links a:hover, .account-row:hover:not(:disabled), .account-switch-add:hover { background: var(--surface-3); color: var(--text); }
+.account-links a svg, .account-row svg, .account-switch-add svg { flex: 0 0 auto; color: var(--accent-bright); }
+.account-row-count { margin-left: auto; min-width: 20px; padding: 1px 6px; color: var(--text-muted); background: var(--surface-3); border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-align: center; }
+.account-row-chevron { flex: 0 0 auto; color: var(--text-subtle) !important; transition: transform 0.18s; }
+.account-row[aria-expanded="true"] .account-row-chevron { transform: rotate(180deg); }
+.account-switcher { display: grid; gap: 2px; max-height: 240px; margin: 0 0 4px; padding: 4px 0 4px 10px; overflow-y: auto; border-left: 2px solid var(--border); }
 .account-switcher .form-message { margin: 4px 8px; padding: 8px 10px; font-size: 0.82rem; }
-.account-switch-item { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 12px; color: var(--text-muted); background: transparent; border: 0; border-radius: var(--r-sm); text-align: left; cursor: pointer; }
+.account-switch-item { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px; color: var(--text-muted); background: transparent; border: 0; border-radius: var(--r-sm); text-align: left; cursor: pointer; }
 .account-switch-item:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
 .account-switch-item:disabled { opacity: 0.6; cursor: wait; }
 .account-switch-text { display: grid; min-width: 0; gap: 1px; }
 .account-switch-text strong { overflow: hidden; color: var(--text); font-size: 0.92rem; text-overflow: ellipsis; white-space: nowrap; }
 .account-switch-text small { overflow: hidden; font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
-.account-switch-add { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 8px 12px; color: var(--text-muted); border-radius: var(--r-sm); font-size: 0.92rem; }
-.account-switch-add:hover { background: var(--surface-3); color: var(--text); }
-.account-switch-add svg { flex: 0 0 auto; color: var(--accent-bright); }
-.account-links { display: grid; gap: 2px; padding: 8px 0; }
-.account-links a { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 8px 12px; color: var(--text-muted); border-radius: var(--r-sm); font-size: 0.92rem; }
-.account-links a:hover { background: var(--surface-3); color: var(--text); }
-.account-links a svg, .account-links-heading svg { flex: 0 0 auto; color: var(--accent-bright); }
-.account-links-heading { display: flex; align-items: center; gap: 8px; margin: 8px 12px 2px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--text-subtle); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-.account-signout { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; color: var(--text-muted); background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0 0 var(--r-sm) var(--r-sm); font-size: 0.92rem; text-align: left; cursor: pointer; }
 .account-signout:hover { color: var(--danger); }
-.account-signout:disabled { opacity: 0.6; cursor: wait; }
+.account-signout:hover svg { color: var(--danger); }
 
 /* ---------- 5. Home ---------- */
 .home-hero {

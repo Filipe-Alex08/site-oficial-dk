@@ -260,6 +260,26 @@ export type MemberProfile = {
   status: "pendente" | "aprovado" | "recusado" | "suspenso" | "desativado";
 };
 
+/** Anotação de um membro para outro (migração 025). Só o autor e o destinatário a leem. */
+export type MemberNote = {
+  id: string;
+  author_id: string;
+  recipient_id: string;
+  body: string;
+  /** Nível do comandante naquela trilha quando a anotação leva o selo; nulo sem selo. */
+  seal_cavalaria: GraduationLevel | null;
+  seal_arquearia: GraduationLevel | null;
+  created_at: string;
+  updated_at: string;
+  read_at: string | null;
+};
+
+/** O outro lado de uma anotação (ou um possível destinatário): só o que a tela precisa mostrar. */
+export type NoteCounterpart = Pick<
+  MemberProfile,
+  "id" | "full_name" | "nickname" | "avatar_path" | "rank" | "graduation_cavalaria" | "graduation_arquearia" | "commander_cavalaria" | "commander_arquearia"
+>;
+
 export type ContentTemplateKind = "post" | "activity";
 
 /** Campos de uma publicação que um template guarda. Sem slug (sai do título) e sem "publicada". */

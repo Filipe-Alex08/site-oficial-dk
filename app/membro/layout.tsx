@@ -19,7 +19,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
   return <MemberThemeProvider initialStyle={initialStyle} graduationTheme={getMemberTheme(profile)}>
     <AdminProviders>
       <MemberNav isAdmin={isAdmin} badges={badges} />
-      {children}
+      <div className="member-content">{children}</div>
     </AdminProviders>
   </MemberThemeProvider>;
 }

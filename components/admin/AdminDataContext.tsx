@@ -4,7 +4,7 @@ import { createContext, useContext, type Dispatch, type ReactNode, type SetState
 import type { createClient } from "@/lib/supabase/client";
 import type { Activity, AdminRole, MemberProfile, Post } from "@/lib/types";
 
-export type AdminSection = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados" | "logs";
+export type AdminSection = "resumo" | "midias" | "calendario" | "presencas" | "membros" | "convites" | "documentos" | "simulados" | "logs" | "configuracoes";
 export type Invite = { id: string; code: string; expires_at: string; max_uses: number; current_uses: number; active: boolean };
 export type MemberTab = "pendentes" | "todos";
 /** Uma seção do painel como aparece na barra lateral, na barra inferior e na paleta de comandos. */

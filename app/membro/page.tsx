@@ -32,7 +32,7 @@ export default async function MemberPage() {
 
   return (
     <>
-      <LiveRefresh tables={["activities", "activity_attendance", "assessment_assignments", "profiles", "user_admin_roles"]} />
+      <LiveRefresh tables={["activities", "activity_attendance", "assessment_assignments", "profiles", "user_admin_roles", "member_notes"]} />
       <MemberHomeView
         profile={profile}
         profileAvatarUrl={profileAvatarUrl}

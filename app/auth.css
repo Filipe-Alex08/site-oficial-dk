@@ -1030,24 +1030,33 @@ a.card:hover .card-cta svg {
   border-radius: var(--r-md)
 }
 
-.track-group[data-tier="bronze"] {
+/* As anotações (.m-memo) e o selo delas (.m-memo-seal) usam as mesmas cores de nível. */
+.track-group[data-tier="bronze"],
+.m-memo[data-tier="bronze"],
+.m-memo-seal[data-tier="bronze"] {
   --tier: #b87a4b;
   --tier-line: rgba(184, 122, 75, 0.3)
 }
 
-.track-group[data-tier="prata"] {
+.track-group[data-tier="prata"],
+.m-memo[data-tier="prata"],
+.m-memo-seal[data-tier="prata"] {
   --tier: #b8bcc4;
   --tier-line: rgba(184, 188, 196, 0.3)
 }
 
-.track-group[data-tier="ouro"] {
+.track-group[data-tier="ouro"],
+.m-memo[data-tier="ouro"],
+.m-memo-seal[data-tier="ouro"] {
   --tier: #d4a73c;
   --tier-line: rgba(212, 167, 60, 0.3)
 }
 
 /* Aparência "Padrão": o bloco deixa de ter a cor do próprio nível. A medalha dentro
-   dele continua mostrando o nível, porque isso é informação, não estilo. */
-.member-shell[data-member-style="padrao"] .track-group[data-tier] {
+   dele continua mostrando o nível, porque isso é informação, não estilo. O selo da
+   anotação também fica colorido: a cor dele diz o nível do comandante. */
+.member-shell[data-member-style="padrao"] .track-group[data-tier],
+.member-shell[data-member-style="padrao"] .m-memo[data-tier] {
   --tier: rgba(255, 255, 255, 0.2);
   --tier-line: rgba(255, 255, 255, 0.1)
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpenCheck, CalendarPlus, ChevronRight, FileText, ImagePlus, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ScrollText, Search, ShieldCheck, TicketPlus, UserCog } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarPlus, ChevronRight, FileText, ImagePlus, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ScrollText, Search, ShieldCheck, SlidersHorizontal, TicketPlus, UserCog } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -21,6 +21,7 @@ import InvitesSection from "@/components/admin/sections/InvitesSection";
 import MediaSection from "@/components/admin/sections/MediaSection";
 import MembersSection from "@/components/admin/sections/MembersSection";
 import OverviewSection from "@/components/admin/sections/OverviewSection";
+import SettingsSection from "@/components/admin/sections/SettingsSection";
 import CountBadge from "@/components/ui/CountBadge";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AdminRole, MemberProfile, Post } from "@/lib/types";
@@ -46,6 +47,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     ...(canMembers ? ["documentos" as const] : []),
     ...(canManageAssessments ? ["simulados" as const] : []),
     ...(canViewLogs ? ["logs" as const] : []),
+    ...(principal ? ["configuracoes" as const] : []),
   ];
 
   const pathname = usePathname();
@@ -142,6 +144,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
     ...(canCalendar ? [{ id: "presencas" as const, label: "Presenças", icon: <ShieldCheck />, group: "Pessoas" }] : []),
     ...(canManageAssessments ? [{ id: "simulados" as const, label: "Avaliações", icon: <BookOpenCheck />, group: "Gestão", badge: pendingReviews, badgeLabel: "respostas a corrigir" }] : []),
     ...(canViewLogs ? [{ id: "logs" as const, label: "Logs", icon: <ScrollText />, group: "Gestão" }] : []),
+    ...(principal ? [{ id: "configuracoes" as const, label: "Configurações", icon: <SlidersHorizontal />, group: "Gestão" }] : []),
   ];
   const navGroups = nav.reduce<Array<{ label: string; items: AdminNavItem[] }>>((all, item) => {
     const group = all.find((entry) => entry.label === item.group);
@@ -225,6 +228,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           {section === "documentos" && canMembers && <DocumentManager />}
           {section === "simulados" && canManageAssessments && <AssessmentAdmin />}
           {section === "logs" && canViewLogs && <LogsViewer />}
+          {section === "configuracoes" && principal && <SettingsSection />}
         </div>
 
         <AdminBottomBar nav={nav} section={section} onSelect={setSection} />

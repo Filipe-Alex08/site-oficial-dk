@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogIn, LogOut, Menu, Shield, UserPlus, UserRound, X } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, LogIn, LogOut, Menu, Shield, UserPlus, UserRound, X } from "lucide-react";
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import type { ClientAccount } from "@/lib/account-switch";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -42,6 +42,7 @@ export default function Header() {
   const [maxSaved, setMaxSaved] = useState(5);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [switchError, setSwitchError] = useState<string | null>(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
   // Ao navegar, fecha menus abertos (ajuste de estado durante a renderização).
   if (lastPath !== pathname) {
@@ -49,6 +50,7 @@ export default function Header() {
     setOpen(false);
     setActivitiesOpen(false);
     setAccountOpen(false);
+    setSwitcherOpen(false);
   }
   const reloadAccount = useRef<(() => void) | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -149,6 +151,10 @@ export default function Header() {
   }, [accountOpen]);
 
   const active = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+  // O menu da conta não repete o ambiente em que a pessoa já está.
+  const inMemberArea = pathname === "/membro" || pathname.startsWith("/membro/");
+  const inAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
+  const hasAdminAccess = Boolean(account && (account.roles.length > 0 || account.canManageAssessments || account.canViewLogs));
   const approved = account?.profile?.status === "aprovado";
   const displayName = account?.profile?.nickname || account?.profile?.full_name || account?.email || "Usuário";
   const initials = displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -224,7 +230,7 @@ export default function Header() {
                 aria-expanded={accountOpen}
                 aria-haspopup="true"
                 disabled={loading}
-                onClick={() => setAccountOpen((value) => !value)}
+                onClick={() => { setAccountOpen((value) => !value); setSwitcherOpen(false); }}
               >
                 <span className="header-avatar">
                   {account?.avatarUrl ? <Image src={account.avatarUrl} alt="" width={36} height={36} unoptimized /> : account ? initials : <UserRound size={19} />}
@@ -236,43 +242,56 @@ export default function Header() {
               <div className={`account-dropdown ${accountOpen ? "is-open" : ""}`} aria-hidden={!accountOpen} inert={!accountOpen}>
                 {account && <>
                   <div className="account-summary">
-                    <strong>{displayName}</strong>
-                    <span>{account.email}</span>
+                    <span className="header-avatar account-summary-avatar">
+                      {account.avatarUrl ? <Image src={account.avatarUrl} alt="" width={44} height={44} unoptimized /> : initials}
+                    </span>
+                    <div className="account-summary-text">
+                      <strong>{displayName}</strong>
+                      <span>{account.email}</span>
+                    </div>
                     {approved && account.profile && <div className="account-insignias"><RankInsignia rank={account.profile.rank} /><GraduationInsignias profile={account.profile} /></div>}
                     {account.profile && !approved && <small className="account-status">Cadastro {account.profile.status}</small>}
                     {!account.profile && <small className="account-status">Cadastro incompleto</small>}
                   </div>
-                  {approved && (
-                    <div className="account-switcher">
-                      <span className="account-links-heading"><UserRound size={14} /> Trocar de conta</span>
-                      {savedAccounts.map((saved) => (
-                        <button key={saved.id} className="account-switch-item" type="button" onClick={() => switchAccount(saved.id)} disabled={switchingId !== null}>
-                          <span className="header-avatar">
-                            {saved.avatarUrl ? <Image src={saved.avatarUrl} alt="" width={36} height={36} unoptimized /> : (saved.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || <UserRound size={19} />)}
-                          </span>
-                          <span className="account-switch-text">
-                            <strong>{switchingId === saved.id ? "Trocando…" : saved.name}</strong>
-                            <small>{saved.email}</small>
-                          </span>
-                        </button>
-                      ))}
-                      {switchError && <p className="form-message error" role="alert">{switchError}</p>}
-                      {savedAccounts.length < maxSaved && (
-                        <Link className="account-switch-add" href="/area-do-membro/login?adicionar=1" onClick={() => setAccountOpen(false)}><UserPlus size={16} /> Adicionar outra conta</Link>
-                      )}
-                    </div>
-                  )}
-                  {approved ? <div className="account-links">
-                    <Link href="/membro" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Área do membro</Link>
-                    <Link href="/membro/atividades" onClick={() => setAccountOpen(false)}>Atividades e presenças</Link>
-                    <Link href="/membro/documentos" onClick={() => setAccountOpen(false)}>Documentos</Link>
-                    <Link href="/membro/simulados" onClick={() => setAccountOpen(false)}>Avaliações</Link>
-                    {(account.roles.length > 0 || account.canManageAssessments || account.canViewLogs) && <>
-                      <span className="account-links-heading"><Shield size={14} /> Administração</span>
-                      <Link href="/admin" onClick={() => setAccountOpen(false)}>Painel administrativo</Link>
+                  {/* Só os destinos que não estão a um clique: dentro da área do membro
+                      as abas já levam a Atividades, Documentos e Avaliações, e quem já
+                      está num dos dois ambientes não precisa de atalho para ele. */}
+                  {(approved ? (!inMemberArea || (hasAdminAccess && !inAdminArea)) : true) && <div className="account-links">
+                    {approved ? <>
+                      {!inMemberArea && <Link href="/membro" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Área do membro</Link>}
+                      {hasAdminAccess && !inAdminArea && <Link href="/admin" onClick={() => setAccountOpen(false)}><Shield size={16} /> Painel administrativo</Link>}
+                    </> : <Link href="/area-do-membro/login" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Status do cadastro</Link>}
+                  </div>}
+                  <div className="account-footer">
+                    {approved && savedAccounts.length > 0 && <>
+                      <button className="account-row" type="button" aria-expanded={switcherOpen} onClick={() => setSwitcherOpen((value) => !value)}>
+                        <ArrowLeftRight size={16} /> Trocar de conta
+                        <span className="account-row-count">{savedAccounts.length}</span>
+                        <ChevronDown className="account-row-chevron" size={15} />
+                      </button>
+                      {switcherOpen && <div className="account-switcher">
+                        {savedAccounts.map((saved) => (
+                          <button key={saved.id} className="account-switch-item" type="button" onClick={() => switchAccount(saved.id)} disabled={switchingId !== null}>
+                            <span className="header-avatar">
+                              {saved.avatarUrl ? <Image src={saved.avatarUrl} alt="" width={36} height={36} unoptimized /> : (saved.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || <UserRound size={19} />)}
+                            </span>
+                            <span className="account-switch-text">
+                              <strong>{switchingId === saved.id ? "Trocando…" : saved.name}</strong>
+                              <small>{saved.email}</small>
+                            </span>
+                          </button>
+                        ))}
+                        {switchError && <p className="form-message error" role="alert">{switchError}</p>}
+                        {savedAccounts.length < maxSaved && (
+                          <Link className="account-switch-add" href="/area-do-membro/login?adicionar=1" onClick={() => setAccountOpen(false)}><UserPlus size={16} /> Adicionar outra conta</Link>
+                        )}
+                      </div>}
                     </>}
-                  </div> : <div className="account-links"><Link href="/area-do-membro/login" onClick={() => setAccountOpen(false)}><UserRound size={16} /> Status do cadastro</Link></div>}
-                  <button className="account-signout" type="button" onClick={signOut} disabled={signingOut}><LogOut size={16} /> {signingOut ? "Saindo…" : "Sair da conta"}</button>
+                    {approved && savedAccounts.length === 0 && (
+                      <Link className="account-row" href="/area-do-membro/login?adicionar=1" onClick={() => setAccountOpen(false)}><UserPlus size={16} /> Adicionar outra conta</Link>
+                    )}
+                    <button className="account-row account-signout" type="button" onClick={signOut} disabled={signingOut}><LogOut size={16} /> {signingOut ? "Saindo…" : "Sair da conta"}</button>
+                  </div>
                 </>}
               </div>
             </>

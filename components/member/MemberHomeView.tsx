@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, CalendarX, ChevronRight, ClipboardCheck, MapPin, UserCheck } from "lucide-react";
+import { CalendarCheck, CalendarX, ChevronRight, ClipboardCheck, MapPin, NotebookPen, UserCheck } from "lucide-react";
 import Panel from "@/components/admin/ui/Panel";
 import StatusBadge from "@/components/admin/ui/StatusBadge";
 import { BuildInsignia, GraduationInsignia } from "@/components/member/Insignia";
@@ -32,15 +32,16 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, canE
   userId: string;
   canEditAccessDirectly: boolean;
   isAdmin: boolean;
-  counts: { activitiesToAnswer: number; assessmentsToTake: number; membersToReview: number };
+  counts: { activitiesToAnswer: number; assessmentsToTake: number; membersToReview: number; notesUnread: number };
   upcoming: UpcomingActivity[];
   /** Resposta do membro por atividade: "vai" ou "nao_vai". */
   responses: Record<string, string>;
 }) {
-  const { activitiesToAnswer, assessmentsToTake, membersToReview } = counts;
+  const { activitiesToAnswer, assessmentsToTake, membersToReview, notesUnread } = counts;
   const attention = [
     { href: "/membro/atividades?filtro=pendentes", icon: <CalendarCheck />, count: activitiesToAnswer, title: `${activitiesToAnswer} ${activitiesToAnswer === 1 ? "atividade" : "atividades"} sem resposta`, text: "Confirme se você vai participar." },
     { href: "/membro/simulados", icon: <ClipboardCheck />, count: assessmentsToTake, title: `${assessmentsToTake} ${assessmentsToTake === 1 ? "avaliação" : "avaliações"} para fazer`, text: "Indicações abertas esperando você." },
+    { href: "/membro/anotacoes", icon: <NotebookPen />, count: notesUnread, title: `${notesUnread} ${notesUnread === 1 ? "anotação nova" : "anotações novas"}`, text: "Deixadas para você por comandantes e oficiais." },
     ...(isAdmin ? [{ href: "/admin?secao=membros", icon: <UserCheck />, count: membersToReview, title: `${membersToReview} ${membersToReview === 1 ? "membro aguardando" : "membros aguardando"} ação`, text: "Cadastros e dados para conferir no painel." }] : []),
   ].filter((item) => item.count > 0);
 

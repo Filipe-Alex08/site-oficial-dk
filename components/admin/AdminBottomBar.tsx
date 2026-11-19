@@ -7,7 +7,7 @@ import { useDialogBehavior } from "@/components/admin/ui/useDialogBehavior";
 import CountBadge from "@/components/ui/CountBadge";
 
 /** Ordem em que as seções disputam as vagas fixas da barra (as demais vão para "Mais"). */
-const priority: AdminSection[] = ["resumo", "membros", "calendario", "midias", "simulados", "presencas", "convites", "documentos", "logs"];
+const priority: AdminSection[] = ["resumo", "membros", "calendario", "midias", "simulados", "presencas", "convites", "documentos", "logs", "configuracoes"];
 
 /** Navegação do painel no celular: quatro atalhos fixos e uma folha com todo o resto. */
 export default function AdminBottomBar({ nav, section, onSelect }: { nav: AdminNavItem[]; section: AdminSection; onSelect: (id: AdminSection) => void }) {
