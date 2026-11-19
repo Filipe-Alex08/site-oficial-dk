@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
+import { useToast } from "@/components/admin/ToastProvider";
+import StatusBadge from "@/components/admin/ui/StatusBadge";
 
 type ResponseForm = { guest_count: number; note: string };
 
@@ -69,10 +71,20 @@ function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: 
   return lines.join("\n");
 }
 
-export default function AttendancePanel({ activities, userId }: { activities: Activity[]; userId: string }) {
+type Filter = "todas" | "pendentes" | "vou";
+
+const filterLabels: Record<Filter, string> = { todas: "Todas", pendentes: "Sem resposta", vou: "Eu vou" };
+
+const monthTitle = (activity: Activity) =>
+  new Date(activity.starts_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
+
+const isActivityClosed = (activity: Activity) => !activity.attendance_open || activity.status === "cancelado" || activity.status === "finalizado";
+
+export default function AttendancePanel({ activities, userId, initialFilter = "todas" }: { activities: Activity[]; userId: string; initialFilter?: Filter }) {
   const supabase = useMemo(() => createClient(), []);
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [forms, setForms] = useState<Record<string, ResponseForm>>({});
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
   const queryClient = useQueryClient();
   const queryKey = ["attendance", userId, activities.map((activity) => activity.id)];
 
@@ -115,17 +127,12 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
       return { activity, response };
     },
     onSuccess: ({ activity, response }) => {
-      show(response === null ? "Resposta removida." : response === "vai" ? "Presença confirmada." : "Ausência registrada.");
+      toast.success(response === null ? "Resposta removida." : response === "vai" ? "Presença confirmada." : "Ausência registrada.");
       void queryClient.invalidateQueries({ queryKey });
     },
-    onError: (error: Error) => show(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
   const busy = responseMutation.isPending ? responseMutation.variables?.activity.id ?? null : null;
-
-  function show(message: string) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 3500);
-  }
 
   function formFor(activityId: string) {
     if (forms[activityId]) return forms[activityId];
@@ -156,9 +163,9 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   async function copyList(activity: Activity) {
     try {
       await navigator.clipboard.writeText(listText(activity));
-      show("Lista copiada.");
+      toast.success("Lista copiada.");
     } catch {
-      show("O navegador não permitiu copiar a lista.");
+      toast.error("O navegador não permitiu copiar a lista.");
     }
   }
 
@@ -167,50 +174,103 @@ export default function AttendancePanel({ activities, userId }: { activities: Ac
   }
 
   if (!activities.length) {
-    return <div className="empty-state"><Users /><h2>Nenhuma atividade aberta</h2></div>;
+    return <div className="empty-state"><Users /><h2>Nenhuma atividade aberta</h2><p>Quando houver uma nova atividade, ela aparece aqui.</p></div>;
   }
 
   if (isPending) return <div className="empty-state" role="status">Carregando presenças…</div>;
 
+  const ownResponse = (activity: Activity) => entries[activity.id]?.find((entry) => entry.user_id === userId)?.response;
+  const matches = (activity: Activity, wanted: Filter) =>
+    wanted === "todas" || (wanted === "pendentes" ? !isActivityClosed(activity) && !ownResponse(activity) : ownResponse(activity) === "vai");
+  const filterCounts: Record<Filter, number> = {
+    todas: activities.length,
+    pendentes: activities.filter((activity) => matches(activity, "pendentes")).length,
+    vou: activities.filter((activity) => matches(activity, "vou")).length,
+  };
+  // As atividades já chegam em ordem de data: cada mês vira um bloco com título.
+  const groups: Array<{ title: string; items: Activity[] }> = [];
+  for (const activity of activities.filter((item) => matches(item, filter))) {
+    const title = monthTitle(activity);
+    const last = groups[groups.length - 1];
+    if (last?.title === title) last.items.push(activity);
+    else groups.push({ title, items: [activity] });
+  }
+
   return (
-    <div className="attendance-list">
-      {notice && <div className="admin-notice">{notice}</div>}
-      {isError && <div className="admin-notice" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
-      {activities.map((activity) => {
+    <div className="m-activities">
+      {isError && <div className="empty-state" role="alert">Não foi possível carregar as presenças. <button className="text-button" onClick={() => void refetch()}>Tentar novamente</button></div>}
+      <div className="m-filters" role="group" aria-label="Filtrar atividades">
+        {(Object.keys(filterLabels) as Filter[]).map((key) => (
+          <button key={key} type="button" aria-pressed={filter === key} onClick={() => setFilter(key)}>
+            {filterLabels[key]}<span className="count-pill">{filterCounts[key]}</span>
+          </button>
+        ))}
+      </div>
+      {!groups.length && <div className="empty-state" role="status"><Users /><h2>{filter === "pendentes" ? "Nada sem resposta" : "Nenhuma atividade aqui"}</h2><p>{filter === "pendentes" ? "Você já respondeu todas as atividades abertas." : "Quando você confirmar presença, as atividades aparecem aqui."}</p></div>}
+      {groups.map((group) => <section className="m-month" key={group.title} aria-label={group.title}>
+        <h2 className="m-month-title">{group.title}</h2>
+      {group.items.map((activity) => {
         const activityEntries = entries[activity.id] ?? [];
         const own = activityEntries.find((entry) => entry.user_id === userId);
         const attending = activityEntries.filter((entry) => entry.response === "vai");
         const absent = activityEntries.filter((entry) => entry.response === "nao_vai");
-        const isClosed = !activity.attendance_open || activity.status === "cancelado" || activity.status === "finalizado";
+        const isClosed = isActivityClosed(activity);
+        const start = new Date(activity.starts_at);
+        const confirmed = attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0);
+        const form = formFor(activity.id);
+        const closedReason = activity.status === "cancelado" ? "Atividade cancelada." : activity.status === "finalizado" ? "Atividade finalizada." : "A lista de presença está fechada.";
 
         return (
-          <article className="attendance-card" id={`activity-${activity.id}`} key={activity.id}>
+          <article className="m-activity" id={`activity-${activity.id}`} key={activity.id} data-answer={own?.response ?? (isClosed ? "closed" : "open")}>
             <header>
-              <div><span>{activity.type}</span><h2>{activity.title}</h2><p>{new Date(activity.starts_at).toLocaleDateString("pt-BR", dateOptions)} • {activityTime(activity)} • {activity.location}</p></div>
-              <div className="attendance-count"><strong>{attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0)}</strong><small>confirmados</small></div>
+              <span className="date-chip" aria-hidden="true"><strong>{start.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: "America/Sao_Paulo" })}</strong><small>{start.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" }).replace(".", "")}</small></span>
+              <div className="m-activity-title">
+                <div className="m-activity-tags"><span>{activity.type}</span>{activity.status !== "confirmado" && <StatusBadge status={activity.status} />}{own && <StatusBadge status={own.response === "vai" ? "aprovado" : "suspenso"} label={own.response === "vai" ? "Você vai" : "Você não vai"} />}</div>
+                <h3>{activity.title}</h3>
+                <p><span>{start.toLocaleDateString("pt-BR", dateOptions)} · {activityTime(activity)}</span><span>{activity.location}</span></p>
+              </div>
+              <div className="m-activity-count"><strong>{confirmed}</strong><small>confirmados</small></div>
             </header>
 
-            <div className="attendance-response">
-              <div className="field"><label>Convidados ou recrutas com você</label><input type="number" min="0" max="30" value={formFor(activity.id).guest_count} disabled={isClosed} onChange={(event) => updateForm(activity.id, { guest_count: Number(event.target.value) })} /></div>
-              <div className="field"><label>Observação pública (opcional)</label><input maxLength={180} value={formFor(activity.id).note} disabled={isClosed} onChange={(event) => updateForm(activity.id, { note: event.target.value })} placeholder="Ex.: imprevisto, trabalhando..." /></div>
-              <div className="attendance-actions">
-                <button className={`button ${own?.response === "vai" ? "button-primary" : "button-ghost"}`} disabled={isClosed || busy === activity.id} onClick={() => saveResponse(activity, "vai")}>{busy === activity.id ? <span className="inline-spinner" aria-label="Salvando" /> : <Check size={17} />} {busy === activity.id ? "Salvando…" : "Vou"}</button>
-                <button className={`button ${own?.response === "nao_vai" ? "button-danger" : "button-ghost"}`} disabled={isClosed || busy === activity.id} onClick={() => saveResponse(activity, "nao_vai")}><X size={17} /> Não vou</button>
-                {own && <button className="text-button" disabled={isClosed || busy === activity.id} onClick={() => removeResponse(activity.id)}>{busy === activity.id ? "Salvando…" : "Remover resposta"}</button>}
-              </div>
+            <div className="m-answer">
+              {isClosed
+                ? <p className="m-activity-note" role="status">{closedReason}</p>
+                : <>
+                  <div className="m-answer-buttons" role="group" aria-label={`Sua resposta para ${activity.title}`}>
+                    <button type="button" className={own?.response === "vai" ? "is-yes" : ""} aria-pressed={own?.response === "vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "vai")}>{busy === activity.id ? <span className="inline-spinner" aria-label="Salvando" /> : <Check size={18} />} Vou</button>
+                    <button type="button" className={own?.response === "nao_vai" ? "is-no" : ""} aria-pressed={own?.response === "nao_vai"} disabled={busy === activity.id} onClick={() => saveResponse(activity, "nao_vai")}><X size={18} /> Não vou</button>
+                  </div>
+                  <details className="m-answer-more" open={Boolean(form.guest_count || form.note)}>
+                    <summary>Convidados e observação</summary>
+                    <div className="m-answer-fields">
+                      <div className="field"><label htmlFor={`guests-${activity.id}`}>Convidados ou recrutas com você</label><input id={`guests-${activity.id}`} type="number" inputMode="numeric" min="0" max="30" value={form.guest_count} onChange={(event) => updateForm(activity.id, { guest_count: Number(event.target.value) })} /></div>
+                      <div className="field"><label htmlFor={`note-${activity.id}`}>Observação pública<span className="opt">opcional</span></label><input id={`note-${activity.id}`} maxLength={180} value={form.note} onChange={(event) => updateForm(activity.id, { note: event.target.value })} placeholder="Ex.: imprevisto, trabalhando…" /></div>
+                    </div>
+                    <p className="field-hint">Depois de alterar, toque em Vou ou Não vou para salvar.</p>
+                  </details>
+                  {own && <button className="text-button" type="button" disabled={busy === activity.id} onClick={() => removeResponse(activity.id)}>{busy === activity.id ? "Salvando…" : "Remover minha resposta"}</button>}
+                </>}
             </div>
 
-            <div className="attendance-columns">
-              <div><h3>✅ Vão participar</h3>{attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma confirmação.</p>}</div>
-              <div><h3>❌ Não poderão ir</h3>{absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma ausência informada.</p>}</div>
+            <div className="m-lists">
+              <details open={attending.length > 0}>
+                <summary><span>Vão participar</span><span className="count-pill">{attending.length}</span></summary>
+                {attending.length ? <ol>{attending.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma confirmação.</p>}
+              </details>
+              <details>
+                <summary><span>Não poderão ir</span><span className="count-pill">{absent.length}</span></summary>
+                {absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma ausência informada.</p>}
+              </details>
             </div>
 
             <footer>
-              <div><button className="button button-ghost" onClick={() => copyList(activity)}><Clipboard size={17} /> Copiar lista</button><button className="button button-primary" onClick={() => shareOnWhatsApp(activity)}><MessageCircle size={17} /> Enviar no WhatsApp</button></div>
+              <button className="button button-ghost button-small" type="button" onClick={() => copyList(activity)}><Clipboard size={16} /> Copiar lista</button>
+              <button className="button button-ghost button-small" type="button" onClick={() => shareOnWhatsApp(activity)}><MessageCircle size={16} /> WhatsApp</button>
             </footer>
           </article>
         );
       })}
+      </section>)}
     </div>
   );
 }

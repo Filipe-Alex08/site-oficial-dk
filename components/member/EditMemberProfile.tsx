@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3 } from "lucide-react";
+import { useToast } from "@/components/admin/ToastProvider";
 import { createClient } from "@/lib/supabase/client";
 import { jsonApiFetch } from "@/lib/api-client";
 import { validatePasswordChange } from "@/lib/account-password";
@@ -14,15 +15,15 @@ import type { MemberProfile } from "@/lib/types";
 type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_date" | "house_cavalaria" | "house_arquearia" | "shirt_number" | "primary_build" | "secondary_build">;
 
 /**
- * Perfil do membro: `children` é a visão somente leitura (renderizada no
- * servidor) e fica sempre no card; a edição acontece num modal.
+ * Botão "Editar perfil" e o modal de edição. `children` (opcional) é a visão
+ * somente leitura renderizada no servidor, mostrada acima do botão.
  */
-export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children: ReactNode }) {
+export default function EditMemberProfile({ profile, canEditAccessDirectly = false, children }: { profile: MemberProfile; canEditAccessDirectly?: boolean; children?: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [password, setPassword] = useState(EMPTY_PASSWORD);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -31,12 +32,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
   // O que o formulário tinha ao abrir; as alterações são contadas contra isso.
   const [initial, setInitial] = useState(form);
   const changes = countProfileChanges(initial, form, password);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(""), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [notice]);
 
   useEffect(() => {
     if (!closing) return;
@@ -64,7 +59,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     setPassword(EMPTY_PASSWORD);
     setPasswordOpen(false);
     setErrors({});
-    setNotice("");
     setClosing(false);
     setOpen(true);
   }
@@ -174,14 +168,13 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
     const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
-    setNotice(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
+    toast.success(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
     setSaving(false);
     closeDialog();
   }
 
   return (
     <div className="profile-edit">
-      {profile.access_request_id && <p className="profile-edit-help" role="status">Alteração de patente, graduação ou comando aguardando aprovação.</p>}
       {children}
       <button ref={triggerRef} className="button button-ghost button-small profile-edit-open" type="button" aria-haspopup="dialog" onClick={openDialog}>
         <Edit3 size={16} aria-hidden="true" /> Editar perfil
@@ -205,7 +198,6 @@ export default function EditMemberProfile({ profile, canEditAccessDirectly = fal
           onClose={closeDialog}
         />
       )}
-      {notice && <p className="profile-edit-message success" role="status">{notice}</p>}
     </div>
   );
 }

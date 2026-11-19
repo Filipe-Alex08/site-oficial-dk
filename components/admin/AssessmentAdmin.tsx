@@ -23,9 +23,14 @@ import {
   UserCheck,
   X,
 } from "lucide-react";
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import AdminDialog from "@/components/admin/AdminDialog";
 import AdminTitle from "@/components/admin/AdminTitle";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
+import { useToast } from "@/components/admin/ToastProvider";
+import { onTabListKeyDown } from "@/components/admin/ui/tabKeys";
+import Select from "@/components/ui/Select";
 import {
   assessmentAssignmentStatusLabels,
   assessmentDifficultyOptions,
@@ -164,8 +169,9 @@ function toggleValue<T extends string>(current: T[], value: T) {
 export default function AssessmentAdmin() {
   const [tab, setTab] = useState<AdminTab>("resumo");
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [resetDialog, setResetDialog] = useState<{ assignment: AssessmentAssignment; reason: string } | null>(null);
   const [questionForm, setQuestionForm] = useState<QuestionForm>(emptyQuestion);
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
   const [questionSearch, setQuestionSearch] = useState("");
@@ -176,10 +182,9 @@ export default function AssessmentAdmin() {
   const [assignmentExpiresAt, setAssignmentExpiresAt] = useState("");
   const [reviewFeedback, setReviewFeedback] = useState<Record<string, string>>({});
 
-  const showNotice = useCallback((message: string) => {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 4500);
-  }, []);
+  // Avisos pela pilha única do painel; setError("") continua valendo como "limpar", sem aviso.
+  const showNotice = (message: string) => toast.success(message);
+  const setError = (message: string) => { if (message) toast.error(message); };
 
   const assessmentQuery = useQuery({
     queryKey: assessmentAdminQueryKey,
@@ -356,14 +361,17 @@ export default function AssessmentAdmin() {
   }
 
   async function changeAssignment(assignment: AssessmentAssignment, action: "cancel" | "close" | "reset") {
-    let reason = "";
-    if (action === "cancel" && !window.confirm("Cancelar esta indicação antes do início? O link deixará de funcionar.")) return;
-    if (action === "close" && !window.confirm("Encerrar esta avaliação agora? As respostas já salvas serão corrigidas e as não respondidas contarão como erro.")) return;
+    if (action === "cancel" && !(await confirm({ title: "Cancelar esta indicação?", message: "Ela ainda não começou. O link deixará de funcionar.", confirmLabel: "Cancelar indicação", cancelLabel: "Voltar", danger: true }))) return;
+    if (action === "close" && !(await confirm({ title: "Encerrar esta avaliação agora?", message: "As respostas já salvas serão corrigidas e as não respondidas contarão como erro.", confirmLabel: "Encerrar", cancelLabel: "Voltar", danger: true }))) return;
     if (action === "reset") {
-      if (!window.confirm("A liberação excepcional apagará as respostas e o resultado desta tentativa. Deseja continuar?")) return;
-      reason = window.prompt("Informe o motivo técnico ou administrativo da nova liberação:")?.trim() ?? "";
-      if (reason.length < 10) return setError("A justificativa precisa ter pelo menos 10 caracteres.");
+      // O motivo é pedido num diálogo próprio; a ação segue em applyAssignmentChange.
+      setResetDialog({ assignment, reason: "" });
+      return;
     }
+    await applyAssignmentChange(assignment, action, "");
+  }
+
+  async function applyAssignmentChange(assignment: AssessmentAssignment, action: "cancel" | "close" | "reset", reason: string) {
     setBusy(true);
     setError("");
     try {
@@ -430,16 +438,14 @@ export default function AssessmentAdmin() {
   const seniorOfficers = data.members.filter((member) => delegableAssessmentRanks.includes(member.rank));
 
   return <div className="assessment-admin-module">
-    <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
     <AdminTitle
       eyebrow="Gestão"
       title="Avaliações"
       description="Questões, provas, indicações aos membros e correção das respostas abertas."
       action={<button className="button button-ghost" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /> Atualizar</button>}
     />
-    {error && <div className="assessment-admin-error"><X /><span>{error}</span><button type="button" onClick={() => setError("")}>Fechar</button></div>}
 
-    <nav className="assessment-admin-tabs" aria-label="Seções das avaliações">
+    <div className="admin-subtabs" role="tablist" aria-label="Seções das avaliações" onKeyDown={onTabListKeyDown}>
       <AssessmentTab label="Resumo" icon={<ClipboardCheck />} active={tab === "resumo"} onClick={() => setTab("resumo")} />
       <AssessmentTab label="Questões" icon={<FileQuestion />} active={tab === "questoes"} onClick={() => setTab("questoes")} count={data.questions.filter((question) => question.active).length} />
       <AssessmentTab label="Avaliações" icon={<BookOpenCheck />} active={tab === "avaliacoes"} onClick={() => setTab("avaliacoes")} count={publishedAssessments.length} />
@@ -447,10 +453,10 @@ export default function AssessmentAdmin() {
       <AssessmentTab label="Correções" icon={<Edit3 />} active={tab === "correcoes"} onClick={() => setTab("correcoes")} count={data.reviews.length} alert />
       <AssessmentTab label="Resultados" icon={<Award />} active={tab === "resultados"} onClick={() => setTab("resultados")} count={completedAssignments.length} />
       {data.actor.canDelegate && <AssessmentTab label="Permissões" icon={<ShieldCheck />} active={tab === "permissoes"} onClick={() => setTab("permissoes")} />}
-    </nav>
+    </div>
 
     {tab === "resumo" && <section className="assessment-admin-panel">
-      <div className="assessment-metric-grid">
+      <div className="kpi-strip">
         <Metric icon={<FileQuestion />} value={data.questions.filter((question) => question.active).length} label="Questões ativas" />
         <Metric icon={<BookOpenCheck />} value={publishedAssessments.length} label="Avaliações publicadas" />
         <Metric icon={<UserCheck />} value={data.assignments.filter((assignment) => assignment.status === "em_andamento" || assignment.status === "convidado").length} label="Indicações abertas" />
@@ -463,13 +469,13 @@ export default function AssessmentAdmin() {
         <header><div><h3>{editingQuestion ? "Editar questão" : "Cadastrar questão"}</h3></div>{editingQuestion && <button className="button button-ghost" type="button" onClick={() => { setEditingQuestion(null); setQuestionForm(emptyQuestion); }}><X /> Cancelar edição</button>}</header>
         <div className="field full"><label htmlFor="question-prompt">Enunciado</label><textarea id="question-prompt" rows={5} value={questionForm.prompt} onChange={(event) => setQuestionForm({ ...questionForm, prompt: event.target.value })} placeholder="Texto da pergunta" required /></div>
         <div className="assessment-form-grid">
-          <label className="field"><span>Tipo</span><select value={questionForm.question_type} onChange={(event) => setQuestionForm({ ...questionForm, question_type: event.target.value as AssessmentQuestionType })}>{assessmentQuestionTypeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+          <SelectField label="Tipo" value={questionForm.question_type} options={assessmentQuestionTypeOptions} onChange={(value) => setQuestionForm({ ...questionForm, question_type: value as AssessmentQuestionType })} />
           <label className="field"><span>Manual de origem</span><input value={questionForm.manual_title} onChange={(event) => setQuestionForm({ ...questionForm, manual_title: event.target.value })} placeholder="Ex.: Manual DK — Nível 3" required /></label>
           <label className="field"><span>Capítulo ou tópico</span><input value={questionForm.source_chapter} onChange={(event) => setQuestionForm({ ...questionForm, source_chapter: event.target.value })} placeholder="Ex.: Capítulo 4" /></label>
           <label className="field"><span>Página</span><input value={questionForm.source_page} onChange={(event) => setQuestionForm({ ...questionForm, source_page: event.target.value })} placeholder="Ex.: 28" /></label>
-          <label className="field"><span>Categoria</span><select value={questionForm.scope_type} onChange={(event) => setQuestionForm({ ...questionForm, scope_type: event.target.value as AssessmentScopeType, rank_scopes: event.target.value === "patente" ? ["terceiro_sargento"] : [], graduation_scopes: event.target.value === "graduacao" ? ["bronze"] : [] })}>{assessmentScopeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-          <label className="field"><span>Área</span><select value={questionForm.track} onChange={(event) => setQuestionForm({ ...questionForm, track: event.target.value as AssessmentTrack })}>{assessmentTrackOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-          <label className="field"><span>Dificuldade</span><select value={questionForm.difficulty} onChange={(event) => setQuestionForm({ ...questionForm, difficulty: event.target.value as AssessmentDifficulty })}>{assessmentDifficultyOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+          <SelectField label="Categoria" value={questionForm.scope_type} options={assessmentScopeOptions} onChange={(value) => setQuestionForm({ ...questionForm, scope_type: value as AssessmentScopeType, rank_scopes: value === "patente" ? ["terceiro_sargento"] : [], graduation_scopes: value === "graduacao" ? ["bronze"] : [] })} />
+          <SelectField label="Área" value={questionForm.track} options={assessmentTrackOptions} onChange={(value) => setQuestionForm({ ...questionForm, track: value as AssessmentTrack })} />
+          <SelectField label="Dificuldade" value={questionForm.difficulty} options={assessmentDifficultyOptions} onChange={(value) => setQuestionForm({ ...questionForm, difficulty: value as AssessmentDifficulty })} />
         </div>
         <fieldset className="assessment-checkbox-fieldset"><legend>{questionForm.scope_type === "patente" ? "Patentes relacionadas" : "Graduações relacionadas"}</legend>
           {questionForm.scope_type === "patente" ? rankGroups.map((group) => <div className="assessment-checkbox-group" key={group.category}><strong>{group.category}</strong><div>{group.ranks.map((rank) => <label key={rank.value}><input type="checkbox" checked={questionForm.rank_scopes.includes(rank.value)} onChange={() => setQuestionForm({ ...questionForm, rank_scopes: toggleValue(questionForm.rank_scopes, rank.value) })} /> {rank.label}</label>)}</div></div>) : <div className="assessment-checkbox-group"><div>{graduationOptions.filter((item) => item.value !== "sem_graduacao").map((level) => <label key={level.value}><input type="checkbox" checked={questionForm.graduation_scopes.includes(level.value)} onChange={() => setQuestionForm({ ...questionForm, graduation_scopes: toggleValue(questionForm.graduation_scopes, level.value) })} /> {level.label}</label>)}</div></div>}
@@ -490,13 +496,13 @@ export default function AssessmentAdmin() {
         <div className="assessment-form-grid">
           <label className="field full"><span>Título</span><input value={assessmentForm.title} onChange={(event) => setAssessmentForm({ ...assessmentForm, title: event.target.value })} placeholder="Ex.: Avaliação de indicação para 1º Sargento" required /></label>
           <label className="field full"><span>Descrição</span><textarea rows={3} value={assessmentForm.description} onChange={(event) => setAssessmentForm({ ...assessmentForm, description: event.target.value })} placeholder="Orientações que aparecerão antes do início." /></label>
-          <label className="field"><span>Tipo do objetivo</span><select value={assessmentForm.target_type} onChange={(event) => setAssessmentForm({ ...assessmentForm, target_type: event.target.value as AssessmentScopeType })}>{assessmentScopeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-          {assessmentForm.target_type === "patente" ? <label className="field"><span>Patente pretendida</span><select value={assessmentForm.target_rank} onChange={(event) => setAssessmentForm({ ...assessmentForm, target_rank: event.target.value as DkRank })}>{rankGroups.flatMap((group) => group.ranks).map((rank) => <option value={rank.value} key={rank.value}>{rank.label}</option>)}</select></label> : <label className="field"><span>Graduação pretendida</span><select value={assessmentForm.target_graduation} onChange={(event) => setAssessmentForm({ ...assessmentForm, target_graduation: event.target.value as GraduationLevel })}>{graduationOptions.filter((item) => item.value !== "sem_graduacao").map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>}
-          <label className="field"><span>Área</span><select value={assessmentForm.track} onChange={(event) => { setAssessmentForm({ ...assessmentForm, track: event.target.value as AssessmentTrack }); setSelectedQuestionIds(new Set()); }}>{assessmentTrackOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-          <label className="field"><span>Quantidade</span><select value={assessmentForm.question_count} onChange={(event) => { setAssessmentForm({ ...assessmentForm, question_count: Number(event.target.value) }); setSelectedQuestionIds(new Set()); }}>{assessmentQuestionCountOptions.map((count) => <option value={count} key={count}>{count} questões</option>)}</select></label>
+          <SelectField label="Tipo do objetivo" value={assessmentForm.target_type} options={assessmentScopeOptions} onChange={(value) => setAssessmentForm({ ...assessmentForm, target_type: value as AssessmentScopeType })} />
+          {assessmentForm.target_type === "patente" ? <SelectField label="Patente pretendida" value={assessmentForm.target_rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setAssessmentForm({ ...assessmentForm, target_rank: value as DkRank })} /> : <SelectField label="Graduação pretendida" value={assessmentForm.target_graduation} options={graduationOptions.filter((item) => item.value !== "sem_graduacao").map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setAssessmentForm({ ...assessmentForm, target_graduation: value as GraduationLevel })} />}
+          <SelectField label="Área" value={assessmentForm.track} options={assessmentTrackOptions} onChange={(value) => { setAssessmentForm({ ...assessmentForm, track: value as AssessmentTrack }); setSelectedQuestionIds(new Set()); }} />
+          <SelectField label="Quantidade" value={String(assessmentForm.question_count)} options={assessmentQuestionCountOptions.map((count) => ({ value: String(count), label: `${count} questões` }))} onChange={(value) => { setAssessmentForm({ ...assessmentForm, question_count: Number(value) }); setSelectedQuestionIds(new Set()); }} />
           <label className="field"><span>Percentual de aprovação</span><input type="number" min="0" max="100" value={assessmentForm.passing_score} onChange={(event) => setAssessmentForm({ ...assessmentForm, passing_score: Number(event.target.value) })} /></label>
           <label className="field"><span>Tempo em minutos (opcional)</span><input type="number" min="5" max="360" value={assessmentForm.duration_minutes} onChange={(event) => setAssessmentForm({ ...assessmentForm, duration_minutes: event.target.value })} placeholder="Sem limite" /></label>
-          <label className="field"><span>Tipo dos conteúdos</span><select value={assessmentForm.content_type} onChange={(event) => { const type = event.target.value as AssessmentScopeType; setAssessmentForm({ ...assessmentForm, content_type: type, content_ranks: type === "patente" ? ["terceiro_sargento"] : [], content_graduations: type === "graduacao" ? ["bronze"] : [] }); setSelectedQuestionIds(new Set()); }}>{assessmentScopeOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+          <SelectField label="Tipo dos conteúdos" value={assessmentForm.content_type} options={assessmentScopeOptions} onChange={(value) => { const type = value as AssessmentScopeType; setAssessmentForm({ ...assessmentForm, content_type: type, content_ranks: type === "patente" ? ["terceiro_sargento"] : [], content_graduations: type === "graduacao" ? ["bronze"] : [] }); setSelectedQuestionIds(new Set()); }} />
         </div>
         <fieldset className="assessment-checkbox-fieldset"><legend>Conteúdos cobrados</legend>{assessmentForm.content_type === "patente" ? rankGroups.map((group) => <div className="assessment-checkbox-group" key={group.category}><strong>{group.category}</strong><div>{group.ranks.map((rank) => <label key={rank.value}><input type="checkbox" checked={assessmentForm.content_ranks.includes(rank.value)} onChange={() => { setAssessmentForm({ ...assessmentForm, content_ranks: toggleValue(assessmentForm.content_ranks, rank.value) }); setSelectedQuestionIds(new Set()); }} /> {rank.label}</label>)}</div></div>) : <div className="assessment-checkbox-group"><div>{graduationOptions.filter((item) => item.value !== "sem_graduacao").map((level) => <label key={level.value}><input type="checkbox" checked={assessmentForm.content_graduations.includes(level.value)} onChange={() => { setAssessmentForm({ ...assessmentForm, content_graduations: toggleValue(assessmentForm.content_graduations, level.value) }); setSelectedQuestionIds(new Set()); }} /> {level.label}</label>)}</div></div>}</fieldset>
         <fieldset className="assessment-selection-mode"><legend>Forma de montagem</legend><div>{assessmentSelectionModeOptions.map((mode) => <label className={assessmentForm.selection_mode === mode.value ? "selected" : ""} key={mode.value}><input type="radio" name="assessment-selection-mode" value={mode.value} checked={assessmentForm.selection_mode === mode.value} onChange={() => { setAssessmentForm({ ...assessmentForm, selection_mode: mode.value }); setSelectedQuestionIds(new Set()); }} /><span>{mode.value === "manual" ? <BookOpenCheck /> : <Shuffle />}<strong>{mode.label}</strong><small>{mode.description}</small></span></label>)}</div></fieldset>
@@ -514,7 +520,7 @@ export default function AssessmentAdmin() {
       <form className="assessment-builder-form" onSubmit={createAssignments}>
         <header><div><h3>Criar nova indicação</h3></div></header>
         <div className="assessment-form-grid">
-          <label className="field"><span>Avaliação</span><select value={effectiveAssignmentAssessmentId} onChange={(event) => setAssignmentAssessmentId(event.target.value)} required><option value="">Selecione</option>{publishedAssessments.map((assessment) => <option value={assessment.id} key={assessment.id}>{assessment.title}</option>)}</select></label>
+          <SelectField label="Avaliação" value={effectiveAssignmentAssessmentId} options={[{ value: "", label: "Selecione" }, ...publishedAssessments.map((assessment) => ({ value: assessment.id, label: assessment.title }))]} onChange={setAssignmentAssessmentId} />
           <label className="field"><span>Data limite (opcional)</span><input type="datetime-local" value={assignmentExpiresAt} onChange={(event) => setAssignmentExpiresAt(event.target.value)} /></label>
         </div>
         <fieldset className="assessment-member-selector"><legend>Integrantes indicados</legend><div>{data.members.map((member) => <label className={assignmentMemberIds.has(member.id) ? "selected" : ""} key={member.id}><input type="checkbox" checked={assignmentMemberIds.has(member.id)} onChange={() => setAssignmentMemberIds((current) => { const next = new Set(current); if (next.has(member.id)) next.delete(member.id); else next.add(member.id); return next; })} /><span><strong>{member.nickname}</strong><small>{member.full_name} · {rankLabels[member.rank]}</small></span></label>)}</div></fieldset>
@@ -538,13 +544,39 @@ export default function AssessmentAdmin() {
       <div className="assessment-list-heading"><div><h3>Gestores de Avaliações</h3><p>Generais possuem acesso automático. A delegação abaixo é exclusiva para Oficiais Superiores.</p></div></div>
       {seniorOfficers.length ? <div className="assessment-permission-list">{seniorOfficers.map((member) => { const permission = permissionByUser.get(member.id); const active = Boolean(permission?.active); return <article key={member.id}><div className="assessment-permission-avatar">{member.nickname.slice(0, 2).toUpperCase()}</div><div><strong>{member.nickname}</strong><span>{member.full_name} · {rankLabels[member.rank]}</span></div><button className={`assessment-permission-toggle ${active ? "active" : ""}`} type="button" onClick={() => void togglePermission(member.id, !active)} disabled={busy} aria-pressed={active}><span>{active ? "Autorizado" : "Sem acesso"}</span><i /></button></article>; })}</div> : <div className="empty-state"><ShieldCheck /><h2>Nenhum Oficial Superior disponível</h2><p>Majores, Tenentes-Coronéis e Coronéis aprovados aparecerão aqui.</p></div>}
     </section>}
+    {resetDialog && <AdminDialog
+      size="sm"
+      title="Liberar nova tentativa?"
+      description="Exceção: apaga as respostas e o resultado desta tentativa."
+      onClose={() => setResetDialog(null)}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const reason = resetDialog.reason.trim();
+        if (reason.length < 10) return toast.error("A justificativa precisa ter pelo menos 10 caracteres.");
+        const { assignment } = resetDialog;
+        setResetDialog(null);
+        void applyAssignmentChange(assignment, "reset", reason);
+      }}
+      footer={<><button className="button button-ghost" type="button" onClick={() => setResetDialog(null)}>Cancelar</button><button className="button button-danger" type="submit">Liberar tentativa</button></>}
+    >
+      <div className="field">
+        <label htmlFor="reset-reason">Motivo técnico ou administrativo</label>
+        <textarea id="reset-reason" rows={3} value={resetDialog.reason} onChange={(event) => setResetDialog({ ...resetDialog, reason: event.target.value })} minLength={10} required />
+        <p className="field-hint">Fica registrado no histórico. Mínimo de 10 caracteres.</p>
+      </div>
+    </AdminDialog>}
   </div>;
 }
 
+function SelectField({ label, value, options, onChange }: { label: string; value: string; options: Array<{ value: string; label: string; group?: string }>; onChange: (value: string) => void }) {
+  const id = useId();
+  return <div className="field"><label htmlFor={id}>{label}</label><Select id={id} value={value} options={options} onChange={onChange} /></div>;
+}
+
 function AssessmentTab({ label, icon, active, onClick, count, alert = false }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void; count?: number; alert?: boolean }) {
-  return <button type="button" className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small className={alert && count > 0 ? "is-alert" : undefined}>{count}</small>}</button>;
+  return <button type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span>{count !== undefined && <small className={alert && count > 0 ? "is-alert" : undefined}>{count}</small>}</button>;
 }
 
 function Metric({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
-  return <article><span>{icon}</span><div><strong>{value}</strong><small>{label}</small></div></article>;
+  return <div className="kpi"><span className="kpi-label"><span aria-hidden="true">{icon}</span>{label}</span><strong>{value}</strong></div>;
 }

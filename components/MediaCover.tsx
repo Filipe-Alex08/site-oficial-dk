@@ -3,15 +3,21 @@
 import { useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 
-type Props = { title: string; coverUrl?: string | null; videoUrl?: string | null };
+type Props = {
+  title: string;
+  coverUrl?: string | null;
+  videoUrl?: string | null;
+  /** Texto alternativo da imagem. Passe "" quando o título já aparece ao lado (imagem decorativa). */
+  alt?: string;
+};
 
-export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
+export default function MediaCover({ title, coverUrl, videoUrl, alt = title }: Props) {
   const [coverFailed, setCoverFailed] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
 
   if (coverUrl && !coverFailed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={coverUrl} alt={title} loading="lazy" decoding="async" onError={() => setCoverFailed(true)} />;
+    return <img src={coverUrl} alt={alt} loading="lazy" decoding="async" onError={() => setCoverFailed(true)} />;
   }
 
   if (videoUrl && !videoFailed) {
@@ -21,7 +27,8 @@ export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
         muted
         playsInline
         preload="metadata"
-        aria-label={`Frame do vídeo: ${title}`}
+        aria-hidden={alt === "" ? true : undefined}
+        aria-label={alt === "" ? undefined : `Frame do vídeo: ${title}`}
         onLoadedMetadata={(event) => {
           const video = event.currentTarget;
           video.pause();
@@ -32,5 +39,5 @@ export default function MediaCover({ title, coverUrl, videoUrl }: Props) {
     );
   }
 
-  return <div className="media-placeholder"><ImageIcon size={42} /><span>DK</span></div>;
+  return <div className="media-placeholder" aria-hidden="true"><ImageIcon size={42} /><span>DK</span></div>;
 }

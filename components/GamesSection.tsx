@@ -6,6 +6,7 @@ import GameCard from "@/components/GameCard";
 import { games } from "@/lib/content";
 import { gameCatalogMetadata } from "@/lib/game-catalog";
 import { gameFieldMaps } from "@/lib/game-maps";
+import { normalizeSearch } from "@/lib/search";
 import type { GameCategory } from "@/lib/types";
 
 const categories = {
@@ -17,14 +18,6 @@ const categories = {
 } satisfies Record<"todos" | GameCategory, string>;
 
 type Filter = keyof typeof categories;
-
-function normalizeSearch(text: string) {
-  return text.toLocaleLowerCase("pt-BR")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
 
 const catalog = games.map((game) => {
   const metadata = gameCatalogMetadata[game.id];

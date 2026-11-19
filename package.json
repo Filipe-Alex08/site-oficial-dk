@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "check:migrations": "node scripts/check-migrations.mjs",
     "sync:instagram": "node scripts/sync-instagram.cjs",
-    "check:realtime": "node --env-file=.env.local scripts/check-realtime-db.mjs"
+    "check:realtime": "node --env-file=.env.local scripts/check-realtime-db.mjs",
+    "prepare:emblems": "node scripts/prepare-build-emblems.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

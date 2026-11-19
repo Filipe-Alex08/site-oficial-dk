@@ -40,11 +40,19 @@ export function getGraduationIcon(level: GraduationLevel, track: DocumentTrack |
 
 export const buildOptions = ["Arqueiro", "Dual (Espadas, Adagas)", "Escudeiro Tank ou Pontuador", "Lanceiro de Ofício"];
 
-export function getBuildIcon(build?: string | null): string | null {
+export type BuildKey = "arqueiro" | "dual" | "escudeiro" | "lanceiro";
+
+/** Build reconhecida a partir do texto livre do perfil, ou null se não casa com nenhuma. */
+export function getBuildKey(build?: string | null): BuildKey | null {
   const value = normalize(build || "");
-  if (/\b(arqueir[oa]|arquearia|archer)\b/.test(value)) return `${base}/builds/arqueiro.webp`;
-  if (/\b(dual|duais|dual wield)\b/.test(value)) return `${base}/builds/dual.webp`;
-  if (/\b(escudeir[oa]|tank|tanque|pontuador)\b/.test(value)) return `${base}/builds/escudeiro.webp`;
-  if (/\b(lanceir[oa]|lanca|lance)\b/.test(value)) return `${base}/builds/lanceiro.webp`;
+  if (/\b(arqueir[oa]|arquearia|archer)\b/.test(value)) return "arqueiro";
+  if (/\b(dual|duais|dual wield)\b/.test(value)) return "dual";
+  if (/\b(escudeir[oa]|tank|tanque|pontuador)\b/.test(value)) return "escudeiro";
+  if (/\b(lanceir[oa]|lanca|lance)\b/.test(value)) return "lanceiro";
   return null;
+}
+
+export function getBuildIcon(build?: string | null): string | null {
+  const key = getBuildKey(build);
+  return key ? `${base}/builds/${key}.webp` : null;
 }

@@ -1,5 +1,5 @@
-import PageSkeleton from "@/components/ui/PageSkeleton";
+import AdminSkeleton from "@/components/admin/AdminSkeleton";
 
 export default function Loading() {
-  return <PageSkeleton cards={4} />;
+  return <AdminSkeleton />;
 }

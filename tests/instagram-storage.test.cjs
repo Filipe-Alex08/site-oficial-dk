@@ -133,7 +133,7 @@ test("syncs old schemas without querying or writing optional video-link columns"
   const archived = { ...post, sourceUrl: "https://www.instagram.com/p/AbC/", media: [],
     excerpt: "Caption", youtubeUrl: "https://youtu.be/example", tiktokUrl: null };
   const api = load("lib/instagram-sync.ts", {
-    "./instagram-apify": { fetchInstagramPosts: async () => [archived] },
+    "./instagram-apify": { fetchInstagramPosts: async () => [archived], isLegacyInstagramTitle: (title) => /^Instagram — /.test(title) },
     "./instagram-storage": { ensureInstagramBucket: async () => {}, archiveInstagramPost: async (_, item) => item,
       InstagramMediaArchiveError: class extends Error {} },
     "./supabase/admin": { createAdminClient: () => ({ from: (table) => ({
@@ -145,7 +145,7 @@ test("syncs old schemas without querying or writing optional video-link columns"
         return this;
       },
       eq() { return this; },
-      maybeSingle: async () => ({ data: { id: "existing", cover_url: archived.coverUrl, excerpt: archived.excerpt } }),
+      maybeSingle: async () => ({ data: { id: "existing", title: archived.title, cover_url: archived.coverUrl, excerpt: archived.excerpt } }),
       order: async () => ({ data: [] }),
       update: () => { writes++; throw new Error("Unexpected write"); },
     }) }) },
@@ -155,6 +155,38 @@ test("syncs old schemas without querying or writing optional video-link columns"
     assert.equal(result.skipped, 1);
     assert.equal(result.failed, 0);
     assert.equal(writes, 0);
+  } finally {
+    if (original === undefined) delete process.env.APIFY_INSTAGRAM_USERNAME;
+    else process.env.APIFY_INSTAGRAM_USERNAME = original;
+  }
+});
+
+test("sync renews only the legacy importer title of an existing post", async () => {
+  const original = process.env.APIFY_INSTAGRAM_USERNAME;
+  process.env.APIFY_INSTAGRAM_USERNAME = "example";
+  const run = async (currentTitle) => {
+    const updates = [];
+    const archived = { ...post, sourceUrl: "https://www.instagram.com/p/AbC/", excerpt: "Caption", title: "Treino de hoje no parque!", youtubeUrl: null, tiktokUrl: null };
+    const api = load("lib/instagram-sync.ts", {
+      "./instagram-apify": { fetchInstagramPosts: async () => [archived], isLegacyInstagramTitle: (title) => /^Instagram — \d{2}\/\d{2}\/\d{4}$/.test(title) },
+      "./instagram-storage": { ensureInstagramBucket: async () => {}, archiveInstagramPost: async (_, item) => item, InstagramMediaArchiveError: class extends Error {} },
+      "./supabase/admin": { createAdminClient: () => ({ from: (table) => ({
+        select(columns) {
+          if (table === "posts" && columns !== "*") return { limit: async () => ({ error: null }) };
+          return this;
+        },
+        eq() { return this; },
+        maybeSingle: async () => ({ data: { id: "existing", title: currentTitle, cover_url: archived.coverUrl, excerpt: archived.excerpt, youtube_url: null, tiktok_url: null } }),
+        order: async () => ({ data: archived.media.map(({ type, url }) => ({ type, url })) }),
+        update: (values) => { updates.push(values); return { eq: async () => ({ error: null }) }; },
+      }) }) },
+    });
+    await api.syncInstagram();
+    return updates;
+  };
+  try {
+    assert.equal(JSON.stringify(await run("Instagram — 10/10/2026")), JSON.stringify([{ title: "Treino de hoje no parque!" }]));
+    assert.equal((await run("Título escrito no painel")).length, 0);
   } finally {
     if (original === undefined) delete process.env.APIFY_INSTAGRAM_USERNAME;
     else process.env.APIFY_INSTAGRAM_USERNAME = original;

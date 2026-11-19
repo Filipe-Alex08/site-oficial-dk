@@ -39,14 +39,25 @@ export default async function MemberAssessmentsPage() {
     : { data: [] };
   const assessments = new Map(((assessmentData ?? []) as Assessment[]).map((assessment) => [assessment.id, assessment]));
 
+  // O que depende do membro vem primeiro.
+  const todo = assignments.filter((assignment) => assignment.status === "convidado" || assignment.status === "em_andamento");
+  const reviewing = assignments.filter((assignment) => assignment.status === "aguardando_correcao");
+  const groups = [
+    { title: "Para fazer", items: todo },
+    { title: "Em correção", items: reviewing },
+    { title: "Concluídas e encerradas", items: assignments.filter((assignment) => !todo.includes(assignment) && !reviewing.includes(assignment)) },
+  ].filter((group) => group.items.length);
+
   return (
     <>
       <LiveRefresh tables={["assessment_assignments"]} />
       <AppPageHeader title="Avaliações" crumbs={[{ label: "Painel", href: "/membro" }]} />
       <section className="section assessment-list-section">
         <div className="container">
-          {assignments.length ? <div className="assessment-assignment-grid">
-            {assignments.map((assignment) => {
+          {assignments.length ? groups.map((group) => <section className={`m-assessment-group${group.title === "Para fazer" ? " is-todo" : ""}`} key={group.title} aria-label={group.title}>
+            <h2 className="m-group-title">{group.title}<span className="count-pill">{group.items.length}</span></h2>
+            <div className="assessment-assignment-grid">
+            {group.items.map((assignment) => {
               const assessment = assessments.get(assignment.assessment_id);
               if (!assessment) return null;
               const target = assessment.target_type === "patente"
@@ -83,7 +94,8 @@ export default async function MemberAssessmentsPage() {
                   : <span className="assessment-locked"><LockKeyhole size={16} /> Indisponível</span>}
               </article>;
             })}
-          </div> : <div className="empty-state"><ClipboardCheck /><h2>Nenhuma avaliação para você</h2></div>}
+            </div>
+          </section>) : <div className="empty-state"><ClipboardCheck /><h2>Nenhuma avaliação para você</h2><p>Quando um administrador indicar uma avaliação, ela aparece aqui.</p></div>}
         </div>
       </section>
     </>

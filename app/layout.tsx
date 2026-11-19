@@ -5,6 +5,8 @@ import "./public.css";
 import "./auth.css";
 import "./app-area.css";
 import "./admin.css";
+import "./admin-ui.css";
+import "./member-ui.css";
 import "./assessment.css";
 import "./insignias.css";
 import Header from "@/components/Header";

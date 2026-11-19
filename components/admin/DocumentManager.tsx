@@ -6,9 +6,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { graduationLabels, graduationOptions, rankGroups, rankLabels } from "@/lib/member-access";
 import { createClient } from "@/lib/supabase/client";
 import AdminTitle from "@/components/admin/AdminTitle";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import FormSectionHead from "@/components/admin/FormSectionHead";
+import { useToast } from "@/components/admin/ToastProvider";
+import Drawer from "@/components/admin/ui/Drawer";
+import Panel from "@/components/admin/ui/Panel";
+import RowMenu from "@/components/admin/ui/RowMenu";
 import Select from "@/components/ui/Select";
 import type { DocumentAccessRule, DocumentTrack, InternalDocument, DkRank, GraduationLevel } from "@/lib/types";
+
+type RulesState = { rules: DocumentAccessRule[]; set: React.Dispatch<React.SetStateAction<DocumentAccessRule[]>>; prefix: string };
 
 const newRule = (): DocumentAccessRule => ({ kind: "rank", minimum_rank: "recruta" });
 function ruleLabel(rule: DocumentAccessRule) {
@@ -25,7 +32,10 @@ export default function DocumentManager() {
   const formRef = useRef<HTMLFormElement>(null);
   const [rules, setRules] = useState<DocumentAccessRule[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
-  const [notice, setNotice] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
+  // Regras do formulário de envio e regras do documento em edição ficam separadas.
+  const [editRules, setEditRules] = useState<DocumentAccessRule[]>([]);
   const [fileName, setFileName] = useState("");
   const queryClient = useQueryClient();
   const documentsQuery = useQuery({
@@ -46,19 +56,19 @@ export default function DocumentManager() {
       if (!response.ok) throw new Error(result.error || "Não foi possível enviar o documento.");
     },
     onSuccess: async () => {
-      show("Documento enviado."); formRef.current?.reset(); setFileName(""); setRules([]);
+      toast.success("Documento enviado."); formRef.current?.reset(); setFileName(""); setRules([]);
       await queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
     },
-    onError: (error: Error) => show(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
   const saveRulesMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: rules }) });
+      const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: editRules }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar as regras.");
     },
-    onSuccess: async () => { show("Regras de acesso atualizadas."); setEditing(null); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
-    onError: (error: Error) => show(error.message),
+    onSuccess: async () => { toast.success("Regras de acesso atualizadas."); setEditing(null); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
+    onError: (error: Error) => toast.error(error.message),
   });
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -66,30 +76,31 @@ export default function DocumentManager() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível excluir o documento.");
     },
-    onSuccess: async () => { show("Documento excluído."); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
-    onError: (error: Error) => show(error.message),
+    onSuccess: async () => { toast.success("Documento excluído."); await queryClient.invalidateQueries({ queryKey: ["admin-documents"] }); },
+    onError: (error: Error) => toast.error(error.message),
   });
-  function show(message: string) { setNotice(message); window.setTimeout(() => setNotice(""), 3500); }
-  function addRule() { setRules((current) => [...current, { ...newRule(), join: "and" }]); }
-  function updateRule(index: number, rule: DocumentAccessRule) { setRules((current) => current.map((item, i) => i === index ? rule : item)); }
-  function changeJoin(index: number, join: "and" | "or") { setRules((current) => current.map((item, i) => i === index ? { ...item, join } : item)); }
+  const uploadRules: RulesState = { rules, set: setRules, prefix: "up" };
+  const drawerRules: RulesState = { rules: editRules, set: setEditRules, prefix: "ed" };
   function renderJoin(join: "and" | "or", onChange: (value: "and" | "or") => void, label: string) {
     return <div className="document-join-control"><div role="group" aria-label={label} className="document-join-toggle">
       {(["and", "or"] as const).map((value) => <button key={value} type="button" className={join === value ? "active" : ""} aria-pressed={join === value} onClick={() => onChange(value)}>{value === "and" ? "E" : "OU"}</button>)}
     </div></div>;
   }
-  function renderRules() {
+  function renderRules({ rules, set, prefix }: RulesState) {
+    const addRule = () => set((current) => [...current, { ...newRule(), join: "and" }]);
+    const updateRule = (index: number, rule: DocumentAccessRule) => set((current) => current.map((item, i) => i === index ? rule : item));
+    const changeJoin = (index: number, join: "and" | "or") => set((current) => current.map((item, i) => i === index ? { ...item, join } : item));
     return <div className="document-rules-editor">
       <div className="document-rules-heading"><strong>Requisitos de acesso</strong><details className="document-rules-help"><summary aria-label="Ajuda sobre requisitos de acesso" title="Como funcionam os requisitos"><CircleHelp size={18} /></summary><div className="document-rules-help-card"><strong>Como funcionam os requisitos</strong><p>Sem requisitos, qualquer membro aprovado pode acessar o documento.</p><ul><li>Patente mínima libera para essa patente e as superiores.</li><li>Graduação mínima vale para a modalidade escolhida e graduações superiores.</li><li><b>E</b> exige que a pessoa cumpra os dois requisitos conectados.</li><li><b>OU</b> libera quando a pessoa cumpre qualquer um dos requisitos conectados.</li></ul><p>Quando há mais de uma combinação, <b>E</b> é avaliado antes de <b>OU</b>. Exemplo: Major E Cavaleiro de Ouro OU General libera para Major com essa graduação ou para qualquer General.</p></div></details></div>
       {rules.map((rule, index) => <div className="document-rule-wrap" key={index}>
         {index > 0 && renderJoin(rule.join ?? "and", (value) => changeJoin(index, value), `Como combinar o requisito ${index + 1} com o anterior`)}
         <section className="document-rule-card">
-          <header><span className="document-rule-icon">{rule.kind === "rank" ? <Shield size={19} /> : <Award size={19} />}</span><div><strong>Requisito {index + 1}</strong><small>{rule.kind === "rank" ? "Patente" : "Graduação"}</small></div><button className="document-rule-remove" type="button" onClick={() => setRules((current) => current.filter((_, i) => i !== index))} aria-label={`Remover requisito ${index + 1}`}><X size={17} /></button></header>
+          <header><span className="document-rule-icon">{rule.kind === "rank" ? <Shield size={19} /> : <Award size={19} />}</span><div><strong>Requisito {index + 1}</strong><small>{rule.kind === "rank" ? "Patente" : "Graduação"}</small></div><button className="document-rule-remove" type="button" onClick={() => set((current) => current.filter((_, i) => i !== index))} aria-label={`Remover requisito ${index + 1}`}><X size={17} /></button></header>
           <div className={`document-rule-fields ${rule.kind === "rank" ? "rank" : "graduation"}`}>
-            <div className="field"><label htmlFor={`rule-kind-${index}`}>Tipo de requisito</label><Select id={`rule-kind-${index}`} value={rule.kind} options={[{ value: "rank", label: "Patente mínima" }, { value: "graduation", label: "Graduação mínima" }]} onChange={(value) => updateRule(index, value === "rank" ? { ...newRule(), join: rule.join } : { kind: "graduation", track: "cavalaria", minimum_graduation: "bronze", join: rule.join })} /></div>
-            {rule.kind === "rank" ? <div className="field"><label htmlFor={`rule-rank-${index}`}>Patente mínima</label><Select id={`rule-rank-${index}`} value={rule.minimum_rank} options={rankGroups.flatMap((group) => group.ranks.map((item) => ({ value: item.value, label: item.label, group: group.category })))} onChange={(value) => updateRule(index, { ...rule, minimum_rank: value as DkRank })} /></div> : <>
-              <div className="field"><label htmlFor={`rule-track-${index}`}>Modalidade</label><Select id={`rule-track-${index}`} value={rule.track} options={[{ value: "cavalaria", label: "Cavalaria" }, { value: "arquearia", label: "Arquearia" }]} onChange={(value) => updateRule(index, { ...rule, track: value as DocumentTrack })} /></div>
-              <div className="field"><label htmlFor={`rule-graduation-${index}`}>Graduação mínima</label><Select id={`rule-graduation-${index}`} value={rule.minimum_graduation} options={graduationOptions.filter((item) => item.value !== "sem_graduacao").map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => updateRule(index, { ...rule, minimum_graduation: value as GraduationLevel })} /></div>
+            <div className="field"><label htmlFor={`rule-${prefix}-kind-${index}`}>Tipo de requisito</label><Select id={`rule-${prefix}-kind-${index}`} value={rule.kind} options={[{ value: "rank", label: "Patente mínima" }, { value: "graduation", label: "Graduação mínima" }]} onChange={(value) => updateRule(index, value === "rank" ? { ...newRule(), join: rule.join } : { kind: "graduation", track: "cavalaria", minimum_graduation: "bronze", join: rule.join })} /></div>
+            {rule.kind === "rank" ? <div className="field"><label htmlFor={`rule-${prefix}-rank-${index}`}>Patente mínima</label><Select id={`rule-${prefix}-rank-${index}`} value={rule.minimum_rank} options={rankGroups.flatMap((group) => group.ranks.map((item) => ({ value: item.value, label: item.label, group: group.category })))} onChange={(value) => updateRule(index, { ...rule, minimum_rank: value as DkRank })} /></div> : <>
+              <div className="field"><label htmlFor={`rule-${prefix}-track-${index}`}>Modalidade</label><Select id={`rule-${prefix}-track-${index}`} value={rule.track} options={[{ value: "cavalaria", label: "Cavalaria" }, { value: "arquearia", label: "Arquearia" }]} onChange={(value) => updateRule(index, { ...rule, track: value as DocumentTrack })} /></div>
+              <div className="field"><label htmlFor={`rule-${prefix}-graduation-${index}`}>Graduação mínima</label><Select id={`rule-${prefix}-graduation-${index}`} value={rule.minimum_graduation} options={graduationOptions.filter((item) => item.value !== "sem_graduacao").map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => updateRule(index, { ...rule, minimum_graduation: value as GraduationLevel })} /></div>
             </>}
           </div>
         </section>
@@ -106,16 +117,19 @@ export default function DocumentManager() {
   function saveRules(id: string) {
     saveRulesMutation.mutate(id);
   }
-  function remove(id: string) {
-    if (!window.confirm("Excluir permanentemente este documento?")) return;
-    removeMutation.mutate(id);
+  async function remove(document: InternalDocument) {
+    if (!(await confirm({ title: `Excluir «${document.title}»?`, message: "O arquivo é apagado permanentemente e deixa de aparecer para os membros.", confirmLabel: "Excluir documento", danger: true }))) return;
+    removeMutation.mutate(document.id);
   }
+  function startEdit(document: InternalDocument) {
+    const savedRules = document.access_rules ?? [];
+    setEditRules(savedRules.map((rule, index) => index === 0 ? rule : { ...rule, join: rule.join ?? document.access_logic ?? "or" }));
+    setEditing(document.id);
+  }
+  const editingDocument = documents.find((document) => document.id === editing);
   return <div>
-    <div className="toast-stack" aria-live="polite">{notice && <div className="toast" role="status">{notice}</div>}</div>
     <AdminTitle eyebrow="Conteúdo" title="Documentos" description="PDFs internos, com acesso liberado por patente ou graduação." />
-    <section className="admin-panel">
-    <div className="admin-panel-head"><div><h3>Enviar documento</h3></div></div>
-    <div className="admin-panel-body">
+    <Panel title="Enviar documento" description="PDF de até 20 MB, com acesso opcional por patente ou graduação.">
     <form className="admin-form" onSubmit={upload} ref={formRef}>
       <section className="form-section">
         <FormSectionHead title="Arquivo" hint="Título e PDF que os membros vão abrir." />
@@ -127,20 +141,30 @@ export default function DocumentManager() {
       </section>
       <section className="form-section">
         <FormSectionHead title="Acesso" hint="Sem requisitos, qualquer membro aprovado pode abrir o documento." />
-        <div className="form-section-body">{renderRules()}</div>
+        <div className="form-section-body">{renderRules(uploadRules)}</div>
       </section>
       <div className="form-actions"><button className="button button-primary" type="submit" disabled={uploadMutation.isPending}><Upload size={17} /> {uploadMutation.isPending ? "Enviando…" : "Enviar PDF"}</button></div>
     </form>
-    </div>
-    </section>
+    </Panel>
     {documentsQuery.isPending && <p className="empty-state" role="status">Carregando documentos…</p>}
     {documentsQuery.isError && <p className="empty-state" role="alert">Falha ao carregar documentos. <button className="text-button" onClick={() => void documentsQuery.refetch()}>Tentar novamente</button></p>}
-    {documents.length ? <div className="document-admin-list">{documents.map((document) => <article key={document.id}>
-      <FileText /><div><strong>{document.title}</strong><span>{accessLabel(document)}</span><small>{document.file_name}</small>
-      {editing === document.id && <div className="document-edit-rules">{renderRules()}<div className="document-rule-actions"><button className="button button-primary" type="button" disabled={saveRulesMutation.isPending} onClick={() => saveRules(document.id)}>{saveRulesMutation.isPending ? "Salvando…" : "Salvar regras"}</button><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button></div></div>}</div>
-      <a href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" title="Abrir"><Download /></a>
-      {editing !== document.id && <button className="document-edit-access" type="button" onClick={() => { const savedRules = document.access_rules ?? []; const normalized = savedRules.map((rule, index) => index === 0 ? rule : { ...rule, join: rule.join ?? document.access_logic ?? "or" }); setRules(normalized); setEditing(document.id); }} title="Editar acesso" aria-label={`Editar acesso de ${document.title}`}><Pencil size={17} /></button>}
-      <button type="button" className="is-danger" disabled={removeMutation.isPending} onClick={() => remove(document.id)} title="Excluir" aria-label={`Excluir ${document.title}`}>{removeMutation.isPending && removeMutation.variables === document.id ? <span className="inline-spinner" /> : <Trash2 />}</button>
-    </article>)}</div> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento enviado</h3></div> : null}
+    {documents.length ? <Panel title="Documentos enviados" description={`${documents.length} ${documents.length === 1 ? "documento" : "documentos"}`} flush>
+      <ul className="document-admin-list">{documents.map((document) => <li key={document.id}>
+        <FileText aria-hidden="true" />
+        <div className="document-admin-text"><strong>{document.title}</strong><span>{accessLabel(document)}</span><small>{document.file_name}</small></div>
+        <a className="button button-ghost button-small" href={`/api/documents/${document.id}/download`} target="_blank" rel="noreferrer" aria-label={`Abrir ${document.title}`}><Download size={16} /> Abrir</a>
+        <RowMenu label={`Ações de ${document.title}`} items={[
+          { label: "Editar acesso", icon: <Pencil />, onSelect: () => startEdit(document) },
+          { label: "Excluir", icon: <Trash2 />, danger: true, disabled: removeMutation.isPending, onSelect: () => void remove(document) },
+        ]} />
+      </li>)}</ul>
+    </Panel> : !documentsQuery.isPending && !documentsQuery.isError ? <div className="empty-state"><FileText /><h3>Nenhum documento enviado</h3></div> : null}
+    {editingDocument && <Drawer
+      title="Editar acesso"
+      description={editingDocument.title}
+      onClose={() => setEditing(null)}
+      onSubmit={(event) => { event.preventDefault(); saveRules(editingDocument.id); }}
+      footer={<><button className="button button-ghost" type="button" onClick={() => setEditing(null)}>Cancelar</button><button className="button button-primary" type="submit" disabled={saveRulesMutation.isPending}>{saveRulesMutation.isPending ? "Salvando…" : "Salvar regras"}</button></>}
+    >{renderRules(drawerRules)}</Drawer>}
   </div>;
 }

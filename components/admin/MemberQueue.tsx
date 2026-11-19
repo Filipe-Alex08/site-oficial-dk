@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check, CheckCircle2, Edit3, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import Avatar from "@/components/admin/ui/Avatar";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import Select from "@/components/ui/Select";
 import { graduationLabels, graduationOptions, graduationTracks, isCommander, rankGroups, rankLabels } from "@/lib/member-access";
@@ -111,6 +112,7 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
   }
 
   return <div className="queue-list">
+    <p className="queue-count" role="status">{members.length} {members.length === 1 ? "item na fila" : "itens na fila"}</p>
     {members.map((member) => {
       const isSelf = member.id === currentUserId;
       const newRegistration = member.status === "pendente";
@@ -158,9 +160,12 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
 
       return <article className={`queue-card${blocked ? " is-blocked" : ""}`} key={member.id}>
         <header className="queue-card-head">
-          <div>
-            <h3>{member.nickname} <BirthdayBadge birthDate={member.birth_date} /></h3>
-            <p>{member.full_name}{member.email ? ` · ${member.email}` : ""}</p>
+          <div className="queue-person">
+            <Avatar name={member.nickname} path={member.avatar_path} size={44} />
+            <div>
+              <h3>{member.nickname} <BirthdayBadge birthDate={member.birth_date} /></h3>
+              <p>{member.full_name}{member.email ? ` · ${member.email}` : ""}</p>
+            </div>
           </div>
           <div className="queue-tags">
             {newRegistration && <span className="badge pendente">Novo cadastro</span>}
