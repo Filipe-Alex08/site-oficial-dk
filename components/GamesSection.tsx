@@ -50,17 +50,20 @@ export default function GamesSection() {
   return (
     <section className="section" aria-labelledby="games-catalog-title">
       <div className="container">
-        <div className="games-catalog-heading">
-          <h2 id="games-catalog-title">Modalidades</h2>
-          <p role="status">{count} {count === 1 ? "modalidade" : "modalidades"}</p>
+        <div className="catalog-head">
+          <div>
+            <h2 id="games-catalog-title">Modalidades</h2>
+            <span className="rule rule--start" aria-hidden="true" />
+          </div>
+          <p className="catalog-count" role="status">{count} {count === 1 ? "modalidade" : "modalidades"}</p>
         </div>
-        <div className="games-controls">
-          <div className="games-filters" role="group" aria-label="Filtrar modalidades">
+        <div className="catalog-controls">
+          <div className="chip-group" role="group" aria-label="Filtrar modalidades">
             {(Object.keys(categories) as Filter[]).map((filter) => (
               <button
                 key={filter}
                 type="button"
-                className={`button button-small ${filter === category ? "button-primary" : "button-ghost"}`}
+                className="chip"
                 aria-pressed={filter === category}
                 onClick={() => setCategory(filter)}
               >
@@ -68,7 +71,7 @@ export default function GamesSection() {
               </button>
             ))}
           </div>
-          <label className="games-search">
+          <label className="catalog-search">
             <Search size={16} aria-hidden="true" />
             <input
               ref={searchRef}
@@ -91,7 +94,7 @@ export default function GamesSection() {
           ))}
         </div>
         {count === 0 && (
-          <div className="games-empty">
+          <div className="catalog-empty">
             <p>Nenhuma modalidade encontrada.</p>
             <button className="button button-ghost button-small" type="button" onClick={clearFilters}>
               Limpar filtros

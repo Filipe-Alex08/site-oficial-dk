@@ -19,6 +19,19 @@ import { socialLinks } from "@/lib/content";
 
 export const metadata = pageMetadata("Swordplay em Belo Horizonte | DK Death Knights", "Treine Swordplay e boffering com o DK em Belo Horizonte. Conheça os jogos, acompanhe o calendário e saiba como participar, mesmo sem experiência.", "/");
 
+const portals = [
+  { href: "/atividades/swordplay", className: "home-portal-activities", title: "Atividades", text: "Treinos, práticas e jogos para evoluir em equipe.", Icon: Swords },
+  { href: "/midias", className: "home-portal-media", title: "Mídias", text: "Fotos, vídeos e publicações do DK.", Icon: Camera },
+  { href: "/eventos", className: "home-portal-events", title: "Eventos", text: "Encontros, batalhas, eventos geek e aniversários.", Icon: Tent },
+];
+
+const virtues = [
+  { title: "Comunidade", text: "acolhedora", Icon: HeartHandshake },
+  { title: "Evolução", text: "constante", Icon: TrendingUp },
+  { title: "Ambiente", text: "seguro", Icon: ShieldCheck },
+  { title: "Tradição", text: "viva", Icon: Flame },
+];
+
 export default function HomePage() {
   return (
     <>
@@ -29,6 +42,7 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">
+            <p className="eyebrow">Death Knights · Belo Horizonte</p>
             <h1>
               Swordplay
               <span>com propósito</span>
@@ -44,51 +58,27 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+        <span className="battlement" aria-hidden="true" />
       </section>
 
       <section className="home-portals" aria-label="Áreas do site">
-        <div className="container home-portal-grid">
-          <Link
-            className="home-portal home-portal-activities"
-            href="/atividades/swordplay"
-          >
-            <div className="home-portal-heading">
-              <span className="home-portal-icon">
-                <Swords />
+        <div className="container home-portal-grid numbered">
+          {portals.map(({ href, className, title, text, Icon }) => (
+            <Link key={href} className={`plate home-portal ${className}`} href={href}>
+              <span className="plate-media portal-photo" aria-hidden="true" />
+              <span className="numeral" aria-hidden="true" />
+              <span className="home-portal-body">
+                <span className="home-portal-heading">
+                  <span className="glyph glyph--inline"><Icon /></span>
+                  <h2>{title}</h2>
+                </span>
+                <p>{text}</p>
+                <span className="home-portal-link">
+                  Ver mais <ArrowRight size={16} />
+                </span>
               </span>
-              <h2>Atividades</h2>
-            </div>
-            <p>Treinos, práticas e jogos para evoluir em equipe.</p>
-            <span className="home-portal-link">
-              Ver mais <ArrowRight size={16} />
-            </span>
-          </Link>
-
-          <Link className="home-portal home-portal-media" href="/midias">
-            <div className="home-portal-heading">
-              <span className="home-portal-icon">
-                <Camera />
-              </span>
-              <h2>Mídias</h2>
-            </div>
-            <p>Fotos, vídeos e publicações do DK.</p>
-            <span className="home-portal-link">
-              Ver mais <ArrowRight size={16} />
-            </span>
-          </Link>
-
-          <Link className="home-portal home-portal-events" href="/eventos">
-            <div className="home-portal-heading">
-              <span className="home-portal-icon">
-                <Tent />
-              </span>
-              <h2>Eventos</h2>
-            </div>
-            <p>Encontros, batalhas, eventos geek e aniversários.</p>
-            <span className="home-portal-link">
-              Ver mais <ArrowRight size={16} />
-            </span>
-          </Link>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -97,6 +87,7 @@ export default function HomePage() {
         <div className="newcomer-content">
           <div className="newcomer-copy">
             <h2>Iniciantes são bem-vindos</h2>
+            <span className="rule rule--start" aria-hidden="true" />
             <p>
               Não é preciso experiência. Nossa equipe acompanha seus primeiros passos e
               empresta os equipamentos para você participar com segurança.
@@ -106,12 +97,14 @@ export default function HomePage() {
             </small>
           </div>
 
-          <div className="newcomer-values">
-            <div><HeartHandshake /><span><strong>Comunidade</strong>acolhedora</span></div>
-            <div><TrendingUp /><span><strong>Evolução</strong>constante</span></div>
-            <div><ShieldCheck /><span><strong>Ambiente</strong>seguro</span></div>
-            <div><Flame /><span><strong>Tradição</strong>viva</span></div>
-          </div>
+          <ul className="newcomer-values">
+            {virtues.map(({ title, text, Icon }) => (
+              <li className="virtue reveal" key={title}>
+                <span className="crest"><Icon aria-hidden="true" /></span>
+                <span><strong>{title}</strong>{text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

@@ -1096,25 +1096,22 @@ a.card:hover .card-cta svg {
 
 .profile-dialog-nav {
   display: flex;
-  gap: 8px;
-  padding: 12px 28px;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 28px 18px;
   background: var(--surface-1);
-  border-bottom: 1px solid var(--line);
-  scrollbar-width: none
-}
-
-.profile-dialog-nav::-webkit-scrollbar {
-  display: none
+  border-bottom: 1px solid var(--line)
 }
 
 .profile-dialog-chip {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 36px;
-  padding: 0 14px;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--border);
@@ -1137,7 +1134,16 @@ a.card:hover .card-cta svg {
 }
 
 .profile-dialog-chip svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
   color: var(--accent-bright)
+}
+
+/* Contorno de foco por sombra interna: o nav rola na horizontal no celular e cortaria um outline. */
+.profile-dialog-chip:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--accent-bright)
 }
 
 .profile-dialog-form {
@@ -1153,7 +1159,7 @@ a.card:hover .card-cta svg {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 8px 28px 28px;
+  padding: 12px 28px 28px;
   background: var(--surface-1);
   scrollbar-width: thin;
   scrollbar-color: #555 var(--surface-1)
@@ -1363,6 +1369,27 @@ a.card:hover .card-cta svg {
   .profile-dialog-footer {
     padding-left: 18px;
     padding-right: 18px
+  }
+
+  /* No celular os chips rolam em uma linha; o respiro vertical e o espaçador final
+     impedem que o foco e o último chip sejam cortados. */
+  .profile-dialog-nav {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-top: 14px;
+    padding-bottom: 16px;
+    overflow-x: auto;
+    scroll-padding-inline: 18px;
+    scrollbar-width: none
+  }
+
+  .profile-dialog-nav::-webkit-scrollbar {
+    display: none
+  }
+
+  .profile-dialog-nav::after {
+    content: "";
+    flex: 0 0 10px
   }
 
   .profile-dialog-content {

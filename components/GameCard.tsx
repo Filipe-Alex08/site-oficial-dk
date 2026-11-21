@@ -81,7 +81,7 @@ export default function GameCard({ game, category, hidden }: { game: Game; categ
   }, [closing, game.slug]);
 
   return (
-    <article className="game-card" hidden={hidden}>
+    <article className="plate plate--flush game-card reveal" hidden={hidden}>
       {game.fieldMap && (
         <button
           className="game-map-preview"

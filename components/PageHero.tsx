@@ -21,6 +21,7 @@ export default function PageHero({
         {description && <p className="hero-description">{description}</p>}
         {children && <div className="hero-actions">{children}</div>}
       </div>
+      <span className="battlement" aria-hidden="true" />
     </section>
   );
 }

@@ -13,7 +13,7 @@ export default function MediaCard({ post, featured = false, headingLevel = 2 }: 
   const total = post.imageCount + post.videoCount;
   const countText = mediaCountText(post.imageCount, post.videoCount);
   return (
-    <article className={`media-card${featured ? " is-featured" : ""}`}>
+    <article className={`plate media-card reveal${featured ? " is-featured" : ""}`}>
       <div className="media-cover">
         <MediaCover key={post.imageUrl} title={post.title} coverUrl={post.imageUrl} videoUrl={post.videoUrl} alt="" />
         <span className="media-category">{post.category}</span>

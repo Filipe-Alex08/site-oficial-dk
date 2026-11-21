@@ -252,34 +252,34 @@
     "semantic_hash": ""
   },
   "app/atividades/graduacoes/page.tsx": {
-    "mtime": 1794358372.277434,
-    "seen": 1795105968.757867,
-    "ast_hash": "aee4e5cb2ec369b73c763078ff17229e",
-    "semantic_hash": "aee4e5cb2ec369b73c763078ff17229e"
+    "mtime": 1795237164.1217248,
+    "seen": 1795237233.1453538,
+    "ast_hash": "eb765105b4b167aba4eeff9b602d36a0",
+    "semantic_hash": ""
   },
   "app/atividades/jogos/[slug]/page.tsx": {
-    "mtime": 1794357209.0786443,
-    "seen": 1795105968.7578688,
-    "ast_hash": "ba7755b3a8ded2cc0a1aa2820bc319f5",
-    "semantic_hash": "ba7755b3a8ded2cc0a1aa2820bc319f5"
+    "mtime": 1795213176.0211968,
+    "seen": 1795213621.0126019,
+    "ast_hash": "11206401f7f5941846e78c408f6f13a2",
+    "semantic_hash": ""
   },
   "app/atividades/jogos/page.tsx": {
-    "mtime": 1794357209.079229,
-    "seen": 1795105968.7578697,
-    "ast_hash": "ab4e18d10abf2b4186314b0e137da1d5",
-    "semantic_hash": "ab4e18d10abf2b4186314b0e137da1d5"
+    "mtime": 1795214630.4103248,
+    "seen": 1795215171.6459508,
+    "ast_hash": "f4cc44db4779a8e4321b1df6ff7b7c9e",
+    "semantic_hash": ""
   },
   "app/atividades/swordplay/page.tsx": {
-    "mtime": 1794358371.9169805,
-    "seen": 1795105968.757871,
-    "ast_hash": "350c6bb3a7a7590e922061001767220f",
-    "semantic_hash": "350c6bb3a7a7590e922061001767220f"
+    "mtime": 1795214630.4205487,
+    "seen": 1795215171.645954,
+    "ast_hash": "f57360eaf3d6aa536babfa42d002f6b9",
+    "semantic_hash": ""
   },
   "app/atividades/tipos/page.tsx": {
-    "mtime": 1794358371.9181924,
-    "seen": 1795105968.7578719,
-    "ast_hash": "de3045f59bd4f251f3f323672445343c",
-    "semantic_hash": "de3045f59bd4f251f3f323672445343c"
+    "mtime": 1795214630.4734414,
+    "seen": 1795215171.645956,
+    "ast_hash": "b5c694ab10b44b4418d56c775c05567e",
+    "semantic_hash": ""
   },
   "app/auth/callback/route.ts": {
     "mtime": 1795122668.6276207,
@@ -312,16 +312,16 @@
     "semantic_hash": "b39b45e1c8c4ec3eebfb0588dd418386"
   },
   "app/eventos/page.tsx": {
-    "mtime": 1794358371.918692,
-    "seen": 1795105968.7578785,
-    "ast_hash": "e18b7b0e6da4a8837b3c6b1fdec51492",
-    "semantic_hash": "e18b7b0e6da4a8837b3c6b1fdec51492"
+    "mtime": 1795214789.158924,
+    "seen": 1795215171.6459723,
+    "ast_hash": "c5e254a275028265bb3c1f0b46dbf9ab",
+    "semantic_hash": ""
   },
   "app/layout.tsx": {
-    "mtime": 1795050350.2091205,
-    "seen": 1795105968.7578797,
-    "ast_hash": "00008eb94b73cddd913aac1593052d43",
-    "semantic_hash": "00008eb94b73cddd913aac1593052d43"
+    "mtime": 1795213088.8549106,
+    "seen": 1795213621.0126321,
+    "ast_hash": "15eb5aceaaaade1edc682b84538c100d",
+    "semantic_hash": ""
   },
   "app/membro/anotacoes/page.tsx": {
     "mtime": 1795109064.223923,
@@ -396,10 +396,10 @@
     "semantic_hash": "8b4455d57f173c0ea067ec2c137dc54b"
   },
   "app/page.tsx": {
-    "mtime": 1795025024.9164433,
-    "seen": 1795105968.757894,
-    "ast_hash": "e0a93ee794b081ce5edda0b5f1ac1692",
-    "semantic_hash": "e0a93ee794b081ce5edda0b5f1ac1692"
+    "mtime": 1795214631.1493323,
+    "seen": 1795215171.6460106,
+    "ast_hash": "975ae5dd7ea820a7d75c08b4f039144a",
+    "semantic_hash": ""
   },
   "app/privacidade/page.tsx": {
     "mtime": 1795017171.5597286,
@@ -420,10 +420,10 @@
     "semantic_hash": "373ce1f80b32e069060486707e91a85f"
   },
   "app/sobre/page.tsx": {
-    "mtime": 1794358371.9207332,
-    "seen": 1795105968.7578986,
-    "ast_hash": "958e64060b1e377b6e765b15058ab150",
-    "semantic_hash": "958e64060b1e377b6e765b15058ab150"
+    "mtime": 1795237676.0978377,
+    "seen": 1795237717.074305,
+    "ast_hash": "30850e4253996ede056147eab5d46402",
+    "semantic_hash": ""
   },
   "app/termos/page.tsx": {
     "mtime": 1795017171.7097242,
@@ -432,22 +432,22 @@
     "semantic_hash": "63e3ffa509986aeffd4d7228bd615a9d"
   },
   "components/CalendarSection.tsx": {
-    "mtime": 1795024978.0764177,
-    "seen": 1795105968.7579005,
-    "ast_hash": "48f71d887326acfb2d39ad98e2629dc5",
-    "semantic_hash": "48f71d887326acfb2d39ad98e2629dc5"
+    "mtime": 1795213262.9304547,
+    "seen": 1795213621.0126913,
+    "ast_hash": "8ca5bc16579e091f3ed47d19ce504b75",
+    "semantic_hash": ""
   },
   "components/CalendarSkeleton.tsx": {
-    "mtime": 1795025025.4713264,
-    "seen": 1795105968.757902,
-    "ast_hash": "6dcbffb56127cbc7075367d1eea9c2ce",
-    "semantic_hash": "6dcbffb56127cbc7075367d1eea9c2ce"
+    "mtime": 1795213262.992179,
+    "seen": 1795213621.0126941,
+    "ast_hash": "c90c41a47a35e13623b41b01f93010c4",
+    "semantic_hash": ""
   },
   "components/CalendarViews.tsx": {
-    "mtime": 1794357209.7135792,
-    "seen": 1795105968.7579029,
-    "ast_hash": "fe3052f337af659e6dadfd1820d111ee",
-    "semantic_hash": "fe3052f337af659e6dadfd1820d111ee"
+    "mtime": 1795213258.3630884,
+    "seen": 1795213621.0127075,
+    "ast_hash": "a37d8787c2cdcdf0e01d0447bd83c29b",
+    "semantic_hash": ""
   },
   "components/CalendarYearView.tsx": {
     "mtime": 1795109066.9880548,
@@ -456,28 +456,28 @@
     "semantic_hash": ""
   },
   "components/Footer.tsx": {
-    "mtime": 1795017171.9688108,
-    "seen": 1795105968.757905,
-    "ast_hash": "71ae15f27b9ef63159382ded1b4f1038",
-    "semantic_hash": "71ae15f27b9ef63159382ded1b4f1038"
+    "mtime": 1795213140.433401,
+    "seen": 1795213621.0127113,
+    "ast_hash": "fefeb639e03ff6683447eeab089379f6",
+    "semantic_hash": ""
   },
   "components/GameCard.tsx": {
-    "mtime": 1794963220.5934968,
-    "seen": 1795105968.757906,
-    "ast_hash": "f275d5771369037fc51d29604bbfcbea",
-    "semantic_hash": "f275d5771369037fc51d29604bbfcbea"
+    "mtime": 1795213258.0939436,
+    "seen": 1795213621.012713,
+    "ast_hash": "1fa31d87d49ea4a0966dcab4bbf13440",
+    "semantic_hash": ""
   },
   "components/GamesSection.tsx": {
-    "mtime": 1795050350.227788,
-    "seen": 1795105968.7579072,
-    "ast_hash": "d7022a4a75f5be12f3cae61b1fa10643",
-    "semantic_hash": "d7022a4a75f5be12f3cae61b1fa10643"
+    "mtime": 1795213257.905684,
+    "seen": 1795213621.0127141,
+    "ast_hash": "f7930a932b57b9a736458ca2d8c7ed09",
+    "semantic_hash": ""
   },
   "components/Header.tsx": {
-    "mtime": 1795092397.433798,
-    "seen": 1795105968.7579086,
-    "ast_hash": "97834dc2d09e635182bb207dbe10244b",
-    "semantic_hash": "97834dc2d09e635182bb207dbe10244b"
+    "mtime": 1795213129.5593975,
+    "seen": 1795213621.0127158,
+    "ast_hash": "7bc4d5edfb38b192a9178647b674efd8",
+    "semantic_hash": ""
   },
   "components/LiveRefresh.tsx": {
     "mtime": 1795025209.6167407,
@@ -486,10 +486,10 @@
     "semantic_hash": "6968ef86ca515887ed46e7e117e25c9e"
   },
   "components/MediaCard.tsx": {
-    "mtime": 1795050350.2282908,
-    "seen": 1795105968.7579105,
-    "ast_hash": "654ff083fc022de55f78ae64b085554d",
-    "semantic_hash": "654ff083fc022de55f78ae64b085554d"
+    "mtime": 1795213258.2750125,
+    "seen": 1795213621.0127187,
+    "ast_hash": "b7a9aca731cc47fa682108983914afcd",
+    "semantic_hash": ""
   },
   "components/MediaCover.tsx": {
     "mtime": 1795050350.2282908,
@@ -498,9 +498,9 @@
     "semantic_hash": "bc5b1d459a6aa92d29a9843c68e73399"
   },
   "components/MediaFeed.tsx": {
-    "mtime": 1795109067.3665679,
-    "seen": 1795110429.2344203,
-    "ast_hash": "41ac7065a9185fc8798a9a0f03f19d2a",
+    "mtime": 1795213257.9998226,
+    "seen": 1795213621.0127213,
+    "ast_hash": "3ac60baf15ee657b7f6aaf94b3be9239",
     "semantic_hash": ""
   },
   "components/MediaGallery.tsx": {
@@ -510,10 +510,10 @@
     "semantic_hash": "c9e75c588a9dbabc13d5c8eee105f10c"
   },
   "components/PageHero.tsx": {
-    "mtime": 1794357209.848072,
-    "seen": 1795105968.7579145,
-    "ast_hash": "8f0eb3ad9038c80940413828efa1b192",
-    "semantic_hash": "8f0eb3ad9038c80940413828efa1b192"
+    "mtime": 1795214631.1498325,
+    "seen": 1795215171.6460629,
+    "ast_hash": "e524296f9782e87d1058fbb5a22d23dd",
+    "semantic_hash": ""
   },
   "components/QueryProvider.tsx": {
     "mtime": 1795109067.5640187,
@@ -1278,10 +1278,10 @@
     "semantic_hash": "5202a685f32068ab14e3f01e4e0c38ed"
   },
   "next-env.d.ts": {
-    "mtime": 1795090206.5905967,
-    "seen": 1795105968.758055,
-    "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
-    "semantic_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
+    "mtime": 1795237026.412793,
+    "seen": 1795237233.1456177,
+    "ast_hash": "c7b887684e81cfa5830eeeb7286485f6",
+    "semantic_hash": ""
   },
   "next.config.ts": {
     "mtime": 1794248183.9408844,
@@ -2247,6 +2247,66 @@
     "mtime": 1795123758.6127207,
     "seen": 1795123948.8992314,
     "ast_hash": "2ec1d54d34fada627aa1ff35531d5625",
+    "semantic_hash": ""
+  },
+  "components/site/PageTrail.tsx": {
+    "mtime": 1795213103.590106,
+    "seen": 1795213621.0129068,
+    "ast_hash": "ece80997cc328eefe41f87e5eb2c2624",
+    "semantic_hash": ""
+  },
+  "components/site/SectionHeading.tsx": {
+    "mtime": 1795213103.5278199,
+    "seen": 1795213621.0129092,
+    "ast_hash": "f87bc8f2f3dabf14a377d8d35ed7d5b4",
+    "semantic_hash": ""
+  },
+  "components/site/SubNav.tsx": {
+    "mtime": 1795213112.6580489,
+    "seen": 1795213621.0129101,
+    "ast_hash": "0cb724b233ca4f150dd9c001fd9f04b3",
+    "semantic_hash": ""
+  },
+  "components/site/icons.tsx": {
+    "mtime": 1795237164.1222265,
+    "seen": 1795237233.1455302,
+    "ast_hash": "b6611862d56413a9853e45e6b8f48ce5",
+    "semantic_hash": ""
+  },
+  "lib/site-nav.ts": {
+    "mtime": 1795214662.965108,
+    "seen": 1795215171.6464124,
+    "ast_hash": "eb98b822195f2d430a03a48900a1dd6f",
+    "semantic_hash": ""
+  },
+  "public/images/ornaments/grain.svg": {
+    "mtime": 1795212848.2111287,
+    "seen": 1795213621.0132387,
+    "ast_hash": "792beb8ec8f4735d9215396fe05197a0",
+    "semantic_hash": ""
+  },
+  "public/images/ornaments/battlement.svg": {
+    "mtime": 1795214593.6757686,
+    "seen": 1795215171.6468298,
+    "ast_hash": "a175e04623e0e4e4e5c327d8811b2fe8",
+    "semantic_hash": ""
+  },
+  "public/images/ornaments/scale-mail.svg": {
+    "mtime": 1795214593.6429338,
+    "seen": 1795215171.6468358,
+    "ast_hash": "cf6388388569a4e882d4586d424ab15c",
+    "semantic_hash": ""
+  },
+  "public/images/ornaments/emblem-bow.png": {
+    "mtime": 1795236937.53,
+    "seen": 1795237233.1458213,
+    "ast_hash": "ea9b2a981ec3aed0e4e139c7c1ad8260",
+    "semantic_hash": ""
+  },
+  "public/images/ornaments/emblem-helm.png": {
+    "mtime": 1795236937.553,
+    "seen": 1795237233.145823,
+    "ast_hash": "9067b8a31be8974e8b865ff645fb1770",
     "semantic_hash": ""
   },
   "package-lock.json": {

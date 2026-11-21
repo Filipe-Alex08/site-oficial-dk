@@ -12,13 +12,7 @@ import { adminRoleOptions } from "@/lib/member-access";
 import type { AdminRole, MemberProfile } from "@/lib/types";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
-
-const activityLinks = [
-  ["Swordplay e Boffering", "/atividades/swordplay"],
-  ["Tipos de atividades", "/atividades/tipos"],
-  ["Jogos", "/atividades/jogos"],
-  ["Graduações", "/atividades/graduacoes"],
-];
+import { activityLinks, isActivePath, mainLinks } from "@/lib/site-nav";
 
 type HeaderAccount = {
   email: string;
@@ -150,7 +144,7 @@ export default function Header() {
     };
   }, [accountOpen]);
 
-  const active = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const active = (href: string) => isActivePath(pathname, href);
   // O menu da conta não repete o ambiente em que a pessoa já está.
   const inMemberArea = pathname === "/membro" || pathname.startsWith("/membro/");
   const inAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -206,16 +200,14 @@ export default function Header() {
         </button>
 
         <nav className={"main-nav " + (open ? "is-open" : "")} aria-label="Menu principal">
-          <Link className={active("/") ? "active" : ""} href="/" onClick={() => setOpen(false)}>Início</Link>
-          <Link className={active("/sobre") ? "active" : ""} href="/sobre" onClick={() => setOpen(false)}>Sobre</Link>
+          {mainLinks.slice(0, 2).map(({ label, href }) => <Link key={href} className={active(href) ? "active" : ""} href={href} onClick={() => setOpen(false)}>{label}</Link>)}
           <div className={"nav-dropdown " + (activitiesOpen ? "is-open" : "")} ref={activitiesRef}>
             <button className={active("/atividades") ? "active" : ""} type="button" aria-expanded={activitiesOpen} aria-haspopup="true" onClick={() => setActivitiesOpen((value) => !value)}>Atividades <ChevronDown size={15} /></button>
             <div className="dropdown-panel">
-              {activityLinks.map(([label, href]) => <Link key={href} className={pathname.startsWith(href) ? "active" : ""} href={href} onClick={() => { setOpen(false); setActivitiesOpen(false); }}>{label}</Link>)}
+              {activityLinks.map(({ label, href, icon: Icon }) => <Link key={href} className={active(href) ? "active" : ""} href={href} onClick={() => { setOpen(false); setActivitiesOpen(false); }}><Icon aria-hidden="true" />{label}</Link>)}
             </div>
           </div>
-          <Link className={active("/midias") ? "active" : ""} href="/midias" onClick={() => setOpen(false)}>Mídias</Link>
-          <Link className={active("/eventos") ? "active" : ""} href="/eventos" onClick={() => setOpen(false)}>Eventos</Link>
+          {mainLinks.slice(2).map(({ label, href }) => <Link key={href} className={active(href) ? "active" : ""} href={href} onClick={() => setOpen(false)}>{label}</Link>)}
         </nav>
 
         <div className="header-account" ref={accountRef}>

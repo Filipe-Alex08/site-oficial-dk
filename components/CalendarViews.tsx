@@ -68,10 +68,10 @@ export default function CalendarViews({
           {upcomingActivities.map((activity) => {
             const date = new Date(activity.starts_at);
             return (
-              <article className="activity-card" key={activity.id}>
+              <article className="plate plate--flush activity-card reveal" key={activity.id}>
                 <div className="date-block">
-                  <strong>{date.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: "America/Sao_Paulo" })}</strong>
                   <span>{date.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" }).replace(".", "")}</span>
+                  <strong>{date.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: "America/Sao_Paulo" })}</strong>
                 </div>
                 <div className="activity-content">
                   <div className="activity-title-row">

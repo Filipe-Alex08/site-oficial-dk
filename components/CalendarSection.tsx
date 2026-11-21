@@ -1,4 +1,5 @@
 import CalendarViews from "@/components/CalendarViews";
+import SectionHeading from "@/components/site/SectionHeading";
 import LiveRefresh from "@/components/LiveRefresh";
 import { saoPauloDate, type MemberBirthday } from "@/lib/birthdays";
 import type { Activity, AttendanceResponse } from "@/lib/types";
@@ -68,9 +69,7 @@ export default async function CalendarSection() {
     <section className="section calendar-section" id="calendario">
       <LiveRefresh tables={["activities", "activity_attendance"]} />
       <div className="container">
-        <div className="section-heading">
-          <h2>Calendário do DK</h2>
-        </div>
+        <SectionHeading title="Calendário do DK" />
         <CalendarViews activities={activities} upcomingActivities={upcomingActivities} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} initialYear={currentYear} birthdays={isApprovedMember ? birthdays : []} birthdaysUnavailable={isApprovedMember && birthdaysUnavailable} currentMonth={saoPauloDate(now).month} />
       </div>
     </section>

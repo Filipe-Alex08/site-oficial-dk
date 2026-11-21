@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import "./globals.css";
-import "./public.css";
+import "./site-primitives.css";
+import "./site-chrome.css";
+import "./site-pages.css";
+import "./site-catalog.css";
 import "./auth.css";
 import "./app-area.css";
 import "./admin.css";

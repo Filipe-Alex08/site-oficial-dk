@@ -13,37 +13,68 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import SectionHeading from "@/components/site/SectionHeading";
+import SubNav from "@/components/site/SubNav";
 import { socialLinks } from "@/lib/content";
 
+type EventKind = { title: string; text: string; Icon: LucideIcon };
 
-const internalEvents = [
-  [
-    "Treinos especiais",
-    "Atividades com propostas diferentes dos treinos regulares, podendo incluir desafios específicos, novas dinâmicas, convidados ou programações temáticas.",
-    Dumbbell,
-  ],
-  [
-    "Confraternizações",
-    "Momentos para reunir os membros fora do ritmo das batalhas, fortalecer amizades, integrar novos participantes e aproximar ainda mais a comunidade do DK.",
-    PartyPopper,
-  ],
-  [
-    "Exames",
-    "Avaliações voltadas ao desenvolvimento dos integrantes, considerando conhecimentos, habilidades e evolução dentro do sistema de graduações do DK.",
-    GraduationCap,
-  ],
-  [
-    "Torneios",
-    "Disputas internas organizadas em diferentes formatos, criadas para testar habilidades, estratégias e proporcionar novos desafios entre os participantes.",
-    Trophy,
-  ],
-  [
-    "Atividades entre divisões",
-    "Encontros que reúnem integrantes de diferentes regiões do DK, promovendo integração, troca de experiências e atividades em conjunto entre as divisões.",
-    Network,
-  ],
-] as const;
+const internalEvents: EventKind[] = [
+  {
+    title: "Treinos especiais",
+    text: "Atividades com propostas diferentes dos treinos regulares, podendo incluir desafios específicos, novas dinâmicas, convidados ou programações temáticas.",
+    Icon: Dumbbell,
+  },
+  {
+    title: "Confraternizações",
+    text: "Momentos para reunir os membros fora do ritmo das batalhas, fortalecer amizades, integrar novos participantes e aproximar ainda mais a comunidade do DK.",
+    Icon: PartyPopper,
+  },
+  {
+    title: "Exames",
+    text: "Avaliações voltadas ao desenvolvimento dos integrantes, considerando conhecimentos, habilidades e evolução dentro do sistema de graduações do DK.",
+    Icon: GraduationCap,
+  },
+  {
+    title: "Torneios",
+    text: "Disputas internas organizadas em diferentes formatos, criadas para testar habilidades, estratégias e proporcionar novos desafios entre os participantes.",
+    Icon: Trophy,
+  },
+  {
+    title: "Atividades entre divisões",
+    text: "Encontros que reúnem integrantes de diferentes regiões do DK, promovendo integração, troca de experiências e atividades em conjunto entre as divisões.",
+    Icon: Network,
+  },
+];
+
+const externalEvents = [
+  {
+    title: "Eventos estaduais",
+    Icon: Map,
+    text: "Grandes encontros realizados em Minas Gerais e em outros estados, reunindo diferentes grupos de Swordplay em um mesmo campo. São grandes batalhas, troca de experiências, novas amizades e muita integração.",
+    examples: ["Encontro Mineiro de Swordplay", "Encontro Carioca de Swordplay", "Encontro Paulista de Swordplay", "Encontro da Aliança da Estrada Real", "Guerra das Facções"],
+  },
+  {
+    title: "Eventos regionais",
+    Icon: Earth,
+    text: "Encontros ainda maiores, capazes de reunir grupos de várias cidades, estados e regiões. São eventos marcados por batalhas intensas, estratégias coletivas e pela oportunidade de lutar ao lado — ou contra — jogadores de diferentes partes do país.",
+    examples: ["Apocalipse", "Odisseia"],
+  },
+];
+
+const hostedOptions: EventKind[] = [
+  { title: "Stands e demonstrações", text: "Exposição de equipamentos, orientação e experiências para o público.", Icon: Presentation },
+  { title: "Eventos temáticos", text: "Atividades para encontros ligados a RPG, fantasia, cultura medieval e geek.", Icon: Drama },
+  { title: "Aniversários", text: "Atividades recreativas preparadas conforme a faixa etária, o espaço e o número de participantes.", Icon: CakeSlice },
+];
+
+const anchors = [
+  { id: "internos", label: "Eventos internos" },
+  { id: "externos", label: "Eventos externos" },
+  { id: "eventos-e-aniversarios", label: "Eventos e aniversários" },
+];
 
 export const metadata = pageMetadata("Eventos de Swordplay em Belo Horizonte", "Conheça os encontros do DK, eventos externos e experiências de Swordplay para eventos geek e aniversários em Belo Horizonte.", "/eventos");
 
@@ -51,35 +82,21 @@ export default function EventsPage() {
   return (
     <>
       <PageHero
+        eyebrow="Death Knights"
         title="Eventos do DK"
         description="O que o grupo organiza, onde participamos e como levar o DK ao seu evento."
         variant="events"
-      >
-        <nav
-          className="page-anchor-nav"
-          aria-label="Seções da página de eventos"
-        >
-          <a href="#internos">Eventos internos</a>
-          <a href="#externos">Eventos externos</a>
-          <a href="#eventos-e-aniversarios">Eventos e aniversários</a>
-        </nav>
-      </PageHero>
+      />
+      <SubNav kind="anchors" label="Seções da página de eventos" items={anchors} />
 
       <section className="section event-section" id="internos">
         <div className="container">
-          <header className="section-heading">
-            <div>
-              <p className="eyebrow">Comunidade do DK</p>
-              <h2>Eventos internos</h2>
-            </div>
-          </header>
-
-          <div className="event-card-grid event-card-grid-internal">
-            {internalEvents.map(([title, text, Icon]) => (
-              <article className="card" key={title}>
-                <span className="card-icon">
-                  <Icon />
-                </span>
+          <SectionHeading eyebrow="Comunidade do DK" title="Eventos internos" />
+          <div className="plate-grid numbered">
+            {internalEvents.map(({ title, text, Icon }) => (
+              <article className="plate reveal" key={title}>
+                <span className="numeral" aria-hidden="true" />
+                <span className="glyph"><Icon /></span>
                 <h3>{title}</h3>
                 <p>{text}</p>
               </article>
@@ -88,121 +105,52 @@ export default function EventsPage() {
         </div>
       </section>
 
-      <section
-        className="section event-section event-section-alt"
-        id="externos"
-      >
+      <section className="section section-band event-section" id="externos">
         <div className="container">
-          <header className="section-heading">
-            <div>
-              <p className="eyebrow">Integração entre grupos</p>
-              <h2>Eventos externos</h2>
-            </div>
-          </header>
-
-          <div className="event-card-grid event-card-grid-external">
-            <article className="card event-list-card">
-              <span className="card-icon">
-                <Map />
-              </span>
-              <h3>Eventos estaduais</h3>
-              <p>
-                Grandes encontros realizados em Minas Gerais e em outros
-                estados, reunindo diferentes grupos de Swordplay em um mesmo
-                campo. São grandes batalhas, troca de experiências, novas
-                amizades e muita integração.
-              </p>
-              <div className="event-examples">
-                <strong>Exemplos</strong>
-                <ul>
-                  <li>Encontro Mineiro de Swordplay</li>
-                  <li>Encontro Carioca de Swordplay</li>
-                  <li>Encontro Paulista de Swordplay</li>
-                  <li>Encontro da Aliança da Estrada Real</li>
-                  <li>Guerra das Facções</li>
-                </ul>
-              </div>
-            </article>
-
-            <article className="card event-list-card">
-              <span className="card-icon">
-                <Earth />
-              </span>
-              <h3>Eventos regionais</h3>
-              <p>
-                Encontros ainda maiores, capazes de reunir grupos de várias
-                cidades, estados e regiões. São eventos marcados por batalhas
-                intensas, estratégias coletivas e pela oportunidade de lutar ao
-                lado — ou contra — jogadores de diferentes partes do país.
-              </p>
-              <div className="event-examples">
-                <strong>Exemplos</strong>
-                <ul>
-                  <li>Apocalipse</li>
-                  <li>Odisseia</li>
-                </ul>
-              </div>
-            </article>
+          <SectionHeading eyebrow="Integração entre grupos" title="Eventos externos" />
+          <div className="plate-grid plate-grid--2">
+            {externalEvents.map(({ title, text, Icon, examples }) => (
+              <article className="plate plate--quiet reveal" key={title}>
+                <span className="glyph"><Icon /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                <div className="event-examples">
+                  <strong>Exemplos</strong>
+                  <ul className="pennants">
+                    {examples.map((example) => <li className="pennant" key={example}>{example}</li>)}
+                  </ul>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       <section className="section event-section" id="eventos-e-aniversarios">
         <div className="container event-article">
-          <header className="section-heading">
-            <div>
-              <p className="eyebrow">Leve o DK para o seu evento</p>
-              <h2>Eventos geek e aniversários</h2>
-            </div>
-          </header>
-
-          <div className="event-introduction">
+          <SectionHeading eyebrow="Leve o DK para o seu evento" title="Eventos geek e aniversários">
             <p className="lead">
-              Levamos stands, demonstrações e oficinas de Swordplay para eventos
-              de RPG, cultura geek, temática medieval e aniversários, adaptados
-              ao espaço e ao público.
+              Levamos stands, demonstrações e oficinas de Swordplay para eventos de RPG, cultura geek, temática medieval e aniversários, adaptados ao espaço e ao público.
             </p>
-          </div>
+          </SectionHeading>
 
           <div className="event-options">
-            <article>
-              <Presentation />
-              <h3>Stands e demonstrações</h3>
-              <p>
-                Exposição de equipamentos, orientação e experiências para o
-                público.
-              </p>
-            </article>
-            <article>
-              <Drama />
-              <h3>Eventos temáticos</h3>
-              <p>
-                Atividades para encontros ligados a RPG, fantasia, cultura
-                medieval e geek.
-              </p>
-            </article>
-            <article>
-              <CakeSlice />
-              <h3>Aniversários</h3>
-              <p>
-                Atividades recreativas preparadas conforme a faixa etária, o
-                espaço e o número de participantes.
-              </p>
-            </article>
+            {hostedOptions.map(({ title, text, Icon }) => (
+              <article className="plate plate--quiet reveal" key={title}>
+                <span className="glyph"><Icon /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
           </div>
 
-          <div className="contact-banner">
-            <Sparkles />
+          <div className="plate plate--feature contact-banner reveal">
+            <span className="glyph"><Sparkles /></span>
             <div>
               <h2>Quer levar o DK?</h2>
               <p>Chame no Instagram com o tipo de evento, data e local.</p>
             </div>
-            <a
-              className="button button-primary"
-              href={socialLinks.instagram}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a className="button button-primary" href={socialLinks.instagram} target="_blank" rel="noreferrer">
               Falar pelo Instagram <ArrowUpRight size={18} />
             </a>
           </div>

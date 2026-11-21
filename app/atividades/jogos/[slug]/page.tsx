@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import GamesSection from "@/components/GamesSection";
 import PageHero from "@/components/PageHero";
+import PageTrail from "@/components/site/PageTrail";
+import SubNav from "@/components/site/SubNav";
 import { games } from "@/lib/content";
 import { pageMetadata } from "@/lib/seo";
 
@@ -29,11 +31,14 @@ export default async function GamePage({ params }: Props) {
   return (
     <>
       <PageHero
+        eyebrow="Atividades"
         title="Jogos de Swordplay"
         description="Objetivos, regras e equipamentos de cada jogo."
         variant="training"
       />
+      <SubNav kind="activities" />
       <GamesSection />
+      <PageTrail href="/atividades/jogos" />
     </>
   );
 }

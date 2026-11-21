@@ -66,22 +66,25 @@ export default function MediaFeed({ posts }: { posts: MediaCardData[] }) {
   }
 
   return <div className="media-feed">
-    <div className="games-catalog-heading">
-      <h2 id="media-feed-title">Publicações</h2>
-      <p role="status">{filtered.length} {filtered.length === 1 ? "publicação" : "publicações"}</p>
+    <div className="catalog-head">
+      <div>
+        <h2 id="media-feed-title">Publicações</h2>
+        <span className="rule rule--start" aria-hidden="true" />
+      </div>
+      <p className="catalog-count" role="status">{filtered.length} {filtered.length === 1 ? "publicação" : "publicações"}</p>
     </div>
 
-    {posts.length > 3 && <div className="games-controls">
-      {categories.length > 1 && <div className="games-filters" role="group" aria-label="Filtrar por categoria">
+    {posts.length > 3 && <div className="catalog-controls">
+      {categories.length > 1 && <div className="chip-group" role="group" aria-label="Filtrar por categoria">
         {[ALL, ...categories].map((value) => <button
           key={value}
           type="button"
-          className={`button button-small ${value === category ? "button-primary" : "button-ghost"}`}
+          className="chip"
           aria-pressed={value === category}
           onClick={() => chooseCategory(value)}
         >{value === ALL ? "Todas" : value}</button>)}
       </div>}
-      <label className="games-search">
+      <label className="catalog-search">
         <Search size={16} aria-hidden="true" />
         <input
           ref={searchRef}
@@ -100,7 +103,7 @@ export default function MediaFeed({ posts }: { posts: MediaCardData[] }) {
       {visible.map((post) => <MediaCard key={post.id} post={post} />)}
     </div>}
 
-    {filtered.length === 0 && <div className="games-empty">
+    {filtered.length === 0 && <div className="catalog-empty">
       <p>Nenhuma publicação encontrada.</p>
       <button className="button button-ghost button-small" type="button" onClick={clearFilters}>Limpar filtros</button>
     </div>}
