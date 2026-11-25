@@ -20,7 +20,7 @@ export default function Footer() {
             </Link>
             <div>
               <strong>DK — Death Knights</strong>
-              <p>Swordplay e comunidade em Belo Horizonte.</p>
+              <p>Swordplay aos domingos em Belo Horizonte.</p>
             </div>
           </div>
           <div className="social-links">

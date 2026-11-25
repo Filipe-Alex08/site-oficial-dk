@@ -24,27 +24,27 @@ type EventKind = { title: string; text: string; Icon: LucideIcon };
 const internalEvents: EventKind[] = [
   {
     title: "Treinos especiais",
-    text: "Atividades com propostas diferentes dos treinos regulares, podendo incluir desafios específicos, novas dinâmicas, convidados ou programações temáticas.",
+    text: "Para sair da rotina do domingo: desafios diferentes, dinâmicas novas, convidados ou uma programação temática.",
     Icon: Dumbbell,
   },
   {
     title: "Confraternizações",
-    text: "Momentos para reunir os membros fora do ritmo das batalhas, fortalecer amizades, integrar novos participantes e aproximar ainda mais a comunidade do DK.",
+    text: "Um respiro das batalhas para juntar a turma, fortalecer amizades e enturmar quem chegou agora.",
     Icon: PartyPopper,
   },
   {
     title: "Exames",
-    text: "Avaliações voltadas ao desenvolvimento dos integrantes, considerando conhecimentos, habilidades e evolução dentro do sistema de graduações do DK.",
+    text: "A hora de mostrar o quanto você evoluiu: conhecimento, habilidade e progresso dentro das graduações do DK.",
     Icon: GraduationCap,
   },
   {
     title: "Torneios",
-    text: "Disputas internas organizadas em diferentes formatos, criadas para testar habilidades, estratégias e proporcionar novos desafios entre os participantes.",
+    text: "Disputas entre a gente, em vários formatos, para colocar habilidade e estratégia à prova.",
     Icon: Trophy,
   },
   {
     title: "Atividades entre divisões",
-    text: "Encontros que reúnem integrantes de diferentes regiões do DK, promovendo integração, troca de experiências e atividades em conjunto entre as divisões.",
+    text: "O DK de várias regiões no mesmo lugar, treinando junto, trocando experiência e se conhecendo.",
     Icon: Network,
   },
 ];
@@ -53,21 +53,21 @@ const externalEvents = [
   {
     title: "Eventos estaduais",
     Icon: Map,
-    text: "Grandes encontros realizados em Minas Gerais e em outros estados, reunindo diferentes grupos de Swordplay em um mesmo campo. São grandes batalhas, troca de experiências, novas amizades e muita integração.",
+    text: "Encontros em Minas e em outros estados que juntam vários grupos de Swordplay no mesmo campo. Tem batalha grande, troca de experiência e muita amizade nova.",
     examples: ["Encontro Mineiro de Swordplay", "Encontro Carioca de Swordplay", "Encontro Paulista de Swordplay", "Encontro da Aliança da Estrada Real", "Guerra das Facções"],
   },
   {
     title: "Eventos regionais",
     Icon: Earth,
-    text: "Encontros ainda maiores, capazes de reunir grupos de várias cidades, estados e regiões. São eventos marcados por batalhas intensas, estratégias coletivas e pela oportunidade de lutar ao lado — ou contra — jogadores de diferentes partes do país.",
+    text: "Os maiores. Gente de várias cidades, estados e regiões, batalhas intensas, estratégia em grupo e a chance de lutar ao lado (ou contra) jogadores de todo canto do país.",
     examples: ["Apocalipse", "Odisseia"],
   },
 ];
 
 const hostedOptions: EventKind[] = [
-  { title: "Stands e demonstrações", text: "Exposição de equipamentos, orientação e experiências para o público.", Icon: Presentation },
-  { title: "Eventos temáticos", text: "Atividades para encontros ligados a RPG, fantasia, cultura medieval e geek.", Icon: Drama },
-  { title: "Aniversários", text: "Atividades recreativas preparadas conforme a faixa etária, o espaço e o número de participantes.", Icon: CakeSlice },
+  { title: "Stands e demonstrações", text: "Equipamentos à mostra, gente para explicar e o público experimentando.", Icon: Presentation },
+  { title: "Eventos temáticos", text: "Atividades para encontros de RPG, fantasia, cultura medieval e geek.", Icon: Drama },
+  { title: "Aniversários", text: "Brincadeiras montadas de acordo com a idade, o espaço e o número de convidados.", Icon: CakeSlice },
 ];
 
 const anchors = [
@@ -84,7 +84,7 @@ export default function EventsPage() {
       <PageHero
         eyebrow="Death Knights"
         title="Eventos do DK"
-        description="O que o grupo organiza, onde participamos e como levar o DK ao seu evento."
+        description="Os encontros do grupo, as batalhas ao lado de outros grupos e o DK no seu evento."
         variant="events"
       />
       <SubNav kind="anchors" label="Seções da página de eventos" items={anchors} />
@@ -130,7 +130,7 @@ export default function EventsPage() {
         <div className="container event-article">
           <SectionHeading eyebrow="Leve o DK para o seu evento" title="Eventos geek e aniversários">
             <p className="lead">
-              Levamos stands, demonstrações e oficinas de Swordplay para eventos de RPG, cultura geek, temática medieval e aniversários, adaptados ao espaço e ao público.
+              A gente leva stand, demonstração e oficina de Swordplay para eventos de RPG, geek, medievais e aniversários, tudo ajustado ao seu espaço e ao seu público.
             </p>
           </SectionHeading>
 
@@ -148,7 +148,7 @@ export default function EventsPage() {
             <span className="glyph"><Sparkles /></span>
             <div>
               <h2>Quer levar o DK?</h2>
-              <p>Chame no Instagram com o tipo de evento, data e local.</p>
+              <p>Chama a gente no Instagram e conta o tipo de evento, a data e o local.</p>
             </div>
             <a className="button button-primary" href={socialLinks.instagram} target="_blank" rel="noreferrer">
               Falar pelo Instagram <ArrowUpRight size={18} />

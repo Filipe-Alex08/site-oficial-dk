@@ -99,7 +99,6 @@
 /* ---------- 4. Atividades ---------- */
 .concept h2 { margin-bottom: 14px; font-size: clamp(1.3rem, 2vw, 1.5rem); }
 .concept p { line-height: 1.75; }
-.dropcap::first-letter { float: left; margin: 4px 10px 0 0; color: var(--accent-bright); font-family: var(--font-display), Georgia, serif; font-size: 3em; line-height: 0.82; }
 
 .conduct { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .conduct > li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 18px; align-items: start; padding: 20px 22px; background: var(--surface-1); border: 1px solid var(--border); border-left: 2px solid var(--accent-bright); border-radius: var(--r-md); }

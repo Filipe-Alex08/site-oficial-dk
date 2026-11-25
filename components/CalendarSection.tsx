@@ -69,7 +69,7 @@ export default async function CalendarSection() {
     <section className="section calendar-section" id="calendario">
       <LiveRefresh tables={["activities", "activity_attendance"]} />
       <div className="container">
-        <SectionHeading title="Calendário do DK" />
+        <SectionHeading title="Agenda do DK" />
         <CalendarViews activities={activities} upcomingActivities={upcomingActivities} isApprovedMember={isApprovedMember} attendanceByActivity={attendanceByActivity} initialYear={currentYear} birthdays={isApprovedMember ? birthdays : []} birthdaysUnavailable={isApprovedMember && birthdaysUnavailable} currentMonth={saoPauloDate(now).month} />
       </div>
     </section>

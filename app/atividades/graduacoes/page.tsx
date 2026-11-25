@@ -14,19 +14,19 @@ const tiers = [
     tone: "bronze",
     level: "bronze",
     title: "Bronze",
-    text: "Representa o integrante que já superou a fase inicial e adquiriu uma base sólida dentro do DK. Conhece as regras do grupo, a estrutura de graduação e os princípios básicos de combate. Possui noções de defesa, ataque, postura e movimentação, além de compreender o equipamento que utiliza, suas características, finalidade e forma correta de manejo.",
+    text: "Você já passou da fase inicial e tem uma base sólida. Conhece as regras do grupo, como as graduações funcionam e os princípios básicos de combate. Tem noção de defesa, ataque, postura e movimentação e entende o equipamento que usa: para que serve, suas características e como manejar do jeito certo.",
   },
   {
     tone: "silver",
     level: "prata",
     title: "Prata",
-    text: "Representa um nível intermediário de domínio técnico. O integrante já demonstra maior controle sobre seu equipamento, consegue utilizá-lo com eficiência em diferentes situações e apresenta boa adaptação de distância, movimentação e velocidade. Também possui maior segurança na execução das técnicas e capacidade de responder melhor às diferentes situações de combate.",
+    text: "O nível intermediário. Você controla bem o seu equipamento, usa com eficiência em diferentes situações e ajusta distância, movimentação e velocidade. Executa as técnicas com mais segurança e responde melhor ao que acontece no combate.",
   },
   {
     tone: "gold",
     level: "ouro",
     title: "Ouro",
-    text: "Representa um nível avançado de experiência, domínio técnico e atuação coletiva. O integrante demonstra capacidade de combater em equipe, proteger aliados, enfrentar múltiplos adversários e contribuir estrategicamente para o grupo. Além da habilidade em campo, espera-se maturidade, responsabilidade e participação no desenvolvimento de outros integrantes do DK.",
+    text: "O nível avançado, de experiência, técnica e jogo coletivo. Você luta em equipe, protege aliados, encara vários adversários e pensa a estratégia do grupo. E não é só habilidade: esperamos maturidade, responsabilidade e que você ajude outros integrantes do DK a evoluir.",
   },
 ] as const;
 
@@ -34,21 +34,21 @@ const tracks = [
   {
     title: "Cavalaria",
     emblem: "helm",
-    text: "Reúne as categorias de combate corpo a corpo e a atuação nas formações de campo.",
+    text: "O combate corpo a corpo e o trabalho nas formações de campo.",
     specs: [
-      ["Defensores e escudistas", "Escudos nórdicos, escudos torre ou broquéis, combinados com espada ou lança. Foco em postura, cobertura, proteção de aliados e sustentação das formações."],
-      ["Lanceiros e armas de haste", "Alcance, controle da ponta e manutenção da distância. Ataques seguros e precisos, apoio à linha de frente e coordenação com escudistas e outros lanceiros."],
-      ["Especialistas em duas armas (Dual)", "Duas espadas ou adagas acolchoadas. Coordenação entre as mãos, alternância entre ataque e defesa, ritmo e mobilidade para pressionar o adversário sem perder o controle técnico."],
-      ["Guerreiros e espada longa", "Espada longa, de maior alcance e normalmente empunhada com as duas mãos. Defesas, transições eficientes, controle de distância e domínio do espaço ao redor."],
+      ["Defensores e escudistas", "Escudos nórdicos, torre ou broquéis, junto com espada ou lança. O foco é postura, cobertura, proteger aliados e segurar a formação."],
+      ["Lanceiros e armas de haste", "Usar o alcance, controlar a ponta e manter a distância. Ataques seguros e precisos, apoiando a linha de frente em sintonia com escudistas e outros lanceiros."],
+      ["Especialistas em duas armas (Dual)", "Duas espadas ou adagas acolchoadas. Pede coordenação entre as mãos, alternância entre ataque e defesa, ritmo e mobilidade para pressionar sem perder o controle técnico."],
+      ["Guerreiros e espada longa", "A espada longa alcança mais e costuma ser usada com as duas mãos. Trabalha defesas, transições eficientes, controle de distância e domínio do espaço ao redor."],
     ],
   },
   {
     title: "Arquearia",
     emblem: "bow",
-    text: "Uso do arco e das flechas adaptadas ao Swordplay, sempre dentro das regras de segurança.",
+    text: "Arco e flechas adaptados ao Swordplay, sempre dentro das regras de segurança.",
     specs: [
-      ["Fundamentos", "Postura, encaixe da flecha, puxada, ancoragem, mira e soltura controlada, além do respeito à linha de disparo e aos cuidados de segurança com as flechas."],
-      ["Evolução técnica", "Agrupamento, leitura do alvo e adaptação a diferentes distâncias, posições e ângulos, mantendo calma e controle durante a execução."],
+      ["Fundamentos", "Postura, encaixe da flecha, puxada, ancoragem, mira e soltura controlada. E, sempre, respeito à linha de disparo e cuidado com as flechas."],
+      ["Evolução técnica", "Agrupar os disparos, ler o alvo e se adaptar a diferentes distâncias, posições e ângulos, com calma e controle."],
     ],
   },
 ] as const;
@@ -59,7 +59,7 @@ export default function GraduationPage() {
       <PageHero
         eyebrow="Atividades"
         title="Graduações"
-        description="O caminho de evolução dentro do DK: Bronze, Prata e Ouro."
+        description="Bronze, Prata e Ouro: o caminho de quem treina com a gente."
         variant="training"
       />
       <SubNav kind="activities" />
@@ -90,7 +90,7 @@ export default function GraduationPage() {
       <section className="section section-continued" aria-labelledby="graduation-tracks-title">
         <div className="container">
           <SectionHeading id="graduation-tracks-title" title="Cavalaria e Arquearia">
-            <p>Cada graduação é conquistada separadamente em duas trilhas, com equipamentos e funções próprios.</p>
+            <p>Você evolui em cada trilha separadamente: dá para ser Prata na Cavalaria e Bronze na Arquearia.</p>
           </SectionHeading>
 
           <div className="plate-grid plate-grid--2">
@@ -114,10 +114,10 @@ export default function GraduationPage() {
           <div className="plate plate--feature locked reveal">
             <span className="glyph"><Lock /></span>
             <div>
-              <strong>Critérios completos</strong>
-              <p>Requisitos de exame e progressão são exclusivos para membros.</p>
+              <strong>O que cai no exame</strong>
+              <p>Os requisitos de cada graduação ficam na área do membro.</p>
             </div>
-            <Link className="button button-primary" href="/area-do-membro/login">Área do membro</Link>
+            <Link className="button button-primary" href="/area-do-membro/login">Entrar na área do membro</Link>
           </div>
         </div>
       </section>

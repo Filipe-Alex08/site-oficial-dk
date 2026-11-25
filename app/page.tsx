@@ -20,16 +20,16 @@ import { socialLinks } from "@/lib/content";
 export const metadata = pageMetadata("Swordplay em Belo Horizonte | DK Death Knights", "Treine Swordplay e boffering com o DK em Belo Horizonte. Conheça os jogos, acompanhe o calendário e saiba como participar, mesmo sem experiência.", "/");
 
 const portals = [
-  { href: "/atividades/swordplay", className: "home-portal-activities", title: "Atividades", text: "Treinos, práticas e jogos para evoluir em equipe.", Icon: Swords },
-  { href: "/midias", className: "home-portal-media", title: "Mídias", text: "Fotos, vídeos e publicações do DK.", Icon: Camera },
-  { href: "/eventos", className: "home-portal-events", title: "Eventos", text: "Encontros, batalhas, eventos geek e aniversários.", Icon: Tent },
+  { href: "/atividades/swordplay", className: "home-portal-activities", title: "Atividades", text: "Treinos, duelos e jogos, do primeiro golpe à batalha campal.", Icon: Swords },
+  { href: "/midias", className: "home-portal-media", title: "Mídias", text: "Fotos e vídeos dos nossos treinos e encontros.", Icon: Camera },
+  { href: "/eventos", className: "home-portal-events", title: "Eventos", text: "Encontros com outros grupos, grandes batalhas e o DK no seu evento.", Icon: Tent },
 ];
 
 const virtues = [
-  { title: "Comunidade", text: "acolhedora", Icon: HeartHandshake },
-  { title: "Evolução", text: "constante", Icon: TrendingUp },
-  { title: "Ambiente", text: "seguro", Icon: ShieldCheck },
-  { title: "Tradição", text: "viva", Icon: Flame },
+  { title: "Comunidade", text: "que acolhe", Icon: HeartHandshake },
+  { title: "Evolução", text: "a cada treino", Icon: TrendingUp },
+  { title: "Segurança", text: "em primeiro lugar", Icon: ShieldCheck },
+  { title: "Tradição", text: "desde 2020", Icon: Flame },
 ];
 
 export default function HomePage() {
@@ -45,15 +45,15 @@ export default function HomePage() {
             <p className="eyebrow">Death Knights · Belo Horizonte</p>
             <h1>
               Swordplay
-              <span>com propósito</span>
+              <span>todo domingo</span>
             </h1>
-            <p>Técnica, estratégia e comunidade em uma experiência esportiva e recreativa, em Belo Horizonte.</p>
+            <p>Combates com espadas e flechas acolchoadas, muita estratégia e uma turma que recebe bem quem chega. Treinamos em Belo Horizonte e qualquer pessoa pode começar.</p>
             <div className="hero-actions">
               <Link className="button button-primary" href="/sobre#como-participar">
-                Como participar <ArrowRight size={18} />
+                Quero participar <ArrowRight size={18} />
               </Link>
               <Link className="button button-ghost" href="#calendario">
-                <CalendarDays size={18} /> Ver calendário
+                <CalendarDays size={18} /> Ver agenda
               </Link>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function HomePage() {
                 </span>
                 <p>{text}</p>
                 <span className="home-portal-link">
-                  Ver mais <ArrowRight size={16} />
+                  Conhecer <ArrowRight size={16} />
                 </span>
               </span>
             </Link>
@@ -86,14 +86,14 @@ export default function HomePage() {
         <div className="newcomer-photo" aria-hidden="true" />
         <div className="newcomer-content">
           <div className="newcomer-copy">
-            <h2>Iniciantes são bem-vindos</h2>
+            <h2>Nunca segurou uma espada? Sem problema.</h2>
             <span className="rule rule--start" aria-hidden="true" />
             <p>
-              Não é preciso experiência. Nossa equipe acompanha seus primeiros passos e
-              empresta os equipamentos para você participar com segurança.
+              Ninguém aqui começou sabendo. A gente empresta todo o equipamento, ensina o
+              básico e acompanha seus primeiros treinos até você se sentir em casa.
             </p>
             <small>
-              <MapPinned size={16} aria-hidden="true" /> Normalmente aos domingos • Parque Ecológico da Pampulha
+              <MapPinned size={16} aria-hidden="true" /> Quase todo domingo • Parque Ecológico da Pampulha
             </small>
           </div>
 

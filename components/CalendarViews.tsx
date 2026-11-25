@@ -62,7 +62,7 @@ export default function CalendarViews({
           {!upcomingActivities.length && (
             <div className="empty-state">
               <CalendarDays />
-              <h3>Nenhuma atividade agendada</h3>
+              <h3>Nenhum treino marcado por enquanto</h3>
             </div>
           )}
           {upcomingActivities.map((activity) => {

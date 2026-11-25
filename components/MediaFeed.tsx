@@ -61,7 +61,7 @@ export default function MediaFeed({ posts }: { posts: MediaCardData[] }) {
   if (!posts.length) {
     return <div className="empty-state">
       <ImageIcon />
-      <h2>Nenhuma publicação disponível</h2>
+      <h2>Ainda não tem nada por aqui</h2>
     </div>;
   }
 

@@ -11,24 +11,24 @@ export const metadata = pageMetadata("Swordplay e Boffering em Belo Horizonte", 
 const concepts = [
   {
     title: "O que é Swordplay?",
-    text: "O Swordplay é uma atividade esportiva e recreativa inspirada em combates históricos e fantásticos. Os participantes utilizam réplicas acolchoadas de equipamentos medievais desenvolvidas para a prática.",
+    text: "Pense numa batalha medieval, ou de fantasia, que você pode viver de verdade, com espadas, escudos e lanças feitos para o esporte. Isso é Swordplay: um combate em que valem técnica, leitura do adversário e trabalho em equipe.",
   },
   {
     title: "O que é Boffering?",
-    text: "Boffering é o uso de equipamentos macios e acolchoados em atividades simuladas. A proposta permite treinar movimentos, posicionamento e estratégia de maneira controlada.",
+    text: "É o nome desse estilo de equipamento: armas macias e acolchoadas que permitem acertar o adversário com segurança. Com elas dá para treinar movimento, posição e estratégia de verdade.",
   },
 ];
 
 const equipment = [
-  { title: "Equipamentos de mão", text: "Equipamentos curtos, equipamentos longos e combinações de duas armas.", Icon: Sword },
-  { title: "Defesa", text: "Escudos nórdicos, escudos torre, escudos broquel.", Icon: RoundShieldIcon },
-  { title: "Longo alcance", text: "Lanças e arquearia adaptadas ao padrão da atividade.", Icon: SpearIcon },
+  { title: "Armas de mão", text: "Espadas curtas, espadas longas ou uma em cada mão.", Icon: Sword },
+  { title: "Defesa", text: "Escudos nórdicos, escudos torre e broquéis.", Icon: RoundShieldIcon },
+  { title: "Longo alcance", text: "Lanças e arcos com flechas adaptadas para o jogo.", Icon: SpearIcon },
 ];
 
 const rules = [
-  { title: "Equipamento", text: "Somente poderão ser utilizados equipamentos que estejam de acordo com os padrões de construção e segurança estabelecidos. Consulte a equipe de segurança para informações sobre equipamentos." },
-  { title: "Conduta", text: "Todos os participantes devem seguir as orientações dos responsáveis e as regras apresentadas antes e durante cada atividade." },
-  { title: "Respeito", text: "Todos devem ser tratados com respeito e igualdade, preservando sempre a segurança, o bem-estar e os limites de cada participante." },
+  { title: "Equipamento", text: "Só entra em campo equipamento aprovado pelos nossos padrões de construção e segurança. Na dúvida, fale com a equipe de segurança." },
+  { title: "Conduta", text: "Siga as orientações de quem está conduzindo a atividade e as regras combinadas antes e durante cada jogo." },
+  { title: "Respeito", text: "Todo mundo é tratado com respeito e igualdade. Cuidar da segurança, do bem-estar e dos limites de quem luta com você faz parte do jogo." },
 ];
 
 export default function SwordplayPage() {
@@ -37,7 +37,7 @@ export default function SwordplayPage() {
       <PageHero
         eyebrow="Atividades"
         title="Swordplay e Boffering"
-        description="Combate esportivo com equipamentos acolchoados."
+        description="Combate de verdade, com segurança e muita estratégia."
         variant="training"
       />
       <SubNav kind="activities" />
@@ -47,7 +47,7 @@ export default function SwordplayPage() {
           {concepts.map(({ title, text }) => (
             <article className="plate plate--quiet concept reveal" key={title}>
               <h2>{title}</h2>
-              <p className="dropcap">{text}</p>
+              <p>{text}</p>
             </article>
           ))}
         </div>
@@ -55,7 +55,7 @@ export default function SwordplayPage() {
 
       <section className="section section-band">
         <div className="container">
-          <SectionHeading title="Equipamentos utilizados" />
+          <SectionHeading title="O que você vai empunhar" />
           <div className="plate-grid">
             {equipment.map(({ title, text, Icon }) => (
               <article className="plate reveal" key={title}>
@@ -70,7 +70,7 @@ export default function SwordplayPage() {
 
       <section className="section">
         <div className="container">
-          <SectionHeading title="Regras básicas" />
+          <SectionHeading title="O que vale sempre" />
           <ol className="conduct numbered">
             {rules.map(({ title, text }) => (
               <li className="reveal" key={title}>

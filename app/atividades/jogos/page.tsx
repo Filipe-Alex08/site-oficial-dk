@@ -12,7 +12,7 @@ export default function GamesPage() {
       <PageHero
         eyebrow="Atividades"
         title="Jogos de Swordplay"
-        description="Objetivos, regras e equipamentos de cada jogo."
+        description="Os jogos que rolam nos nossos treinos e como se joga cada um."
         variant="training"
       />
       <SubNav kind="activities" />

@@ -10,32 +10,32 @@ type ActivityType = { title: string; text: string; Icon: LucideIcon };
 const activities: ActivityType[] = [
   {
     title: "Treinos técnicos",
-    text: "Exercícios voltados ao aprendizado e aperfeiçoamento da movimentação, controle dos equipamentos, posicionamento, defesa, ataque e atuação em conjunto com outros participantes.",
+    text: "É onde a base se constrói: movimentação, controle da arma, posicionamento, ataque, defesa e como lutar junto com os outros.",
     Icon: Footprints,
   },
   {
     title: "Duelos",
-    text: "Combates individuais ou em pequenos grupos, como 1x1, 2x2 e 3x3, que ajudam a desenvolver percepção, tomada de decisão, tempo de resposta e adaptação ao estilo do adversário.",
+    text: "1x1, 2x2, 3x3. Ótimos para afiar reflexo, tomada de decisão e a leitura do estilo de cada adversário.",
     Icon: Swords,
   },
   {
     title: "Batalhas em equipe",
-    text: "Atividades coletivas em que os participantes precisam trabalhar comunicação, organização, posicionamento e cooperação para alcançar os objetivos propostos.",
+    text: "Aqui ninguém vence sozinho. Para cumprir o objetivo, o time precisa conversar, se organizar, se posicionar bem e cooperar.",
     Icon: Users,
   },
   {
     title: "Batalhas campais",
-    text: "Confrontos com um número maior de participantes, utilizando formações, funções específicas e estratégias de campo. Podem envolver linha de frente, flancos, arquearia, lanceiros e outras funções.",
+    text: "As grandes. Muita gente em campo, formações e estratégia, com linha de frente, flancos, lanceiros e arqueiros, cada um na sua função.",
     Icon: Flag,
   },
   {
     title: "Dinâmicas recreativas",
-    text: "Jogos com regras e objetivos próprios, como captura de bandeira, Trollball e outras atividades desenvolvidas para estimular raciocínio rápido, adaptação, estratégia e diversão.",
+    text: "Captura da Bandeira, Trollball e outros jogos com regras próprias, que pedem raciocínio rápido, adaptação e estratégia. E divertem muito.",
     Icon: Dices,
   },
   {
     title: "Atividades de integração",
-    text: "Dinâmicas voltadas à recepção de novos participantes e à aproximação entre os integrantes do DK, permitindo conhecer o grupo, experimentar diferentes equipamentos e fortalecer a convivência dentro e fora das batalhas.",
+    text: "Pensadas para quem está chegando: conhecer a turma, experimentar equipamentos diferentes e se sentir parte do grupo dentro e fora do campo.",
     Icon: Handshake,
   },
 ];
@@ -48,7 +48,7 @@ export default function ActivityTypesPage() {
       <PageHero
         eyebrow="Atividades"
         title="Tipos de atividades"
-        description="Do treino técnico à batalha campal: formatos para todos os níveis."
+        description="Do treino de base à batalha campal, tem espaço para todo nível."
         variant="training"
       />
       <SubNav kind="activities" />

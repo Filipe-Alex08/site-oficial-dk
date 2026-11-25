@@ -28,7 +28,7 @@ export default async function MediaPage() {
       <LiveRefresh tables={["posts", "media_items"]} debounceMs={2000} />
       <PageHero
         title="Mídias"
-        description="Treinos, eventos e encontros da comunidade."
+        description="Fotos e vídeos dos treinos, batalhas e encontros."
         variant="events"
       />
       <section className="section">
