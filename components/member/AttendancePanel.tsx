@@ -3,7 +3,8 @@
 import { Check, Copy, MessageCircle, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { rankLabels, rankOptions } from "@/lib/member-access";
+import { rankLabels } from "@/lib/member-access";
+import { activityTime, attendanceTally, buildShareText, dateOptions, responseLine, whatsappShareUrl } from "@/lib/attendance-share";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeTables } from "@/components/RealtimeProvider";
 import type { Activity, AttendanceEntry, AttendanceResponse, RosterEntry } from "@/lib/types";
@@ -13,26 +14,6 @@ import StatusBadge from "@/components/admin/ui/StatusBadge";
 
 type ResponseForm = { guest_count: number; note: string };
 
-const dateOptions: Intl.DateTimeFormatOptions = {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  timeZone: "America/Sao_Paulo",
-};
-
-function activityTime(activity: Activity) {
-  const start = new Date(activity.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-  if (!activity.ends_at) return start;
-  const end = new Date(activity.ends_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-  return `${start} às ${end}`;
-}
-
-function responseLine(entry: AttendanceEntry, index: number) {
-  const guests = entry.guest_count ? ` +${entry.guest_count} ${entry.guest_count === 1 ? "convidado" : "convidados"}` : "";
-  const note = entry.note ? ` (${entry.note})` : "";
-  return `${index + 1}. ${entry.nickname}${guests}${note}`;
-}
-
 function AttendanceInsignias({ entry }: { entry: AttendanceEntry }) {
   return (
     <span className="attendance-insignias">
@@ -40,35 +21,6 @@ function AttendanceInsignias({ entry }: { entry: AttendanceEntry }) {
       <GraduationInsignias profile={entry} variant="icon" />
     </span>
   );
-}
-
-function buildShareText(activity: Activity, entries: AttendanceEntry[], roster: RosterEntry[]) {
-  const attending = entries.filter((entry) => entry.response === "vai").sort((a, b) => a.nickname.localeCompare(b.nickname));
-  const absent = entries.filter((entry) => entry.response === "nao_vai").sort((a, b) => a.nickname.localeCompare(b.nickname));
-  const lines = [
-    "🏴‍☠️Death Knights🏴‍☠️",
-    `💀- ${activity.title} -💀`,
-    "",
-    `📅 Data: ${new Date(activity.starts_at).toLocaleDateString("pt-BR", dateOptions)}`,
-    `⏰ Horário: ${activityTime(activity)}`,
-    `📍 Local: ${activity.location}`,
-    "",
-    "✅ Lista de presença:",
-    ...(attending.length ? attending.map(responseLine) : ["Nenhuma confirmação até o momento."]),
-    "",
-    "❌ Não poderão ir:",
-    ...(absent.length ? absent.map(responseLine) : ["Nenhuma ausência informada até o momento."]),
-    "",
-    "💀👁️‍🗨️INVOCAÇÃO DK👁️‍🗨️💀",
-  ];
-
-  [...rankOptions].reverse().forEach((rank) => {
-    const members = roster.filter((member) => member.rank === rank.value);
-    if (!members.length) return;
-    lines.push("", `${rank.label.toUpperCase()}:`, ...members.map((member) => member.nickname));
-  });
-
-  return lines.join("\n");
 }
 
 type Filter = "todas" | "pendentes" | "vou";
@@ -170,7 +122,7 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
   }
 
   function shareOnWhatsApp(activity: Activity) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(listText(activity))}`, "_blank", "noopener,noreferrer");
+    window.open(whatsappShareUrl(listText(activity)), "_blank", "noopener,noreferrer");
   }
 
   if (!activities.length) {
@@ -216,7 +168,12 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
         const absent = activityEntries.filter((entry) => entry.response === "nao_vai");
         const isClosed = isActivityClosed(activity);
         const start = new Date(activity.starts_at);
-        const confirmed = attending.length + attending.reduce((total, entry) => total + entry.guest_count, 0);
+        const tally = attendanceTally(activityEntries, roster);
+        const tallyItems = [
+          { key: "going", count: tally.going, label: tally.going === 1 ? "vai" : "vão" },
+          { key: "absent", count: tally.notGoing, label: tally.notGoing === 1 ? "não vai" : "não vão" },
+          { key: "pending", count: tally.pending.length, label: "sem resposta" },
+        ];
         const form = formFor(activity.id);
         const closedReason = activity.status === "cancelado" ? "Atividade cancelada." : activity.status === "finalizado" ? "Atividade finalizada." : "A lista de presença está fechada.";
 
@@ -229,8 +186,21 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
                 <h3>{activity.title}</h3>
                 <p><span>{start.toLocaleDateString("pt-BR", dateOptions)} · {activityTime(activity)}</span><span>{activity.location}</span></p>
               </div>
-              <div className="m-activity-count"><strong>{confirmed}</strong><small>confirmados</small></div>
             </header>
+
+            {data && <div className="m-tally">
+              <ul>
+                {tallyItems.map((item) => <li key={item.key} data-kind={item.key}>
+                  <strong>{item.count}</strong>
+                  <span>{item.label}</span>
+                  {item.key === "going" && tally.guests > 0 && <small>+{tally.guests} {tally.guests === 1 ? "convidado" : "convidados"}</small>}
+                </li>)}
+              </ul>
+              {/* A barra repete os números acima, por isso fica fora da leitura de tela. */}
+              <div className="m-tally-bar" aria-hidden="true">
+                {tallyItems.map((item) => item.count > 0 && <i key={item.key} data-kind={item.key} style={{ flexGrow: item.count }} />)}
+              </div>
+            </div>}
 
             <div className="m-answer">
               {isClosed
@@ -260,6 +230,10 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
               <details>
                 <summary><span>Não poderão ir</span><span className="count-pill">{absent.length}</span></summary>
                 {absent.length ? <ol>{absent.map((entry) => <li key={entry.user_id}>{responseLine(entry, 0).replace(/^1\. /, "")}<AttendanceInsignias entry={entry} /></li>)}</ol> : <p>Nenhuma ausência informada.</p>}
+              </details>
+              <details>
+                <summary><span>Sem resposta</span><span className="count-pill">{tally.pending.length}</span></summary>
+                {tally.pending.length ? <ol>{tally.pending.map((member) => <li key={member.user_id}>{member.nickname}<span className="attendance-insignias"><RankInsignia rank={member.rank} variant="icon" /></span></li>)}</ol> : <p>Todos responderam.</p>}
               </details>
             </div>
 

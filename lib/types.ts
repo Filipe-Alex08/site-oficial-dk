@@ -257,6 +257,8 @@ export type MemberProfile = {
   secondary_build?: string | null;
   birth_date?: string | null;
   zodiac_sign?: string | null;
+  /** Só dígitos, com o código do país (migração 028). */
+  whatsapp?: string | null;
   status: "pendente" | "aprovado" | "recusado" | "suspenso" | "desativado";
 };
 

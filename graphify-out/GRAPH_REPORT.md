@@ -1,28 +1,28 @@
-# Graph Report - site-oficial-dk  (2026-11-21)
+# Graph Report - site-oficial-dk  (2026-11-25)
 
 ## Corpus Check
-- 316 files · ~142,714 words
+- 321 files · ~144,749 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 14 file(s) not represented in the graph (top: .css 12, .example 1, (none) 1)
 
 ## Summary
-- 1979 nodes · 5232 edges · 104 communities (89 shown, 15 thin omitted)
+- 2007 nodes · 5328 edges · 100 communities (84 shown, 16 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 125 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c0b14d30`
+- Built from commit: `6f01faa9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- jsonApiFetch
+- NoteList.tsx
 - Login com Google (section 14)
 - AssessmentCreateForm.tsx
-- AttendancePanel.tsx
+- viewer.ts
 - package.json
 - swordplay/page.tsx
-- types.ts
+- membro/layout.tsx
 - Midias publicas
 - LogsViewer.tsx
 - SQL+docs: perfil, rank e acesso a documentos
@@ -31,91 +31,87 @@
 - isSameOriginRequest
 - PageHero
 - AdminDashboard.tsx
-- useToast
+- MediaSection.tsx
 - Row Level Security
 - Emblemas de build + docs
-- types.ts
+- jsonApiFetch
 - Registro e instrumentacao
-- ref_node_fs
+- relative-day.test.cjs
 - ProfileEditDialog.tsx
-- sections/CalendarSection.tsx
+- settings/route.ts
 - public
 - Realtime SSE
 - security-phrase.test.cjs
-- member-notes.ts
+- anotacoes/page.tsx
 - Configuracao do Site Oficial do DK (SETUP)
-- react
+- useToast
 - public.registration_rate_limits
-- [token]/route.ts
-- eventos/page.tsx
+- DocumentManager.tsx
+- AttendancePanel.tsx
 - Teste login Google
 - app/layout.tsx
 - createClient
 - Admin de avaliacoes (acoes)
-- Select
+- sections/CalendarSection.tsx
 - Home, robots e skeletons
 - Cards de jogos
 - Config TypeScript
 - steps
-- AssessmentRunner.tsx
+- types.ts
 - MembersSection
-- proxy.ts
+- components/CalendarSection.tsx
 - Teste de fluxo de perfil
 - assessments.ts
-- reset/route.ts
-- MemberQueue.tsx
+- AuthShell
+- AssessmentAdmin.tsx
 - Teste storage Instagram
 - ref_node_fs
-- createClient
+- MemberHomeView.tsx
 - instagram-apify.ts
 - Teste cofre de contas
 - Teste app-log
 - logs/route.ts
-- sobre/page.tsx
+- admin/layout.tsx
 - Teste mapas de jogos
 - Teste anotacoes
 - SQL: logs do app
 - Teste filtros de membros
 - Teste estilo do membro
 - Teste auth hardening e TypeScript
-- assessment-server.ts
-- public.user_admin_roles
-- site-nav.ts
+- attendance-share.test.cjs
+- 013_admin_authorization_hardening.sql
+- AssessmentCreateForm.tsx
 - Teste titulos Instagram
 - callback/route.ts
-- assessment-scoring.ts
+- email-templates-deploy.test.cjs
 - Teste senha
-- 015_graduation_tracks.sql
-- Teste datas relativas
+- Area do membro
 - ref_node_assert
 - [...path]/route.ts
 - SQL+doc: templates de conteudo
-- check-migrations.mjs
 - Loading admin
 - Loading login
 - SQL: zodiaco
 - account-email.test.cjs
 - graphify-agent-guard.js
 - Project instructions
-- email-templates-deploy.test.cjs
 - Insignia.tsx
-- public.member_notes
+- member-notes.ts
 - MembersSection.tsx
-- react-dom
+- [token]/route.ts
 - password-recovery.test.cjs
-- MemberHero.tsx
-- Avaliacoes e Simulados do DK
+- proxy.ts
 - build-emblem.test.cjs
-- https-redirect.test.cjs
-- ToastProvider.tsx
+- typescript
 - next.config.ts
 - 1. Texto em português
+- public.set_own_whatsapp
 
 ## God Nodes (most connected - your core abstractions)
-1. `next` - 99 edges
-2. `react` - 87 edges
-3. `public.profiles` - 76 edges
-4. `lucide-react` - 72 edges
+1. `next` - 100 edges
+2. `react` - 88 edges
+3. `public.profiles` - 77 edges
+4. `lucide-react` - 73 edges
 5. `createAdminClient()` - 47 edges
 6. `createClient()` - 44 edges
 7. `jsonApiFetch()` - 43 edges
@@ -128,12 +124,12 @@
   docs/AVALIACOES-E-SIMULADOS.md → supabase/migrations/009_assessment_module.sql
 - `Snapshot of questions in published assessments` --references--> `public.assessment_items`  [INFERRED]
   docs/AVALIACOES-E-SIMULADOS.md → supabase/migrations/009_assessment_module.sql
+- `Progressive document access (Bronze/Prata/Ouro, min rank)` --references--> `public.can_access_document()`  [INFERRED]
+  docs/TESTES-ACESSO.md → supabase/migrations/015_graduation_tracks.sql
 - `Gestor de Avaliacoes (role: Generais automatic; Major-Coronel by delegation)` --references--> `public.can_manage_assessments()`  [INFERRED]
   docs/AVALIACOES-E-SIMULADOS.md → supabase/migrations/009_assessment_module.sql
-- `Seguranca (convite, aprovacao, RLS, bucket privado)` --references--> `public.invites`  [INFERRED]
-  README.md → supabase/migrations/001_initial_schema.sql
-- `Seguranca (convite, aprovacao, RLS, bucket privado)` --references--> `public.documents`  [INFERRED]
-  README.md → supabase/migrations/001_initial_schema.sql
+- `Image-generation base prompt for emblems` --semantically_similar_to--> `Medalhoes de arquearia (bronze master + SVG filters for prata/ouro)`  [INFERRED] [semantically similar]
+  art/builds/LEIA-ME.md → docs/INSIGNIAS.md
 
 ## Import Cycles
 - None detected.
@@ -143,103 +139,103 @@
 - **Assessment module: definition, activation and acceptance testing** — docs_avaliacoes_e_simulados_avaliacoes_e_simulados, docs_setup_avaliacoes_simulados, docs_testes_acesso_testes_avaliacoes, docs_avaliacoes_e_simulados_gestor_de_avaliacoes, docs_avaliacoes_e_simulados_indicacao_individual [INFERRED 0.85]
 - **Private document access control (RLS, private bucket, progressive levels)** — readme_documentos_privados, docs_setup_documentos_pdfs, docs_setup_bucket_dk_documents, docs_testes_acesso_progressao_de_documentos, docs_testes_acesso_testes_pdfs [INFERRED 0.85]
 
-## Communities (104 total, 15 thin omitted)
+## Communities (100 total, 16 thin omitted)
 
-### Community 0 - "jsonApiFetch"
-Cohesion: 0.05
-Nodes (58): ForgotPasswordPage(), metadata, ForgotPasswordForm(), handleSubmit(), GoogleIcon(), LoginForm(), handleGoogle(), handleSubmit() (+50 more)
+### Community 0 - "NoteList.tsx"
+Cohesion: 0.13
+Nodes (19): fold(), NoteComposer(), submit(), call(), dayLabel(), formatDate(), NoteItem, NoteList() (+11 more)
 
 ### Community 1 - "Login com Google (section 14)"
-Cohesion: 0.15
-Nodes (15): Google Cloud OAuth Web client (Client ID/Secret), Como ativar o login com Google (guia rapido), Supabase Google provider (hosted or self-hosted), Supabase Site URL and Redirect URLs (/auth/callback), Orphan accounts without profile (14.7), Disable public sign-ups (14.5), .env.local keys (Supabase URL, publishable key, secret key, site URL), Delete Google-created account when no profile exists (/auth/callback) (+7 more)
+Cohesion: 0.09
+Nodes (26): Google Cloud OAuth Web client (Client ID/Secret), Como ativar o login com Google (guia rapido), Supabase Google provider (hosted or self-hosted), Supabase Site URL and Redirect URLs (/auth/callback), Orphan accounts without profile (14.7), Disable public sign-ups (14.5), .env.local keys (Supabase URL, publishable key, secret key, site URL), Delete Google-created account when no profile exists (/auth/callback) (+18 more)
 
 ### Community 2 - "AssessmentCreateForm.tsx"
-Cohesion: 0.10
-Nodes (20): AssessmentCreateForm(), goToPending(), setScopes(), submit(), toggleGroup(), toggleScope(), AssessmentPayload, BankMeter() (+12 more)
+Cohesion: 0.16
+Nodes (11): AssessmentCreateForm(), goToPending(), setScopes(), submit(), toggleGroup(), toggleScope(), BankMeter(), Field() (+3 more)
 
-### Community 3 - "AttendancePanel.tsx"
-Cohesion: 0.08
-Nodes (31): CalendarSection(), CalendarViews(), statusLabel, activityDateKey(), CalendarYearView(), eventTimes(), statusLabel, weekdays (+23 more)
+### Community 3 - "viewer.ts"
+Cohesion: 0.16
+Nodes (17): MemberPage(), metadata, UpcomingActivity, getMemberBadges, getNotesSettings, usesPasswordLogin(), readSecurityPhrase(), SECURITY_PHRASE_KEY (+9 more)
 
 ### Community 4 - "package.json"
 Cohesion: 0.06
-Nodes (41): dependencies, ffmpeg-static@^5.3.0, lucide-react@^0.468.0, next@16.4.6, pg@^8.23.1, react@^19.0.0, react-dom@^19.0.0, @supabase/supabase-js@^2.57.0 (+33 more)
+Nodes (40): dependencies, ffmpeg-static@^5.3.0, lucide-react@^0.468.0, next@16.4.6, pg@^8.23.1, react@^19.0.0, @supabase/supabase-js@^2.57.0, @tanstack/react-query@^5.104.3 (+32 more)
 
 ### Community 5 - "swordplay/page.tsx"
-Cohesion: 0.27
-Nodes (9): concepts, equipment, metadata, rules, GraduationIcon(), Icon(), IconProps, RoundShieldIcon() (+1 more)
+Cohesion: 0.25
+Nodes (9): GraduationIcon(), Icon(), IconProps, RoundShieldIcon(), SpearIcon(), activityLinks, legalLinks, NavIcon (+1 more)
 
-### Community 6 - "types.ts"
-Cohesion: 0.09
-Nodes (43): createInvite(), disableInvite(), defaultInstagramDateRange(), formFromPost(), MediaSection(), loadPostForm(), openEdit(), openNew() (+35 more)
+### Community 6 - "membro/layout.tsx"
+Cohesion: 0.15
+Nodes (18): metadata, PrivateLayout(), listeners, useStoredFlag(), Badges, MemberNav(), NavItem, MemberThemeContext (+10 more)
 
 ### Community 7 - "Midias publicas"
-Cohesion: 0.10
-Nodes (30): MediaPage(), metadata, revalidate, generateMetadata(), generateStaticParams(), loadPost, loadRelated, PostPage() (+22 more)
+Cohesion: 0.09
+Nodes (32): MediaPage(), metadata, revalidate, generateMetadata(), generateStaticParams(), loadPost, loadRelated, PostPage() (+24 more)
 
 ### Community 8 - "LogsViewer.tsx"
-Cohesion: 0.07
-Nodes (31): ActivityRow, AttendanceManager(), Correction, Entry, History, Member, readJson(), auditActionLabel (+23 more)
+Cohesion: 0.08
+Nodes (25): SelectField(), auditActionLabel, auditCategoryLabel, auditCategoryOptions, formatDate(), JsonBlock(), copy(), levelBadge (+17 more)
 
 ### Community 9 - "SQL+docs: perfil, rank e acesso a documentos"
-Cohesion: 0.13
-Nodes (26): activities_starts_at_idx, activities_updated_at, activity_attendance_activity_idx, activity_attendance_updated_at, documents_access_idx, documents_updated_at, games_updated_at, media_items_post_id_idx (+18 more)
+Cohesion: 0.08
+Nodes (31): Progressive document access (Bronze/Prata/Ouro, min rank), Seguranca (convite, aprovacao, RLS, bucket privado), activities_updated_at, activity_attendance_updated_at, documents_access_idx, documents_updated_at, games_updated_at, invites_code_idx (+23 more)
 
 ### Community 10 - "createAdminClient"
-Cohesion: 0.14
-Nodes (26): allRows(), GET(), PATCH(), DELETE(), PATCH(), POST(), runtime, GET() (+18 more)
+Cohesion: 0.12
+Nodes (30): allRows(), GET(), PATCH(), DELETE(), PATCH(), POST(), runtime, GET() (+22 more)
 
 ### Community 11 - "Troca de contas"
-Cohesion: 0.16
-Nodes (32): DELETE(), GET(), NO_STORE, NO_STORE, POST(), POST(), GET(), NO_STORE (+24 more)
+Cohesion: 0.13
+Nodes (36): DELETE(), GET(), NO_STORE, NO_STORE, POST(), GET(), NO_STORE, LoginPage() (+28 more)
 
 ### Community 12 - "isSameOriginRequest"
-Cohesion: 0.12
-Nodes (34): NO_STORE, POST(), NO_STORE, POST(), NO_STORE, POST(), POST(), fields (+26 more)
+Cohesion: 0.20
+Nodes (27): NO_STORE, POST(), NO_STORE, POST(), NO_STORE, POST(), NO_STORE, POST() (+19 more)
 
 ### Community 13 - "PageHero"
-Cohesion: 0.12
-Nodes (23): GraduationPage(), metadata, tiers, tracks, GamesPage(), metadata, dynamicParams, GamePage() (+15 more)
+Cohesion: 0.10
+Nodes (36): GraduationPage(), metadata, tiers, tracks, GamesPage(), metadata, dynamicParams, GamePage() (+28 more)
 
 ### Community 14 - "AdminDashboard.tsx"
 Cohesion: 0.12
-Nodes (26): AdminBottomBar(), priority, Sheet(), AdminDashboard(), AdminNav(), DashboardSnapshot, AdminData, AdminDataContext (+18 more)
+Nodes (27): AdminPage(), metadata, AdminBottomBar(), priority, Sheet(), AdminDashboard(), AdminNav(), DashboardSnapshot (+19 more)
 
-### Community 15 - "useToast"
-Cohesion: 0.09
-Nodes (20): ConfirmContext, ConfirmOptions, Pending, useConfirm(), FormSectionHead(), MediaGalleryManager(), rankOptions, saveNotes() (+12 more)
+### Community 15 - "MediaSection.tsx"
+Cohesion: 0.10
+Nodes (25): useConfirm(), FormSectionHead(), MediaGalleryManager(), defaultInstagramDateRange(), formFromPost(), MediaSection(), loadPostForm(), openEdit() (+17 more)
 
 ### Community 16 - "Row Level Security"
-Cohesion: 0.15
-Nodes (25): dynamic, GET(), assessment_answers_review_idx, assessment_answers_state_guard, assessment_answers_updated_at, assessment_assignments_member_idx, assessment_assignments_number, assessment_assignments_status_idx (+17 more)
+Cohesion: 0.13
+Nodes (29): POST(), shuffled(), dynamic, assessment_answers_review_idx, assessment_answers_state_guard, assessment_answers_updated_at, assessment_assignments_member_idx, assessment_assignments_number (+21 more)
 
 ### Community 17 - "Emblemas de build + docs"
-Cohesion: 0.09
-Nodes (28): Build emblem: arqueiro, Build emblem: dual, Build emblem: escudeiro, Build emblem: lanceiro, Build emblem: padrao (oni mask, fallback), Emblemas de build (fundo do cartao do membro), npm run prepare:emblems script, Image-generation base prompt for emblems (+20 more)
+Cohesion: 0.10
+Nodes (27): Build emblem: arqueiro, Build emblem: dual, Build emblem: escudeiro, Build emblem: lanceiro, Build emblem: padrao (oni mask, fallback), Emblemas de build (fundo do cartao do membro), npm run prepare:emblems script, Image-generation base prompt for emblems (+19 more)
 
-### Community 18 - "types.ts"
-Cohesion: 0.13
-Nodes (17): AdminTab, AssessmentAdminData, assessmentAdminQueryKey, emptyQuestion, MemberSummary, PendingReview, QuestionForm, ActivityTemplateData (+9 more)
+### Community 18 - "jsonApiFetch"
+Cohesion: 0.10
+Nodes (32): AuthInput(), PasswordInput(), GoogleIcon(), LoginForm(), handleGoogle(), handleSubmit(), empty, RegistrationForm() (+24 more)
 
 ### Community 19 - "Registro e instrumentacao"
-Cohesion: 0.13
-Nodes (22): POST(), readRegistrationBody(), onRequestError(), register(), drain(), enqueue(), flushLogs(), LogEntry (+14 more)
+Cohesion: 0.12
+Nodes (21): POST(), readRegistrationBody(), onRequestError(), register(), drain(), enqueue(), flushLogs(), LogEntry (+13 more)
 
-### Community 20 - "ref_node_fs"
+### Community 20 - "relative-day.test.cjs"
 Cohesion: 0.25
-Nodes (6): assert, fs, seo, { test }, ts, vm
+Nodes (7): assert, fs, moduleExports, now, { test }, ts, vm
 
 ### Community 21 - "ProfileEditDialog.tsx"
-Cohesion: 0.10
-Nodes (27): EditableProfile, EditMemberProfile(), openDialog(), submit(), AnswerBadge(), day(), MemberHomeView(), month() (+19 more)
+Cohesion: 0.11
+Nodes (26): ResetPasswordForm(), handleSubmit(), EditableProfile, EditMemberProfile(), openDialog(), submit(), countProfileChanges(), EMPTY_PASSWORD (+18 more)
 
-### Community 22 - "sections/CalendarSection.tsx"
-Cohesion: 0.16
-Nodes (22): useAdminData(), AdminTitle(), CalendarSection(), loadActivityForm(), openEdit(), openNew(), removeActivity(), saveActivity() (+14 more)
+### Community 22 - "settings/route.ts"
+Cohesion: 0.21
+Nodes (11): fields, GET(), NO_STORE, runtime, POST(), runtime, loadNotesSettings(), NotesSettings (+3 more)
 
 ### Community 23 - "public"
-Cohesion: 0.10
-Nodes (17): Profile completion with pending access-request approval (migration 011), Profile completion and rank-request test script, profiles_nickname_unique_idx, public.update_own_member_profile(), public.update_own_member_avatar(), public.update_own_member_profile_with_access_request(), public.check_registration_rate_limit(), public.update_own_member_profile_with_access_request() (+9 more)
+Cohesion: 0.07
+Nodes (20): Profile completion with pending access-request approval (migration 011), Profile completion and rank-request test script, profiles_nickname_unique_idx, public.update_own_member_profile(), public.update_own_member_avatar(), public.update_own_member_profile_with_access_request(), public.check_registration_rate_limit(), public.update_own_member_profile_with_access_request() (+12 more)
 
 ### Community 24 - "Realtime SSE"
 Cohesion: 0.13
@@ -249,57 +245,57 @@ Nodes (24): clientIp(), dynamic, encoder, GET(), cleanup(), send(), NO_STORE, ru
 Cohesion: 0.22
 Nodes (8): assert, fs, load(), phrase, route(), { test }, ts, vm
 
-### Community 26 - "member-notes.ts"
-Cohesion: 0.06
-Nodes (69): AdminLayout(), metadata, AdminPage(), metadata, NO_STORE, POST(), MemberNotesPage(), metadata (+61 more)
+### Community 26 - "anotacoes/page.tsx"
+Cohesion: 0.20
+Nodes (20): MemberNotesPage(), metadata, MemberActivitiesPage(), metadata, MemberDocumentsPage(), metadata, formatDate(), MemberAssessmentsPage() (+12 more)
 
 ### Community 27 - "Configuracao do Site Oficial do DK (SETUP)"
-Cohesion: 0.14
-Nodes (19): Member birthdays calendar (migration 008), Private bucket dk-documents with temporary links, Content templates for posts and activities (migration 021), Documentos e PDFs internos (progressive access), Validation order (18 steps), Presenca nas atividades (/membro/atividades), Configuracao do Site Oficial do DK (SETUP), Supabase project creation (+11 more)
+Cohesion: 0.13
+Nodes (26): POST(), Activation: migrations 009 and 010 plus three Supabase env vars, Audit history of assessment actions, Avaliacoes e Simulados do DK, Gestor de Avaliacoes (role: Generais automatic; Major-Coronel by delegation), Selecao manual de questoes, Sorteio individual por filtro (frozen random set per indication), Member birthdays calendar (migration 008) (+18 more)
 
-### Community 28 - "react"
-Cohesion: 0.09
-Nodes (19): AdminDialog(), accessLabel(), DocumentManager(), renderJoin(), renderRules(), newRule(), ruleLabel(), RulesState (+11 more)
+### Community 28 - "useToast"
+Cohesion: 0.08
+Nodes (35): useAdminData(), AdminTitle(), ActivityRow, AttendanceManager(), Correction, Entry, History, Member (+27 more)
 
 ### Community 29 - "public.registration_rate_limits"
-Cohesion: 0.19
-Nodes (9): invites_code_idx, public.invites, public.check_registration_rate_limit(), public.consume_registration_invite(), public.registration_rate_limits, public.release_registration_invite(), registration_rate_limits_window_idx, public.check_registration_rate_limit() (+1 more)
+Cohesion: 0.24
+Nodes (6): public.check_registration_rate_limit(), public.consume_registration_invite(), public.registration_rate_limits, registration_rate_limits_window_idx, public.check_registration_rate_limit(), public.check_registration_rate_limit()
 
-### Community 30 - "[token]/route.ts"
-Cohesion: 0.35
-Nodes (10): CandidateContext, candidatePayload(), expireOrSubmitIfNeeded(), GET(), getContext(), getDeadline(), PATCH(), POST() (+2 more)
+### Community 30 - "DocumentManager.tsx"
+Cohesion: 0.08
+Nodes (22): AdminDialog(), ConfirmContext, ConfirmOptions, Pending, accessLabel(), DocumentManager(), renderJoin(), renderRules() (+14 more)
 
-### Community 31 - "eventos/page.tsx"
-Cohesion: 0.12
-Nodes (15): generateMetadata(), anchors, EventKind, externalEvents, hostedOptions, internalEvents, metadata, metadata (+7 more)
+### Community 31 - "AttendancePanel.tsx"
+Cohesion: 0.15
+Nodes (20): AttendanceInsignias(), AttendancePanel(), copyList(), listText(), shareOnWhatsApp(), Filter, filterLabels, isActivityClosed() (+12 more)
 
 ### Community 32 - "Teste login Google"
 Cohesion: 0.11
 Nodes (17): alreadyActive, approvedByPassword, assert, availability(), callback(), decide(), envOk, fs (+9 more)
 
 ### Community 33 - "app/layout.tsx"
-Cohesion: 0.10
-Nodes (10): cinzel, inter, metadata, RootLayout(), Footer(), InsigniaColorFilters(), QueryActivityFeedback(), QueryProvider() (+2 more)
+Cohesion: 0.08
+Nodes (18): cinzel, inter, metadata, RootLayout(), AboutPage(), metadata, steps, values (+10 more)
 
 ### Community 34 - "createClient"
-Cohesion: 0.21
-Nodes (5): AvatarCropper(), MemberAvatar(), changePhoto(), removePhoto(), createClient()
+Cohesion: 0.15
+Nodes (8): AvatarCropper(), Point, MemberAvatar(), changePhoto(), removePhoto(), createClient(), react-dom@^19.0.0, react-dom
 
 ### Community 35 - "Admin de avaliacoes (acoes)"
-Cohesion: 0.15
+Cohesion: 0.16
 Nodes (17): AssessmentAdmin(), applyAssignmentChange(), assignmentUrl(), changeAssignment(), copyAssignmentLink(), createAssessment(), deactivateQuestion(), reviewAnswer() (+9 more)
 
-### Community 36 - "Select"
-Cohesion: 0.20
-Nodes (9): TemplateBar(), closeDialog(), rename(), saveNew(), updateApplied(), Select(), handleKeyDown(), openMenu() (+1 more)
+### Community 36 - "sections/CalendarSection.tsx"
+Cohesion: 0.08
+Nodes (43): CalendarSection(), loadActivityForm(), openEdit(), openNew(), saveActivity(), endOf(), monthLabel(), Period (+35 more)
 
 ### Community 37 - "Home, robots e skeletons"
-Cohesion: 0.12
-Nodes (18): metadata, HomePage(), metadata, portals, virtues, JSON-LD (organization, Article, BreadcrumbList), lib/seo.ts (canonical domain death-knights.com.br), Post-publication SEO checklist (Search Console, Lighthouse) (+10 more)
+Cohesion: 0.09
+Nodes (24): HomePage(), metadata, portals, virtues, metadata, PrivacyPage(), revalidate, metadata (+16 more)
 
 ### Community 38 - "Cards de jogos"
-Cohesion: 0.16
-Nodes (13): GameCard(), GameDialog(), GameView, noopSubscribe(), categories, Filter, GameCatalogMetadata, gameCatalogMetadata (+5 more)
+Cohesion: 0.14
+Nodes (15): GameCard(), GameDialog(), GameView, noopSubscribe(), catalog, categories, Filter, GameCatalogMetadata (+7 more)
 
 ### Community 39 - "Config TypeScript"
 Cohesion: 0.11
@@ -309,48 +305,48 @@ Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 Cohesion: 0.12
 Nodes (15): Future deployment (env vars, lint, build), runs-on, steps, jobs, build, name, on, pull_request (+7 more)
 
-### Community 41 - "AssessmentRunner.tsx"
-Cohesion: 0.13
-Nodes (17): AssessmentPayload, AssessmentRunnerLoaded(), formatRemaining(), SafeQuestion, SavedAnswer, assessmentAssignmentStatusLabels, assessmentDifficultyOptions, assessmentQuestionTypeOptions (+9 more)
+### Community 41 - "types.ts"
+Cohesion: 0.14
+Nodes (12): AssessmentPayload, AssessmentRunnerLoaded(), formatRemaining(), SafeQuestion, SavedAnswer, assessmentAssignmentStatusLabels, assessmentTrackOptions, rankShortLabels (+4 more)
 
 ### Community 42 - "MembersSection"
-Cohesion: 0.13
-Nodes (17): Chip(), Medal(), MemberFilters(), optionLabel(), MembersSection(), canEditAccess(), canManageMember(), decideRegistration() (+9 more)
+Cohesion: 0.19
+Nodes (15): removeActivity(), MembersSection(), canEditAccess(), canManageMember(), decideRegistration(), deleteMember(), editMember(), isOtherPrincipal() (+7 more)
 
-### Community 43 - "proxy.ts"
-Cohesion: 0.43
-Nodes (6): updateSession(), canonicalHost, cloudflareVisitorScheme(), config, httpsRedirect(), proxy()
+### Community 43 - "components/CalendarSection.tsx"
+Cohesion: 0.24
+Nodes (14): CalendarSection(), CalendarViews(), statusLabel, activityDateKey(), CalendarYearView(), eventTimes(), statusLabel, weekdays (+6 more)
 
 ### Community 44 - "Teste de fluxo de perfil"
 Cohesion: 0.16
 Nodes (15): accessOptions, account, apiGuard, approve(), assert, fs, loadRoute(), nextServer (+7 more)
 
 ### Community 45 - "assessments.ts"
-Cohesion: 0.22
-Nodes (15): POST(), POST(), Classificacao das questoes (manual, tipo, area, dificuldade), optionalText(), validateAssessmentDefinition(), validateAssessmentQuestion(), ValidationResult, isAssessmentDifficulty() (+7 more)
+Cohesion: 0.20
+Nodes (18): POST(), POST(), Classificacao das questoes (manual, tipo, area, dificuldade), optionalText(), validateAssessmentDefinition(), validateAssessmentQuestion(), ValidationResult, assessmentSelectionModeOptions (+10 more)
 
-### Community 46 - "reset/route.ts"
-Cohesion: 0.11
-Nodes (20): NO_STORE, POST(), metadata, RegisterPage(), metadata, ResetPasswordPage(), AuthShell(), ResetPasswordForm() (+12 more)
+### Community 46 - "AuthShell"
+Cohesion: 0.16
+Nodes (9): metadata, RegisterPage(), ForgotPasswordPage(), metadata, AuthShell(), authTabs, ForgotPasswordForm(), handleSubmit() (+1 more)
 
-### Community 47 - "MemberQueue.tsx"
+### Community 47 - "AssessmentAdmin.tsx"
 Cohesion: 0.14
-Nodes (15): adjustmentsOf(), commanderOptions, Draft, levelOptions, MemberQueue(), startAdjust(), Props, rankOptions (+7 more)
+Nodes (13): AdminTab, AssessmentAdminData, assessmentAdminQueryKey, emptyQuestion, MemberSummary, PendingReview, QuestionForm, assessmentQuestionTypeOptions (+5 more)
 
 ### Community 48 - "Teste storage Instagram"
-Cohesion: 0.18
+Cohesion: 0.17
 Nodes (9): assert, { createHash }, fixture(), fs, load(), post, { test }, ts (+1 more)
 
 ### Community 49 - "ref_node_fs"
 Cohesion: 0.11
 Nodes (13): apply, body, dir, subjects, outDir, templates, assert, fs (+5 more)
 
-### Community 50 - "createClient"
-Cohesion: 0.20
-Nodes (12): POST(), LoginPage(), metadata, POST(), loginErrorMessage(), googleEnabledFromSettings(), isGoogleLoginAvailable(), SUPABASE_COOKIE_OPTIONS (+4 more)
+### Community 50 - "MemberHomeView.tsx"
+Cohesion: 0.21
+Nodes (13): AnswerBadge(), day(), MemberHomeView(), month(), time(), TrackGroup(), normalizeBuildName(), houseFor() (+5 more)
 
 ### Community 51 - "instagram-apify.ts"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (37): GET(), isDateOnly(), maxDuration, POST(), runSync(), runtime, CRON_SECRET scheduled sync endpoint /api/admin/instagram/sync, FFmpeg video compression (50-250 MB to MP4 H.264/AAC) (+29 more)
 
 ### Community 52 - "Teste cofre de contas"
@@ -365,9 +361,9 @@ Nodes (10): assert, clientIp, fs, load(), loadAppLog(), loadLogsRoute(), sanitiz
 Cohesion: 0.24
 Nodes (9): FeedRow, GET(), LEVELS, NO_STORE, PERIODS, safeSearch(), SECTIONS, SERVER_SOURCES (+1 more)
 
-### Community 55 - "sobre/page.tsx"
-Cohesion: 0.25
-Nodes (7): AboutPage(), metadata, steps, values, CalendarSkeleton(), SectionHeading(), WhatsAppIcon()
+### Community 55 - "admin/layout.tsx"
+Cohesion: 0.22
+Nodes (7): AdminLayout(), metadata, metadata, AdminProviders(), ConfirmProvider(), ToastProvider(), privateRobots
 
 ### Community 56 - "Teste mapas de jogos"
 Cohesion: 0.18
@@ -378,8 +374,8 @@ Cohesion: 0.18
 Nodes (7): access, assert, fs, notes, { test }, ts, vm
 
 ### Community 58 - "SQL: logs do app"
-Cohesion: 0.26
-Nodes (12): assessment_audit_created_idx, public.assessment_audit_log, app_logs_category_idx, app_logs_created_at_idx, app_logs_level_idx, assessment_audit_log_created_at_idx, audit_log_viewer_permissions, public.app_logs (+4 more)
+Cohesion: 0.36
+Nodes (9): app_logs_category_idx, app_logs_created_at_idx, app_logs_level_idx, audit_log_viewer_permissions, public.app_logs, public.can_view_logs(), public.log_feed, public.log_viewer_permissions (+1 more)
 
 ### Community 59 - "Teste filtros de membros"
 Cohesion: 0.20
@@ -391,107 +387,87 @@ Nodes (8): assert, fs, load(), route(), style, { test }, ts, vm
 
 ### Community 61 - "Teste auth hardening e TypeScript"
 Cohesion: 0.13
-Nodes (11): assert, fs, { test }, ts, vm, assert, fs, moduleExports (+3 more)
+Nodes (11): assert, fs, { test }, ts, vm, assert, exportsMap, fs (+3 more)
 
-### Community 62 - "assessment-server.ts"
-Cohesion: 0.26
-Nodes (10): POST(), shuffled(), POST(), DELETE(), PATCH(), AssessmentActor, getApprovedAssessmentActor(), requireAssessmentManager() (+2 more)
+### Community 62 - "attendance-share.test.cjs"
+Cohesion: 0.18
+Nodes (9): activity, assert, { attendanceTally, buildShareText, whatsappShareUrl }, fs, { normalizeWhatsapp, maskPhone, phoneFieldValue }, roster, { test }, ts (+1 more)
 
-### Community 63 - "public.user_admin_roles"
-Cohesion: 0.31
-Nodes (13): Admin roles: principal, midias, atividades, membros, Bootstrap first ADM Principal via SQL, Four ADM levels action matrix, CMS (papeis de ADM), public.has_admin_role(), public.user_admin_roles, admin_audit_log_occurred_at_idx, admin_audit_log_target_idx (+5 more)
+### Community 63 - "013_admin_authorization_hardening.sql"
+Cohesion: 0.52
+Nodes (6): admin_audit_log_occurred_at_idx, admin_audit_log_target_idx, audit_invites, audit_user_admin_roles, public.admin_audit_log, public.log_admin_audit()
 
-### Community 64 - "site-nav.ts"
-Cohesion: 0.19
-Nodes (10): motto, activityLinks, footerColumns, legalLinks, mainLinks, NavIcon, NavLink, formatBuildDate() (+2 more)
+### Community 64 - "AssessmentCreateForm.tsx"
+Cohesion: 0.15
+Nodes (11): AssessmentPayload, emptyForm, FormState, Segmented(), SegmentedOption, STEP_TITLES, assessmentDifficultyOptions, assessmentQuestionCountOptions (+3 more)
 
 ### Community 65 - "Teste titulos Instagram"
 Cohesion: 0.22
 Nodes (7): assert, { buildInstagramTitle, isLegacyInstagramTitle, normalizeInstagramPost }, fs, photo, { test }, ts, vm
 
 ### Community 66 - "callback/route.ts"
-Cohesion: 0.16
-Nodes (19): backToLogin(), GET(), giveBack(), relativeRedirect(), ActiveSnapshot, callbackFailureCode(), decideGoogleLogin(), GoogleAccount (+11 more)
+Cohesion: 0.10
+Nodes (29): metadata, ResetPasswordPage(), backToLogin(), GET(), giveBack(), relativeRedirect(), ActiveSnapshot, callbackFailureCode() (+21 more)
 
-### Community 67 - "assessment-scoring.ts"
-Cohesion: 0.29
-Nodes (8): PATCH(), POST(), AssessmentAdmin, AssignmentItemLink, loadAssignmentItems(), AssessmentAdmin, recalculateAssessmentResult(), submitAssessmentAttempt()
+### Community 67 - "email-templates-deploy.test.cjs"
+Cohesion: 0.15
+Nodes (8): assert, fs, os, path, python, { spawnSync }, subjects, { test }
 
 ### Community 68 - "Teste senha"
 Cohesion: 0.25
 Nodes (8): assert, fs, load(), setup(), { test }, ts, { validatePasswordChange }, vm
 
-### Community 69 - "015_graduation_tracks.sql"
-Cohesion: 0.12
-Nodes (7): Progressive document access (Bronze/Prata/Ouro, min rank), public.can_access_document(), public.can_access_document(), public.can_access_document(), profiles_sync_graduations, public.can_access_document(), public.sync_profile_graduations()
-
-### Community 70 - "Teste datas relativas"
-Cohesion: 0.15
-Nodes (11): typescript, fs, path, ts, assert, fs, moduleExports, now (+3 more)
+### Community 69 - "Area do membro"
+Cohesion: 0.29
+Nodes (7): Presenca nas atividades (/membro/atividades), Attendance test script, Area do membro, Cadastro por convite com aprovacao administrativa, Documentos e PDFs privados por nivel de acesso, Patentes (Recruta a General de Exercito) e graduacoes Bronze/Prata/Ouro, Confirmacao de presenca em atividades e lista para WhatsApp
 
 ### Community 71 - "ref_node_assert"
 Cohesion: 0.09
-Nodes (19): assert, fs, subjects, { test }, assert, exportsMap, fs, { test } (+11 more)
+Nodes (19): assert, fs, subjects, { test }, assert, fs, moduleExports, { test } (+11 more)
 
 ### Community 72 - "[...path]/route.ts"
-Cohesion: 0.18
-Nodes (11): ALLOWED_PREFIXES, DELETE, GET, handle(), HEAD, PATCH, POST, PUT (+3 more)
+Cohesion: 0.12
+Nodes (15): ALLOWED_PREFIXES, DELETE, GET, HEAD, PATCH, POST, PUT, STRIPPED_REQUEST_HEADERS (+7 more)
 
 ### Community 73 - "SQL+doc: templates de conteudo"
 Cohesion: 0.36
 Nodes (5): content_templates_kind_name_key, content_templates_updated_at, public.content_templates, public.sync_profile_email(), sync_profile_email
 
-### Community 74 - "check-migrations.mjs"
-Cohesion: 0.24
-Nodes (11): Ordered migrations 001-012 applied manually in SQL Editor, byPrefix, duplicates, isKnown(), known, KNOWN_DUPLICATES, migrationsDir, unexpected (+3 more)
-
 ### Community 82 - "account-email.test.cjs"
 Cohesion: 0.22
 Nodes (8): assert, fs, load(), recovery, setup(), { test }, ts, vm
 
-### Community 91 - "email-templates-deploy.test.cjs"
-Cohesion: 0.18
-Nodes (8): assert, fs, os, path, python, { spawnSync }, subjects, { test }
-
 ### Community 92 - "Insignia.tsx"
-Cohesion: 0.19
-Nodes (17): GraduationInsignia(), Insignia(), Variant, InsigniaBadge(), trackNames, lib/insignias.ts catalog, components/member/Insignia.tsx and app/insignias.css, Icones de patentes, graduacoes e builds (insignias) (+9 more)
+Cohesion: 0.13
+Nodes (28): BuildInsignia(), GraduationInsignia(), GraduationInsignias(), Insignia(), Variant, InsigniaBadge(), MemberHero(), MemberInsignias() (+20 more)
 
-### Community 93 - "public.member_notes"
-Cohesion: 0.10
-Nodes (24): Context, DELETE(), fail(), loadNote(), PATCH(), runtime, denied(), POST() (+16 more)
+### Community 93 - "member-notes.ts"
+Cohesion: 0.06
+Nodes (45): Context, DELETE(), fail(), loadNote(), PATCH(), runtime, denied(), POST() (+37 more)
 
 ### Community 94 - "MembersSection.tsx"
-Cohesion: 0.11
-Nodes (34): Props, MemberAccessForm, MemberStatusFilter, statusFilters, ChipOption, HeaderAccount, adminRoleOptions, documentAudienceOptions (+26 more)
+Cohesion: 0.06
+Nodes (51): Chip(), Medal(), MemberFilters(), optionLabel(), Props, adjustmentsOf(), commanderOptions, Draft (+43 more)
 
-### Community 95 - "react-dom"
-Cohesion: 0.40
-Nodes (3): GalleryItem, MediaGallery(), noopSubscribe()
+### Community 95 - "[token]/route.ts"
+Cohesion: 0.13
+Nodes (25): PATCH(), DELETE(), PATCH(), POST(), GET(), CandidateContext, candidatePayload(), expireOrSubmitIfNeeded() (+17 more)
 
 ### Community 96 - "password-recovery.test.cjs"
 Cohesion: 0.18
 Nodes (13): assert, fs, load(), now, recovery, requestRoute(), resetRoute(), run() (+5 more)
 
-### Community 97 - "MemberHero.tsx"
-Cohesion: 0.29
-Nodes (12): AttendanceInsignias(), BirthdayBadge(), BuildInsignia(), GraduationInsignias(), RankInsignia(), MemberHero(), MemberInsignias(), MemberStyleToggle() (+4 more)
-
-### Community 98 - "Avaliacoes e Simulados do DK"
-Cohesion: 0.31
-Nodes (9): Activation: migrations 009 and 010 plus three Supabase env vars, Audit history of assessment actions, Avaliacoes e Simulados do DK, Gestor de Avaliacoes (role: Generais automatic; Major-Coronel by delegation), Selecao manual de questoes, Sorteio individual por filtro (frozen random set per indication), Avaliacoes e simulados setup (migrations 009/010), Assessment test script (18 steps) (+1 more)
+### Community 98 - "proxy.ts"
+Cohesion: 0.43
+Nodes (6): updateSession(), canonicalHost, cloudflareVisitorScheme(), config, httpsRedirect(), proxy()
 
 ### Community 99 - "build-emblem.test.cjs"
 Cohesion: 0.22
 Nodes (7): assert, fs, { getBuildKey, getBuildIcon, buildOptions, normalizeBuildName }, { test }, ts, vm, { wreathLeaves, leafTip, leafPath, wreathStemPath, defaultWreath }
 
-### Community 100 - "https-redirect.test.cjs"
-Cohesion: 0.22
-Nodes (6): assert, fs, SITE, { test }, ts, vm
-
-### Community 101 - "ToastProvider.tsx"
-Cohesion: 0.25
-Nodes (7): icons, lifetime, ToastAction, ToastApi, ToastContext, ToastItem, ToastKind
+### Community 100 - "typescript"
+Cohesion: 0.09
+Nodes (16): typescript, fs, path, ts, assert, fs, SITE, { test } (+8 more)
 
 ### Community 104 - "next.config.ts"
 Cohesion: 0.40
@@ -503,23 +479,23 @@ Nodes (7): 1. Texto em português, 2. Assinatura: SPF, DKIM e DMARC, 3. Frase de
 
 ## Knowledge Gaps
 - **5 isolated node(s):** `Test cleanup`, `Member birthdays calendar (migration 008)`, `Content templates for posts and activities (migration 021)`, `Supabase project creation`, `Post-publication SEO checklist (Search Console, Lighthouse)`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 700 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 714 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `reset/route.ts` to `jsonApiFetch`, `AttendancePanel.tsx`, `package.json`, `Midias publicas`, `createAdminClient`, `Troca de contas`, `isSameOriginRequest`, `PageHero`, `AdminDashboard.tsx`, `Row Level Security`, `Registro e instrumentacao`, `ProfileEditDialog.tsx`, `member-notes.ts`, `[token]/route.ts`, `eventos/page.tsx`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `AssessmentRunner.tsx`, `proxy.ts`, `assessments.ts`, `MemberQueue.tsx`, `createClient`, `instagram-apify.ts`, `logs/route.ts`, `assessment-server.ts`, `site-nav.ts`, `assessment-scoring.ts`, `[...path]/route.ts`, `Insignia.tsx`, `public.member_notes`, `MembersSection.tsx`, `next.config.ts`?**
-  _High betweenness centrality (0.216) - this node is a cross-community bridge._
+- **Why does `next` connect `AuthShell` to `NoteList.tsx`, `viewer.ts`, `package.json`, `membro/layout.tsx`, `Midias publicas`, `createAdminClient`, `Troca de contas`, `isSameOriginRequest`, `PageHero`, `AdminDashboard.tsx`, `Row Level Security`, `jsonApiFetch`, `Registro e instrumentacao`, `ProfileEditDialog.tsx`, `settings/route.ts`, `anotacoes/page.tsx`, `Configuracao do Site Oficial do DK (SETUP)`, `useToast`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `types.ts`, `components/CalendarSection.tsx`, `assessments.ts`, `MemberHomeView.tsx`, `instagram-apify.ts`, `logs/route.ts`, `admin/layout.tsx`, `callback/route.ts`, `[...path]/route.ts`, `Insignia.tsx`, `member-notes.ts`, `MembersSection.tsx`, `[token]/route.ts`, `proxy.ts`, `next.config.ts`?**
+  _High betweenness centrality (0.199) - this node is a cross-community bridge._
 - **What connects `Test cleanup`, `Member birthdays calendar (migration 008)`, `Content templates for posts and activities (migration 021)` to the rest of the system?**
   _5 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `jsonApiFetch` be split into smaller, more focused modules?**
-  _Cohesion score 0.050239234449760764 - nodes in this community are weakly interconnected._
-- **Why does `react` connect `react` to `jsonApiFetch`, `AssessmentCreateForm.tsx`, `AttendancePanel.tsx`, `package.json`, `swordplay/page.tsx`, `types.ts`, `Midias publicas`, `LogsViewer.tsx`, `PageHero`, `AdminDashboard.tsx`, `useToast`, `Emblemas de build + docs`, `types.ts`, `ProfileEditDialog.tsx`, `sections/CalendarSection.tsx`, `member-notes.ts`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `AssessmentRunner.tsx`, `reset/route.ts`, `MemberQueue.tsx`, `sobre/page.tsx`, `site-nav.ts`, `Insignia.tsx`, `MembersSection.tsx`, `react-dom`, `MemberHero.tsx`, `ToastProvider.tsx`?**
-  _High betweenness centrality (0.149) - this node is a cross-community bridge._
-- **Should `AssessmentCreateForm.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10461538461538461 - nodes in this community are weakly interconnected._
-- **Why does `typescript` connect `Teste datas relativas` to `package.json`, `ref_node_fs`, `security-phrase.test.cjs`, `Teste login Google`, `Teste de fluxo de perfil`, `Teste storage Instagram`, `ref_node_fs`, `Teste cofre de contas`, `Teste app-log`, `Teste mapas de jogos`, `Teste anotacoes`, `Teste filtros de membros`, `Teste estilo do membro`, `Teste auth hardening e TypeScript`, `Teste titulos Instagram`, `Teste senha`, `ref_node_assert`, `account-email.test.cjs`, `password-recovery.test.cjs`, `build-emblem.test.cjs`, `https-redirect.test.cjs`?**
-  _High betweenness centrality (0.144) - this node is a cross-community bridge._
-- **Should `AttendancePanel.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.08414634146341464 - nodes in this community are weakly interconnected._
+- **Should `NoteList.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.12923076923076923 - nodes in this community are weakly interconnected._
+- **Why does `react` connect `useToast` to `NoteList.tsx`, `viewer.ts`, `package.json`, `swordplay/page.tsx`, `membro/layout.tsx`, `Midias publicas`, `LogsViewer.tsx`, `PageHero`, `AdminDashboard.tsx`, `MediaSection.tsx`, `Emblemas de build + docs`, `jsonApiFetch`, `ProfileEditDialog.tsx`, `anotacoes/page.tsx`, `DocumentManager.tsx`, `AttendancePanel.tsx`, `createClient`, `sections/CalendarSection.tsx`, `Home, robots e skeletons`, `Cards de jogos`, `types.ts`, `components/CalendarSection.tsx`, `AuthShell`, `AssessmentAdmin.tsx`, `MemberHomeView.tsx`, `admin/layout.tsx`, `AssessmentCreateForm.tsx`, `Insignia.tsx`, `MembersSection.tsx`?**
+  _High betweenness centrality (0.147) - this node is a cross-community bridge._
+- **Should `Login com Google (section 14)` be split into smaller, more focused modules?**
+  _Cohesion score 0.09247311827956989 - nodes in this community are weakly interconnected._
+- **Why does `typescript` connect `typescript` to `package.json`, `relative-day.test.cjs`, `security-phrase.test.cjs`, `Teste login Google`, `Teste de fluxo de perfil`, `Teste storage Instagram`, `ref_node_fs`, `Teste cofre de contas`, `Teste app-log`, `Teste mapas de jogos`, `Teste anotacoes`, `Teste filtros de membros`, `Teste estilo do membro`, `Teste auth hardening e TypeScript`, `attendance-share.test.cjs`, `Teste titulos Instagram`, `Teste senha`, `ref_node_assert`, `account-email.test.cjs`, `password-recovery.test.cjs`, `build-emblem.test.cjs`?**
+  _High betweenness centrality (0.139) - this node is a cross-community bridge._
+- **Should `package.json` be split into smaller, more focused modules?**
+  _Cohesion score 0.05813953488372093 - nodes in this community are weakly interconnected._

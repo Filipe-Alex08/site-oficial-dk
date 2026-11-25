@@ -394,9 +394,20 @@ body:has(.member-shell) .site-footer { display: none; }
 .m-activity-title p { display: grid; gap: 2px; margin-top: 4px; color: var(--text-muted); font-size: var(--fs-sm); }
 .m-activity-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .m-activity-tags > span:first-child { color: var(--accent-bright); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.m-activity-count { display: grid; flex: 0 0 auto; justify-items: center; min-width: 64px; padding: var(--space-2) var(--space-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); }
-.m-activity-count strong { font-size: 1.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.m-activity-count small { margin-top: 4px; color: var(--text-muted); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; }
+/* Placar: vão, não vão e sem resposta, com a proporção numa barra fina. */
+.m-tally { display: grid; gap: var(--space-2); margin: 0 var(--space-5) var(--space-4); padding: var(--space-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); }
+.m-tally ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.m-tally li { --kind: var(--text); display: flex; flex-wrap: wrap; align-content: start; align-items: baseline; justify-content: center; gap: 0 6px; min-width: 0; padding-inline: var(--space-1); text-align: center; }
+.m-tally li + li { border-left: 1px solid var(--border); }
+.m-tally li[data-kind="going"] { --kind: var(--ok); }
+.m-tally li[data-kind="absent"] { --kind: var(--danger); }
+.m-tally strong { color: var(--kind); font-size: 1.4rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.m-tally span { color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; }
+.m-tally small { flex-basis: 100%; color: var(--text-subtle); font-size: var(--fs-xs); }
+.m-tally-bar { display: flex; gap: 2px; height: 6px; overflow: hidden; background: var(--surface-3); border-radius: 999px; }
+.m-tally-bar i { flex-basis: 0; background: var(--border-strong); transition: flex-grow var(--dur-2) var(--ease-out); }
+.m-tally-bar i[data-kind="going"] { background: var(--ok); }
+.m-tally-bar i[data-kind="absent"] { background: var(--danger); }
 
 .m-answer { display: grid; gap: var(--space-3); padding: 0 var(--space-5) var(--space-5); }
 .m-activity-note { margin: 0; padding: var(--space-3) var(--space-4); color: var(--text-muted); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--fs-sm); }
@@ -431,7 +442,7 @@ body:has(.member-shell) .site-footer { display: none; }
 .m-answer-fields .field { margin: 0; }
 .m-answer .text-button { justify-self: start; }
 
-.m-lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+.m-lists { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); }
 .m-lists details { padding: var(--space-2) var(--space-5) var(--space-3); }
 .m-lists details + details { border-left: 1px solid var(--border); }
 .m-lists summary { color: var(--text); }
@@ -445,12 +456,16 @@ body:has(.member-shell) .site-footer { display: none; }
 @media (max-width: 620px) {
   .m-activity > header, .m-answer { padding-inline: var(--space-4); }
   .m-activity > header { padding-top: var(--space-4); }
-  .m-activity-count { min-width: 56px; }
   .m-answer-fields { grid-template-columns: minmax(0, 1fr); }
+  .m-tally { margin-inline: var(--space-4); }
+  .m-tally li { flex-direction: column; flex-wrap: nowrap; align-items: center; justify-content: flex-start; }
+  .m-tally small { flex-basis: auto; }
+  .m-activity > footer { padding-inline: var(--space-4); }
+}
+@media (max-width: 820px) {
   .m-lists { grid-template-columns: minmax(0, 1fr); }
   .m-lists details { padding-inline: var(--space-4); }
   .m-lists details + details { border-top: 1px solid var(--border); border-left: 0; }
-  .m-activity > footer { padding-inline: var(--space-4); }
 }
 
 /* ---------- Fundo das atividades: estandarte ----------

@@ -45,6 +45,7 @@ export default async function LoginPage({
       title={adding && activeId ? "Adicionar conta" : "Entrar"}
       description={adding && activeId ? `Você continua conectado como ${activeName}. Entre com outra conta para alternar entre elas.` : undefined}
       notice={notice}
+      tabs={adding && activeId ? undefined : "login"}
     >
       {saved.length > 0 && <SavedAccounts accounts={saved} />}
       <LoginForm googleAvailable={googleAvailable} addingAccount={adding && Boolean(activeId)} />

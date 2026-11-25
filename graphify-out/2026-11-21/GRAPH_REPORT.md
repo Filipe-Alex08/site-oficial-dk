@@ -1,7 +1,7 @@
 # Graph Report - site-oficial-dk  (2026-11-21)
 
 ## Corpus Check
-- 316 files · ~142,720 words
+- 316 files · ~142,714 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 14 file(s) not represented in the graph (top: .css 12, .example 1, (none) 1)
 
@@ -130,9 +130,9 @@
   docs/AVALIACOES-E-SIMULADOS.md → supabase/migrations/009_assessment_module.sql
 - `Gestor de Avaliacoes (role: Generais automatic; Major-Coronel by delegation)` --references--> `public.can_manage_assessments()`  [INFERRED]
   docs/AVALIACOES-E-SIMULADOS.md → supabase/migrations/009_assessment_module.sql
-- `Seguranca (convite, aprovacao, RLS, bucket privado)` --references--> `public.documents`  [INFERRED]
-  README.md → supabase/migrations/001_initial_schema.sql
 - `Seguranca (convite, aprovacao, RLS, bucket privado)` --references--> `public.invites`  [INFERRED]
+  README.md → supabase/migrations/001_initial_schema.sql
+- `Seguranca (convite, aprovacao, RLS, bucket privado)` --references--> `public.documents`  [INFERRED]
   README.md → supabase/migrations/001_initial_schema.sql
 
 ## Import Cycles
@@ -510,16 +510,16 @@ Nodes (7): 1. Texto em português, 2. Assinatura: SPF, DKIM e DMARC, 3. Frase de
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `reset/route.ts` to `jsonApiFetch`, `AttendancePanel.tsx`, `package.json`, `Midias publicas`, `createAdminClient`, `Troca de contas`, `isSameOriginRequest`, `PageHero`, `AdminDashboard.tsx`, `Row Level Security`, `Registro e instrumentacao`, `ProfileEditDialog.tsx`, `member-notes.ts`, `[token]/route.ts`, `eventos/page.tsx`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `AssessmentRunner.tsx`, `proxy.ts`, `assessments.ts`, `MemberQueue.tsx`, `createClient`, `instagram-apify.ts`, `logs/route.ts`, `assessment-server.ts`, `site-nav.ts`, `assessment-scoring.ts`, `[...path]/route.ts`, `Insignia.tsx`, `public.member_notes`, `MembersSection.tsx`, `next.config.ts`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
+  _High betweenness centrality (0.216) - this node is a cross-community bridge._
 - **What connects `Test cleanup`, `Member birthdays calendar (migration 008)`, `Content templates for posts and activities (migration 021)` to the rest of the system?**
   _5 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `jsonApiFetch` be split into smaller, more focused modules?**
   _Cohesion score 0.050239234449760764 - nodes in this community are weakly interconnected._
-- **Why does `typescript` connect `Teste datas relativas` to `package.json`, `ref_node_fs`, `security-phrase.test.cjs`, `Teste login Google`, `Teste de fluxo de perfil`, `Teste storage Instagram`, `ref_node_fs`, `Teste cofre de contas`, `Teste app-log`, `Teste mapas de jogos`, `Teste anotacoes`, `Teste filtros de membros`, `Teste estilo do membro`, `Teste auth hardening e TypeScript`, `Teste titulos Instagram`, `Teste senha`, `ref_node_assert`, `account-email.test.cjs`, `password-recovery.test.cjs`, `build-emblem.test.cjs`, `https-redirect.test.cjs`?**
-  _High betweenness centrality (0.160) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `jsonApiFetch`, `AssessmentCreateForm.tsx`, `AttendancePanel.tsx`, `package.json`, `swordplay/page.tsx`, `types.ts`, `Midias publicas`, `LogsViewer.tsx`, `PageHero`, `AdminDashboard.tsx`, `useToast`, `Emblemas de build + docs`, `types.ts`, `ProfileEditDialog.tsx`, `sections/CalendarSection.tsx`, `member-notes.ts`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `AssessmentRunner.tsx`, `reset/route.ts`, `MemberQueue.tsx`, `sobre/page.tsx`, `site-nav.ts`, `Insignia.tsx`, `MembersSection.tsx`, `react-dom`, `MemberHero.tsx`, `ToastProvider.tsx`?**
+  _High betweenness centrality (0.149) - this node is a cross-community bridge._
 - **Should `AssessmentCreateForm.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.10461538461538461 - nodes in this community are weakly interconnected._
-- **Why does `react` connect `react` to `jsonApiFetch`, `AssessmentCreateForm.tsx`, `AttendancePanel.tsx`, `package.json`, `swordplay/page.tsx`, `types.ts`, `Midias publicas`, `LogsViewer.tsx`, `PageHero`, `AdminDashboard.tsx`, `useToast`, `Emblemas de build + docs`, `types.ts`, `ProfileEditDialog.tsx`, `sections/CalendarSection.tsx`, `member-notes.ts`, `app/layout.tsx`, `createClient`, `Home, robots e skeletons`, `Cards de jogos`, `AssessmentRunner.tsx`, `reset/route.ts`, `MemberQueue.tsx`, `sobre/page.tsx`, `site-nav.ts`, `Insignia.tsx`, `MembersSection.tsx`, `react-dom`, `MemberHero.tsx`, `ToastProvider.tsx`?**
-  _High betweenness centrality (0.147) - this node is a cross-community bridge._
+- **Why does `typescript` connect `Teste datas relativas` to `package.json`, `ref_node_fs`, `security-phrase.test.cjs`, `Teste login Google`, `Teste de fluxo de perfil`, `Teste storage Instagram`, `ref_node_fs`, `Teste cofre de contas`, `Teste app-log`, `Teste mapas de jogos`, `Teste anotacoes`, `Teste filtros de membros`, `Teste estilo do membro`, `Teste auth hardening e TypeScript`, `Teste titulos Instagram`, `Teste senha`, `ref_node_assert`, `account-email.test.cjs`, `password-recovery.test.cjs`, `build-emblem.test.cjs`, `https-redirect.test.cjs`?**
+  _High betweenness centrality (0.144) - this node is a cross-community bridge._
 - **Should `AttendancePanel.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.08414634146341464 - nodes in this community are weakly interconnected._

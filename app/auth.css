@@ -9,7 +9,7 @@
   gap: 18px
 }
 
-.login-form .button,.registration-form>.button {
+.login-form .button {
   margin-top: 10px
 }
 
@@ -31,8 +31,9 @@
   text-align: center
 }
 
-.registration-success svg {
-  color: var(--success)
+.registration-success>svg {
+  justify-self: center;
+  color: var(--ok)
 }
 
 .registration-success h2 {
@@ -1413,7 +1414,7 @@ a.card:hover .card-cta svg {
 
 /* Contas já usadas neste navegador (troca rápida na tela de login). */
 .saved-accounts {
-  width: min(100%,480px);
+  width: 100%;
   display: grid;
   gap: 8px;
   margin-bottom: 18px
@@ -1519,11 +1520,14 @@ a.card:hover .card-cta svg {
 
 /* Esqueci minha senha. */
 .login-forgot {
-  justify-self: end;
-  margin-top: 6px;
   color: var(--accent-bright);
-  font-size: .88rem;
-  font-weight: 800
+  font-size: .85rem;
+  font-weight: 700
+}
+
+.login-forgot:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px
 }
 
 .reset-actions {

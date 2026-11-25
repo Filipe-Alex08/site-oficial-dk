@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { LogIn, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import AuthInput, { PasswordInput } from "@/components/auth/AuthInput";
 import { jsonApiFetch } from "@/lib/api-client";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -98,12 +99,14 @@ export default function LoginForm({ googleAvailable = false, addingAccount = fal
     <form className="form-card login-form" onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="email">E-mail</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
+        <AuthInput icon={Mail} id="email" name="email" type="email" autoComplete="email" required />
       </div>
       <div className="field">
-        <label htmlFor="password">Senha</label>
-        <input id="password" name="password" type="password" autoComplete="current-password" required minLength={8} />
-        <Link className="login-forgot" href="/area-do-membro/esqueci-senha">Esqueci minha senha</Link>
+        <div className="auth-label-row">
+          <label htmlFor="password">Senha</label>
+          <Link className="login-forgot" href="/area-do-membro/esqueci-senha">Esqueci minha senha</Link>
+        </div>
+        <PasswordInput id="password" name="password" autoComplete="current-password" required minLength={8} />
       </div>
       <button className="button button-primary" type="submit" disabled={loading || googleLoading}>
         <LogIn size={18} /> {loading ? "Entrando…" : "Entrar"}
@@ -120,9 +123,6 @@ export default function LoginForm({ googleAvailable = false, addingAccount = fal
       </button>
       {!googleAvailable && <p className="form-help" id="google-unavailable">Login com Google em breve.</p>}
       {message && <p className={"form-message " + message.type}>{message.text}</p>}
-      <p className="form-help">
-        Tem um convite? <Link href="/area-do-membro/cadastro">Criar conta</Link>
-      </p>
     </form>
   );
 }

@@ -13,6 +13,7 @@ import { jsonApiFetch } from "@/lib/api-client";
 import { PASSWORD_MAX, PASSWORD_MIN } from "@/lib/account-password";
 import { graduationOptions, graduationTracks, houseFor, rankGroups } from "@/lib/member-access";
 import { getZodiacSign } from "@/lib/zodiac";
+import { maskPhone, phoneFieldValue } from "@/lib/phone";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 export type ProfileFormState = {
@@ -29,9 +30,10 @@ export type ProfileFormState = {
   shirt_number: string;
   primary_build: string;
   secondary_build: string;
+  whatsapp: string;
 };
 export type PasswordState = { current: string; next: string; confirm: string };
-export type ProfileFormErrors = { nickname?: string; password?: string; general?: string };
+export type ProfileFormErrors = { nickname?: string; whatsapp?: string; password?: string; general?: string };
 
 export const EMPTY_PASSWORD: PasswordState = { current: "", next: "", confirm: "" };
 
@@ -51,6 +53,7 @@ export function profileFormFrom(profile: MemberProfile): ProfileFormState {
     shirt_number: profile.shirt_number?.toString() || "",
     primary_build: normalizeBuildName(profile.primary_build),
     secondary_build: normalizeBuildName(profile.secondary_build),
+    whatsapp: profile.whatsapp ? phoneFieldValue(profile.whatsapp) : "",
   };
 }
 
@@ -104,12 +107,28 @@ export default function ProfileEditDialog({
   const contentRef = useRef<HTMLDivElement>(null);
   const nicknameRef = useRef<HTMLInputElement>(null);
   const passwordErrorRef = useRef<HTMLParagraphElement>(null);
+  const whatsappRef = useRef<HTMLInputElement>(null);
 
   const showConfirm = confirmDiscard && changes > 0 && !saving;
   const update = <K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) => setForm((current) => ({ ...current, [key]: value }));
   // Sem graduação na trilha não existe comandante: a marca cai junto.
   const updateLevel = (track: (typeof graduationTracks)[number], level: GraduationLevel) =>
     setForm((current) => ({ ...current, [track.field]: level, ...(level === "sem_graduacao" ? { [track.commanderField]: false } : {}) }));
+  // Aplica a máscara e devolve o cursor para depois do mesmo número de dígitos.
+  const updatePhone = (input: HTMLInputElement) => {
+    const caret = input.selectionStart ?? input.value.length;
+    const atEnd = caret === input.value.length;
+    const digitsBefore = input.value.slice(0, caret).replace(/\D/g, "").length;
+    const masked = maskPhone(input.value);
+    input.value = masked;
+    if (!atEnd) {
+      let position = 0;
+      for (let seen = 0; position < masked.length && seen < digitsBefore; position++) if (/\d/.test(masked[position])) seen++;
+      input.setSelectionRange(position, position);
+    }
+    clearError("whatsapp");
+    update("whatsapp", masked);
+  };
   const updatePassword = (key: keyof PasswordState, value: string) => {
     clearError("password");
     setPassword((current) => ({ ...current, [key]: value }));
@@ -151,6 +170,7 @@ export default function ProfileEditDialog({
   }, []);
 
   useEffect(() => { if (errors.nickname) nicknameRef.current?.focus(); }, [errors.nickname]);
+  useEffect(() => { if (errors.whatsapp) whatsappRef.current?.focus(); }, [errors.whatsapp]);
   useEffect(() => { if (errors.password) passwordErrorRef.current?.scrollIntoView({ block: "nearest" }); }, [errors.password]);
 
   function syncActiveSection() {
@@ -274,6 +294,23 @@ export default function ProfileEditDialog({
                 <div className="field">
                   <label htmlFor="member-zodiac-sign">Signo do Zodíaco</label>
                   <input id="member-zodiac-sign" className="profile-dialog-readonly" value={zodiac} readOnly aria-readonly="true" placeholder="Preenchido pela data de nascimento" />
+                </div>
+                <div className="field">
+                  <label htmlFor="member-whatsapp">Celular</label>
+                  <input
+                    ref={whatsappRef}
+                    id="member-whatsapp"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={24}
+                    placeholder="Opcional"
+                    value={form.whatsapp}
+                    aria-invalid={errors.whatsapp ? true : undefined}
+                    aria-describedby={errors.whatsapp ? "member-whatsapp-error" : undefined}
+                    onChange={(event) => updatePhone(event.target)}
+                  />
+                  {errors.whatsapp && <p id="member-whatsapp-error" className="profile-dialog-error" role="alert">{errors.whatsapp}</p>}
                 </div>
               </div>
             </section>

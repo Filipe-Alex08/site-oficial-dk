@@ -207,13 +207,20 @@
    páginas internas. */
 .home-hero, .page-hero {
   --hero-photo: url("/images/dk-hero.webp");
-  --hero-pos: center;
+  --hero-pos: center 40%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
 }
-.page-hero--training { --hero-photo: url("/images/dk-training.webp"); --hero-pos: center 48%; }
-.page-hero--events { --hero-photo: url("/images/dk-events.webp"); --hero-pos: center 54%; }
+/* Banners das páginas internas são faixas baixas e largas: cada um ajusta o próprio enquadramento
+   (e, se precisar, o véu) para que o assunto da foto apareça em vez de só o meio do quadro. */
+.page-hero--default { --hero-pos: center 30%; }
+.page-hero--training { --hero-photo: url("/images/dk-training.webp"); --hero-pos: center 24%; }
+.page-hero--events { --hero-photo: url("/images/dk-events.webp"); --hero-pos: center 40%; --hero-veil: 0.62; }
+/* No celular só cabe um trecho da largura da foto; ancora à direita. */
+@media (max-width: 720px) {
+  .page-hero--events { --hero-pos: 82% 40%; --hero-veil: 0.5; }
+}
 .home-hero::after, .page-hero::after {
   content: "";
   position: absolute;
@@ -226,7 +233,7 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: var(--ornament-grain), rgba(8, 8, 8, 0.8);
+  background: var(--ornament-grain), rgba(8, 8, 8, var(--hero-veil, 0.8));
 }
 /* Ameias: a cor da seção seguinte sobe em dentes sobre a foto. */
 .battlement {

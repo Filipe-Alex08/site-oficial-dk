@@ -11,7 +11,7 @@ export default async function RegisterPage({
 }) {
   const { convite = "" } = await searchParams;
   return (
-    <AuthShell title="Criar conta" wide>
+    <AuthShell title="Criar conta" tabs="cadastro" wide>
       <RegistrationForm initialCode={convite} />
     </AuthShell>
   );

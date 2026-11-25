@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/ToastProvider";
 import { createClient } from "@/lib/supabase/client";
 import { jsonApiFetch } from "@/lib/api-client";
 import { validatePasswordChange } from "@/lib/account-password";
+import { normalizeWhatsapp, phoneFieldValue } from "@/lib/phone";
 import ProfileEditDialog, {
   EMPTY_PASSWORD, countProfileChanges, profileFormFrom, type ProfileFormErrors,
 } from "@/components/member/ProfileEditDialog";
@@ -69,6 +70,11 @@ export default function EditMemberProfile({ profile, hasPassword = true, securit
     setErrors({});
     const supabase = createClient();
     if (!supabase) return setErrors({ general: "Serviço indisponível no momento. Tente novamente." });
+
+    // Só valida e grava o WhatsApp quando ele muda; vazio apaga o número.
+    const whatsappChanged = form.whatsapp !== initial.whatsapp;
+    const whatsapp = form.whatsapp.trim() ? normalizeWhatsapp(form.whatsapp) : "";
+    if (whatsappChanged && whatsapp === null) return setErrors({ whatsapp: "Número de celular inválido." });
 
     // Senha é opcional: só entra em jogo se algum dos três campos foi preenchido.
     const changingPassword = Boolean(password.current || password.next || password.confirm);
@@ -162,11 +168,21 @@ export default function EditMemberProfile({ profile, hasPassword = true, securit
       shirt_number: updated.shirt_number?.toString() || "",
       primary_build: updated.primary_build || "",
       secondary_build: updated.secondary_build || "",
+      whatsapp: whatsappChanged ? (whatsapp ? phoneFieldValue(whatsapp) : "") : form.whatsapp,
     };
-    setForm(saved);
-    setInitial(saved);
+    const { error: whatsappError } = whatsappChanged
+      ? await supabase.rpc("set_own_whatsapp", { requested_whatsapp: whatsapp })
+      : { error: null };
+    setForm(whatsappError ? { ...saved, whatsapp: form.whatsapp } : saved);
+    setInitial(whatsappError ? { ...saved, whatsapp: initial.whatsapp } : saved);
     window.dispatchEvent(new Event("dk-profile-updated"));
     router.refresh();
+    if (whatsappError) {
+      // O resto já foi salvo: só o número continua pendente no formulário.
+      setErrors({ general: "O perfil foi salvo, mas o celular não. Tente novamente." });
+      setSaving(false);
+      return;
+    }
     const done = changingPassword ? "Perfil e senha atualizados." : "Perfil atualizado.";
     toast.success(accessDetailsChanged ? done + " Patente, graduação ou comando aguardam aprovação de um administrador." : done);
     setSaving(false);

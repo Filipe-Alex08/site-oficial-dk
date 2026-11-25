@@ -44,39 +44,148 @@
 .breadcrumb a:hover { color: var(--text); text-decoration: underline; }
 .breadcrumb [aria-current="page"] { color: var(--text); }
 
-/* ---------- Login e cadastro ---------- */
+/* ---------- Login e cadastro ----------
+   Mesmo idioma do site público: foto com véu e grão de um lado, placa forjada
+   (.plate--feature, com rebites) do outro. No celular a foto vira uma faixa com ameias. */
 .auth-page {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   min-height: calc(100vh - var(--header-h));
+  background: var(--bg);
+}
+.auth-page-wide { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); }
+
+.auth-banner {
+  position: relative;
+  isolation: isolate;
+  /* Entrar (e as telas de senha). O cadastro troca a foto logo abaixo. */
+  --auth-photo: url("/images/dk-entrar.webp");
+  background: var(--ornament-grain), var(--auth-photo) 50% 40% / cover;
+}
+/* Vinheta leve (as fotos já são escuras): as bordas se apagam e a direita termina na cor do fundo. */
+.auth-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 84%, color-mix(in srgb, var(--bg) 60%, transparent) 94%, var(--bg) 100%),
+    radial-gradient(ellipse 110% 85% at 55% 42%, transparent 0 50%, rgba(8, 8, 8, 0.35) 75%, rgba(8, 8, 8, 0.8) 100%);
+  box-shadow: inset 0 0 44px 4px rgba(8, 8, 8, 0.5);
+}
+.auth-banner .battlement { display: none; }
+.auth-page-wide .auth-banner { --auth-photo: url("/images/dk-registro.webp"); background-position: 70% center; }
+
+/* Cota de malha bem leve atrás da placa, como no rodapé. */
+.auth-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: center;
+  padding: 40px 24px 56px;
+}
+.auth-stage::before { content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: var(--accent-bright); opacity: 0.045; -webkit-mask: var(--ornament-scales) 0 0 / 20px 20px, linear-gradient(90deg, transparent, #000 220px); -webkit-mask-composite: source-in; mask: var(--ornament-scales) 0 0 / 20px 20px, linear-gradient(90deg, transparent, #000 220px); mask-composite: intersect; }
+
+.auth-plate.plate {
+  --plate-bg: var(--surface-1);
+  align-items: stretch;
+  width: min(100%, 440px);
+  padding: clamp(28px, 4vw, 40px) clamp(22px, 4vw, 40px);
+}
+.auth-page-wide .auth-plate.plate { width: min(100%, 640px); }
+.auth-page .auth-plate h1:not(.sr-only) { margin-bottom: 18px; font-family: var(--font-display), Georgia, serif; font-size: 1.55rem; font-weight: 600; letter-spacing: 0.02em; }
+.auth-description { margin-bottom: 20px; }
+.auth-plate > .form-message { margin: 0 0 18px; }
+.auth-plate > .form-help { margin-top: 18px; }
+
+/* Abas Entrar / Criar conta. */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 26px; border-bottom: 1px solid var(--border); }
+.auth-tabs a {
   display: grid;
   place-items: center;
-  padding: 40px 16px 64px;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(var(--accent-rgb), 0.12), transparent 60%),
-    var(--bg);
+  min-height: 48px;
+  margin-bottom: -1px;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: color var(--dur-1), border-color var(--dur-1), background var(--dur-1);
 }
-.auth-card {
-  width: min(100%, 460px);
-  padding: clamp(24px, 5vw, 40px);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
-}
-.auth-card-wide { width: min(100%, 680px); }
-.auth-brand { display: block; width: 56px; margin: 0 auto 18px; }
-.auth-brand img { display: block; width: 56px; height: 56px; border-radius: 50%; }
-.auth-card h1 { margin-bottom: 8px; text-align: center; font-size: 1.6rem; }
-.auth-description { margin-bottom: 20px; text-align: center; }
-.auth-card .form-message { margin: 0 0 16px; }
-.auth-card .form-card {
+.auth-tabs a:hover { color: var(--text); background: var(--hover-veil); }
+.auth-tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent-bright); }
+.auth-tabs a:focus-visible { outline-offset: -3px; }
+
+.auth-plate .form-card {
+  width: 100%;
   max-width: none;
   padding: 0;
   background: none;
   border: 0;
   border-radius: 0;
 }
-.auth-card .login-form,
-.auth-card .registration-form { width: 100%; }
+.auth-plate .form-card .button { width: 100%; min-height: 48px; }
+.auth-plate .form-card .reset-actions .button { width: auto; }
+.auth-plate input { min-height: 48px; background-color: var(--surface-ink); }
+
+/* Campo com ícone à esquerda e ações à direita. */
+.auth-input { position: relative; display: flex; align-items: center; }
+.auth-input-icon { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-subtle); pointer-events: none; transition: color var(--dur-1); }
+.auth-input input { padding-left: 42px; }
+.auth-input:focus-within .auth-input-icon { color: var(--accent-bright); }
+.auth-input:has(.auth-input-trailing) input { padding-right: 48px; }
+.auth-input.is-valid input { padding-right: 72px; border-color: var(--ok-border); }
+.auth-input input[aria-invalid="true"] { border-color: var(--danger); }
+.auth-input-trailing { position: absolute; right: 4px; display: flex; align-items: center; gap: 4px; }
+.auth-input-check { width: 18px; height: 18px; color: var(--ok); animation: pop-in var(--dur-2) var(--ease-out); }
+.auth-reveal { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--text-subtle); background: none; border: 0; border-radius: var(--r-sm); cursor: pointer; transition: color var(--dur-1), background var(--dur-1); }
+.auth-reveal:hover { color: var(--text); background: var(--hover-veil); }
+.auth-reveal svg { width: 18px; height: 18px; }
+.auth-field-error { color: var(--danger); font-size: 0.83rem; }
+.auth-label-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+
+/* Cadastro: três blocos numerados. */
+.registration-form.numbered { display: grid; gap: 28px; }
+.auth-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.auth-fieldset legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.auth-fieldset legend::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.auth-fieldset .numeral { min-width: 1.6em; font-size: 0.95rem; }
+.auth-invite input { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 1.05rem; letter-spacing: 0.18em; }
+
+.auth-plate .registration-success { display: grid; justify-items: center; gap: 14px; text-align: center; }
+.auth-plate .registration-success .crest { width: 62px; height: 70px; }
+.auth-plate .registration-success .crest svg { width: 28px; height: 28px; margin-top: -8px; color: var(--ok); }
+.auth-plate .registration-success h2 { margin: 6px 0 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-stage .auth-plate { animation: rise var(--dur-3) var(--ease-out) both; }
+}
+
+@media (max-width: 899px) {
+  .auth-page { grid-template-columns: minmax(0, 1fr); align-content: start; grid-template-rows: auto 1fr; }
+  .auth-banner { height: 170px; background-position: 50% 21%; }
+  .auth-page-wide .auth-banner { background-position: 50% 28%; }
+  /* Os dois seletores igualam a força das regras do desktop. */
+  .auth-banner::before, .auth-page-wide .auth-banner::before { background: radial-gradient(ellipse 80% 110% at 50% 45%, transparent 0 45%, rgba(8, 8, 8, 0.75) 100%); box-shadow: inset 0 0 30px 4px rgba(8, 8, 8, 0.55); }
+  .auth-stage::before { -webkit-mask: var(--ornament-scales) 0 0 / 20px 20px; mask: var(--ornament-scales) 0 0 / 20px 20px; }
+  .auth-banner .battlement { display: block; }
+  .auth-stage { align-content: start; padding: 16px 16px 48px; }
+}
 
 /* ---------- Avisos (toasts) ---------- */
 .toast-stack {
