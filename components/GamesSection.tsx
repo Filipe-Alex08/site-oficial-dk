@@ -13,8 +13,13 @@ const categories = {
   todos: "Todas",
   objetivos: "Objetivos",
   batalhas: "Batalhas",
-  arquearia: "Arquearia",
+  pontaria: "Pontaria",
   duelos: "Duelos",
+  busca: "Busca",
+  desportivos: "Desportivos",
+  lendas: "Lendas",
+  resistencia: "Resistência",
+  taverna: "Taverna",
 } satisfies Record<"todos" | GameCategory, string>;
 
 type Filter = keyof typeof categories;

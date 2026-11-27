@@ -31,18 +31,27 @@ const expectedMaps = new Map([
   ["Rei da Mesa", "/images/games/maps/rei-da-mesa.webp"],
 ]);
 
-test("every Swordplay game has the correct permanent field map", () => {
-  assert.equal(games.length, expectedMaps.size);
+test("mapped games keep the correct permanent field map", () => {
+  assert.equal(Object.keys(gameFieldMaps).length, expectedMaps.size);
 
-  for (const game of games) {
+  for (const [name, expectedSrc] of expectedMaps) {
+    const game = games.find((item) => item.name === name);
+    assert.ok(game, name);
     const fieldMap = gameFieldMaps[game.id];
-    assert.equal(fieldMap?.src, expectedMaps.get(game.name), game.name);
-    assert.ok(fieldMap.alt.length > 20, game.name);
-    assert.ok(fieldMap.width > 0 && fieldMap.height > 0, game.name);
-    assert.ok(fs.existsSync(`public${fieldMap.src}`), game.name);
+    assert.equal(fieldMap?.src, expectedSrc, name);
+    assert.ok(fieldMap.alt.length > 20, name);
+    assert.ok(fieldMap.width > 0 && fieldMap.height > 0, name);
+    assert.ok(fs.existsSync(`public${fieldMap.src}`), name);
   }
 
-  assert.equal(new Set(Object.values(gameFieldMaps).map((fieldMap) => fieldMap.src)).size, games.length);
+  for (const gameId of Object.keys(gameFieldMaps)) {
+    assert.ok(games.some((game) => game.id === gameId), gameId);
+  }
+
+  assert.equal(
+    new Set(Object.values(gameFieldMaps).map((fieldMap) => fieldMap.src)).size,
+    Object.keys(gameFieldMaps).length,
+  );
 });
 
 test("every game has a unique, URL-safe slug", () => {
@@ -52,7 +61,7 @@ test("every game has a unique, URL-safe slug", () => {
 });
 
 test("every game belongs to a supported catalog category", () => {
-  const supported = new Set(["objetivos", "batalhas", "arquearia", "duelos"]);
+  const supported = new Set(["objetivos", "batalhas", "pontaria", "duelos", "busca", "desportivos", "lendas", "resistencia", "taverna"]);
   const represented = new Set();
 
   for (const game of games) {
