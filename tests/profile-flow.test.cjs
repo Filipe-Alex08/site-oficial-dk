@@ -17,7 +17,9 @@ function loadRoute(file, mocks) {
   return exports;
 }
 
-const nextServer = { NextResponse: { json: (body, init) => Response.json(body, init) } };
+// after() roda o trabalho na hora, e o teste espera pelo que ficou agendado.
+const scheduled = [];
+const nextServer = { after: (task) => { scheduled.push(task()); }, NextResponse: { json: (body, init) => Response.json(body, init) } };
 const accessOptions = {
   rankOptions: [{ value: "recruta" }, { value: "cabo" }, { value: "major" }, { value: "general_brigada" }, { value: "general_divisao" }], graduationOptions: [{ value: "sem_graduacao" }, { value: "bronze" }, { value: "prata" }],
   memberKindOptions: [{ value: "membro" }],
@@ -33,6 +35,7 @@ function registration({ consumeThrows = false } = {}) {
   let inserted;
   let consumedWith;
   let deletedUser;
+  const emails = [];
   // invites.used_by referencia profiles(id): consumir antes de existir o perfil falha.
   const admin = {
     rpc: async (name, args) => {
@@ -58,7 +61,9 @@ function registration({ consumeThrows = false } = {}) {
       "@/lib/client-ip": loadRoute("lib/client-ip.ts", {}),
       "@/lib/log-sanitize": loadRoute("lib/log-sanitize.ts", {}),
       "@/lib/app-log": { logEvent: () => {} },
+      "@/lib/site-email": { sendSiteEmail: async (...args) => { emails.push(args); } },
     }),
+    emails: () => emails,
     profile: () => inserted,
     consumedWith: () => consumedWith,
     deletedUser: () => deletedUser,
@@ -120,12 +125,14 @@ test("registration still requires the basic account fields", async () => {
 function review({ authorized = true, changed = false, principal = false, target = {}, targetRoles = [] } = {}) {
   let changes;
   let audit;
+  const emails = [];
   const supabase = {
     auth: { getUser: async () => ({ data: { user: authorized ? { id: "admin" } : null } }) },
     from: () => ({ select() { return this; }, eq() { return this; }, in: async () => ({ data: [{ role: "membros" }] }) }),
   };
   const adminAuth = { requireAdmin: async () => (authorized ? { user: { id: "admin" }, roles: ["membros"], isPrincipal: principal } : null) };
   const admin = {
+    auth: { admin: { getUserById: async () => ({ data: { user: { email: "member@example.com", user_metadata: { frase_seguranca: "Lobo cinza" } } } }) } },
     from: (table) => table === "user_admin_roles" ? {
       select() { return this; }, eq: async () => ({ data: targetRoles.map((role) => ({ role })) }),
     } : ({
@@ -144,7 +151,12 @@ function review({ authorized = true, changed = false, principal = false, target 
       "@/lib/admin-auth": adminAuth, "@/lib/admin-audit": { logAdminAudit: async (...args) => { audit = args; } },
       "@/lib/supabase/server": { createClient: async () => supabase },
       "@/lib/supabase/admin": { createAdminClient: () => admin },
+      "@/lib/api-guard": { requestOrigin: () => "https://example.com" },
+      "@/lib/app-log": { logEvent: () => {} },
+      "@/lib/security-phrase": loadRoute("lib/security-phrase.ts", {}),
+      "@/lib/site-email": { sendSiteEmail: async (...args) => { emails.push(args); } },
     }),
+    emails: async () => { await Promise.all(scheduled); return JSON.parse(JSON.stringify(emails)); },
     changes: () => changes,
     audit: () => audit,
   };
@@ -325,6 +337,38 @@ test("keeping or lowering a general rank is not granting it", async () => {
   assert.equal((await lowered.route.PATCH(request({ rank: "major" }), params)).status, 200);
   const other = review({ target: { rank: "general_divisao" } });
   assert.equal((await other.route.PATCH(request({ rank: "general_brigada" }), params)).status, 403);
+});
+
+// --- Avisos por e-mail -------------------------------------------------------
+
+test("a completed registration sends the waiting-for-approval e-mail, a failed one does not", async () => {
+  const done = registration();
+  assert.equal((await done.route.POST(request({ ...account, email: " Member@Example.com " }))).status, 201);
+  assert.deepEqual(JSON.parse(JSON.stringify(done.emails())), [["cadastro_recebido", "member@example.com"]]);
+
+  const undone = registration({ consumeThrows: true });
+  await undone.route.POST(request(account));
+  assert.equal(undone.emails().length, 0);
+});
+
+test("approving a registration tells the member, with the login link and the security phrase", async () => {
+  const { route, emails } = review({ target: { status: "pendente" } });
+  assert.equal((await route.PATCH(request({ status: "aprovado" }), params)).status, 200);
+  assert.deepEqual(await emails(), [["cadastro_aprovado", "member@example.com", { actionUrl: "https://example.com/area-do-membro/login", securityPhrase: "Lobo cinza" }]]);
+});
+
+test("no approval e-mail when the status was already approved, is not approval, or the change is refused", async () => {
+  for (const [options, body] of [
+    [{ target: { status: "aprovado" } }, { status: "aprovado" }],
+    [{ target: { status: "pendente" } }, { status: "recusado" }],
+    [{ target: { status: "aprovado" } }, { rank: "major" }],
+    [{ authorized: false, target: { status: "pendente" } }, { status: "aprovado" }],
+    [{ targetRoles: ["atividades"], target: { status: "pendente" } }, { status: "aprovado" }],
+  ]) {
+    const harness = review(options);
+    await harness.route.PATCH(request(body), params);
+    assert.deepEqual(await harness.emails(), [], JSON.stringify([options, body]));
+  }
 });
 
 // --- Comandante por trilha ---------------------------------------------------
