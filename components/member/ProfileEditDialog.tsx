@@ -77,7 +77,6 @@ type Props = {
   /** false para quem entra só pelo Google: não há senha atual, então a senha nasce pelo link do e-mail. */
   hasPassword: boolean;
   securityPhrase: string;
-  canEditAccessDirectly: boolean;
   form: ProfileFormState;
   setForm: Dispatch<SetStateAction<ProfileFormState>>;
   password: PasswordState;
@@ -94,7 +93,7 @@ type Props = {
 };
 
 export default function ProfileEditDialog({
-  profile, hasPassword, securityPhrase, canEditAccessDirectly, form, setForm, password, setPassword, passwordOpen, setPasswordOpen,
+  profile, hasPassword, securityPhrase, form, setForm, password, setPassword, passwordOpen, setPasswordOpen,
   errors, clearError, changes, saving, closing, onSubmit, onClose,
 }: Props) {
   const [active, setActive] = useState(SECTIONS[0].id);
@@ -223,11 +222,11 @@ export default function ProfileEditDialog({
   }
 
   const approvalNeeded = {
-    rank: !canEditAccessDirectly && form.rank !== profile.rank,
-    graduation_cavalaria: !canEditAccessDirectly && form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao"),
-    graduation_arquearia: !canEditAccessDirectly && form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao"),
-    commander_cavalaria: !canEditAccessDirectly && form.commander_cavalaria !== (profile.commander_cavalaria ?? false),
-    commander_arquearia: !canEditAccessDirectly && form.commander_arquearia !== (profile.commander_arquearia ?? false),
+    rank: form.rank !== profile.rank,
+    graduation_cavalaria: form.graduation_cavalaria !== (profile.graduation_cavalaria ?? "sem_graduacao"),
+    graduation_arquearia: form.graduation_arquearia !== (profile.graduation_arquearia ?? "sem_graduacao"),
+    commander_cavalaria: form.commander_cavalaria !== (profile.commander_cavalaria ?? false),
+    commander_arquearia: form.commander_arquearia !== (profile.commander_arquearia ?? false),
   };
   const zodiac = getZodiacSign(form.birth_date);
   const passwordType = reveal ? "text" : "password";

@@ -42,7 +42,7 @@ export const getMemberBadges = cache(async () => {
     notesUnread: notesSettings.enabled ? (unreadNotesResult.count ?? 0) : 0,
     notesEnabled: notesSettings.enabled,
     membersToReview: (reviewRows ?? []).filter((row) =>
-      row.status === "pendente" || (Boolean(row.access_request_id) && row.id !== user.id) || (isPrincipal && Boolean(row.graduation_review_needed)),
+      row.status === "pendente" || (Boolean(row.access_request_id) && row.id !== user.id) || (Boolean(row.graduation_review_needed) && (isPrincipal || row.id !== user.id)),
     ).length,
   };
 });

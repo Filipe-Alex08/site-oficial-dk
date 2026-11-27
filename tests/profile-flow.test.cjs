@@ -19,7 +19,7 @@ function loadRoute(file, mocks) {
 
 const nextServer = { NextResponse: { json: (body, init) => Response.json(body, init) } };
 const accessOptions = {
-  rankOptions: [{ value: "recruta" }, { value: "cabo" }, { value: "major" }], graduationOptions: [{ value: "sem_graduacao" }, { value: "bronze" }, { value: "prata" }],
+  rankOptions: [{ value: "recruta" }, { value: "cabo" }, { value: "major" }, { value: "general_brigada" }, { value: "general_divisao" }], graduationOptions: [{ value: "sem_graduacao" }, { value: "bronze" }, { value: "prata" }],
   memberKindOptions: [{ value: "membro" }],
 };
 
@@ -117,7 +117,7 @@ test("registration still requires the basic account fields", async () => {
   assert.equal((await route.POST(request({ ...account, nickname: "" }))).status, 400);
 });
 
-function review({ authorized = true, changed = false, principal = false, target = {} } = {}) {
+function review({ authorized = true, changed = false, principal = false, target = {}, targetRoles = [] } = {}) {
   let changes;
   let audit;
   const supabase = {
@@ -126,7 +126,9 @@ function review({ authorized = true, changed = false, principal = false, target 
   };
   const adminAuth = { requireAdmin: async () => (authorized ? { user: { id: "admin" }, roles: ["membros"], isPrincipal: principal } : null) };
   const admin = {
-    from: () => ({
+    from: (table) => table === "user_admin_roles" ? {
+      select() { return this; }, eq: async () => ({ data: targetRoles.map((role) => ({ role })) }),
+    } : ({
       select() { return this; }, eq() { return this; },
       maybeSingle: async () => ({ data: { requested_rank: "cabo", graduation_cavalaria: "sem_graduacao", graduation_arquearia: "prata", requested_graduation_cavalaria: "bronze", requested_graduation_arquearia: null, ...target } }),
       update(value) {
@@ -138,6 +140,7 @@ function review({ authorized = true, changed = false, principal = false, target 
   return {
     route: loadRoute("app/api/admin/members/[id]/route.ts", {
       "next/server": nextServer, "@/lib/member-access": accessOptions,
+      "@/lib/rank-grants": loadRoute("lib/rank-grants.ts", { "@/lib/assessments": loadRoute("lib/assessments.ts", {}) }),
       "@/lib/admin-auth": adminAuth, "@/lib/admin-audit": { logAdminAudit: async (...args) => { audit = args; } },
       "@/lib/supabase/server": { createClient: async () => supabase },
       "@/lib/supabase/admin": { createAdminClient: () => admin },
@@ -242,20 +245,86 @@ test("review requires administrator authorization", async () => {
   assert.equal(changes(), undefined);
 });
 
-test("only the principal admin sets each graduation track, and the level must be valid", async () => {
-  const denied = review({ principal: false });
-  assert.equal((await denied.route.PATCH(request({ graduation_arquearia: "prata" }), params)).status, 403);
-  assert.equal(denied.changes(), undefined);
-
-  const allowed = review({ principal: true });
-  assert.equal((await allowed.route.PATCH(request({ graduation_cavalaria: "bronze", graduation_arquearia: "prata" }), params)).status, 200);
+test("a membros admin sets rank and graduation of someone else, and values must be valid", async () => {
+  const allowed = review();
+  assert.equal((await allowed.route.PATCH(request({ rank: "major", graduation_cavalaria: "bronze", graduation_arquearia: "prata" }), params)).status, 200);
+  assert.equal(allowed.changes().rank, "major");
   assert.equal(allowed.changes().graduation_cavalaria, "bronze");
   assert.equal(allowed.changes().graduation_arquearia, "prata");
   assert.equal(allowed.changes().graduation_level, undefined);
 
-  const invalid = review({ principal: true });
+  const invalid = review();
   assert.equal((await invalid.route.PATCH(request({ graduation_cavalaria: "diamante" }), params)).status, 400);
   assert.equal(invalid.changes(), undefined);
+});
+
+const self = { params: Promise.resolve({ id: "admin" }) };
+test("a membros admin cannot change or approve their own access", async () => {
+  for (const body of [
+    { rank: "major" },
+    { graduation_arquearia: "prata" },
+    { commander_arquearia: true },
+    { access_request_action: "approve", access_request_id: "request" },
+  ]) {
+    const { route, changes } = review({ targetRoles: ["membros"] });
+    assert.equal((await route.PATCH(request(body), self)).status, 403, JSON.stringify(body));
+    assert.equal(changes(), undefined);
+  }
+});
+
+test("a membros admin edits and approves another administrator's rank", async () => {
+  for (const targetRoles of [["membros"], ["principal"]]) {
+    // O painel manda o nível interno junto; sem mudança, não conta.
+    const direct = review({ targetRoles, target: { member_kind: "membro" } });
+    assert.equal((await direct.route.PATCH(request({ member_kind: "membro", rank: "major" }), params)).status, 200);
+    assert.equal(direct.changes().rank, "major");
+
+    const { send, changes } = approve(undefined, { targetRoles });
+    assert.equal((await send()).status, 200);
+    assert.equal(changes().rank, "cabo");
+  }
+});
+
+test("status and membership level of another administrator stay with the principal", async () => {
+  for (const body of [{ status: "suspenso" }, { member_kind: "membro", rank: "major" }]) {
+    const { route, changes } = review({ targetRoles: ["atividades"], target: { member_kind: "recrutando" } });
+    assert.equal((await route.PATCH(request(body), params)).status, 403, JSON.stringify(body));
+    assert.equal(changes(), undefined);
+  }
+});
+
+test("only the principal admin grants a general rank, directly or by approval", async () => {
+  const denied = review();
+  assert.equal((await denied.route.PATCH(request({ rank: "general_brigada" }), params)).status, 403);
+  assert.equal(denied.changes(), undefined);
+
+  const requested = approve(undefined, { target: { rank: "major", requested_rank: "general_brigada" } });
+  assert.equal((await requested.send()).status, 403);
+  assert.equal(requested.changes(), undefined);
+
+  const forced = approve({ rank: "general_brigada" });
+  assert.equal((await forced.send()).status, 403);
+  assert.equal(forced.changes(), undefined);
+
+  // Ajustar para baixo ou recusar o pedido continua com o ADM de Membros.
+  const lowered = approve({ rank: "major" }, { target: { rank: "cabo", requested_rank: "general_brigada" } });
+  assert.equal((await lowered.send()).status, 200);
+  assert.equal(lowered.changes().rank, "major");
+  const rejected = review({ target: { rank: "major", requested_rank: "general_brigada" } });
+  assert.equal((await rejected.route.PATCH(request({ access_request_action: "reject", access_request_id: "request" }), params)).status, 200);
+
+  const principal = review({ principal: true });
+  assert.equal((await principal.route.PATCH(request({ rank: "general_brigada" }), params)).status, 200);
+  assert.equal(principal.changes().rank, "general_brigada");
+});
+
+test("keeping or lowering a general rank is not granting it", async () => {
+  const kept = review({ target: { rank: "general_divisao" } });
+  assert.equal((await kept.route.PATCH(request({ rank: "general_divisao" }), params)).status, 200);
+  const lowered = review({ target: { rank: "general_divisao" } });
+  assert.equal((await lowered.route.PATCH(request({ rank: "major" }), params)).status, 200);
+  const other = review({ target: { rank: "general_divisao" } });
+  assert.equal((await other.route.PATCH(request({ rank: "general_brigada" }), params)).status, 403);
 });
 
 // --- Comandante por trilha ---------------------------------------------------
@@ -311,12 +380,8 @@ test("commander adjustments must be booleans", async () => {
   }
 });
 
-test("only the principal admin sets the commander mark directly, and it needs a graduation", async () => {
-  const denied = review({ principal: false });
-  assert.equal((await denied.route.PATCH(request({ commander_arquearia: true }), params)).status, 403);
-  assert.equal(denied.changes(), undefined);
-
-  const allowed = review({ principal: true });
+test("setting the commander mark directly needs a graduation", async () => {
+  const allowed = review();
   assert.equal((await allowed.route.PATCH(request({ commander_arquearia: true }), params)).status, 200);
   assert.equal(allowed.changes().commander_arquearia, true);
 

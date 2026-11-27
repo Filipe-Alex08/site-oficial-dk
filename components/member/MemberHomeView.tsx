@@ -27,7 +27,7 @@ function AnswerBadge({ activity, answer }: { activity: UpcomingActivity; answer:
 }
 
 /** Corpo da página inicial do membro: só apresentação, sem acesso a dados (a página busca e entrega pronto). */
-export default function MemberHomeView({ profile, profileAvatarUrl, userId, hasPassword, securityPhrase, canEditAccessDirectly, isAdmin, counts, upcoming, responses }: {
+export default function MemberHomeView({ profile, profileAvatarUrl, userId, hasPassword, securityPhrase, isAdmin, counts, upcoming, responses }: {
   profile: MemberProfile;
   profileAvatarUrl: string | null;
   userId: string;
@@ -35,7 +35,6 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, hasP
   hasPassword: boolean;
   /** Frase mostrada nos e-mails de autenticação ("" se ainda não definiu). */
   securityPhrase: string;
-  canEditAccessDirectly: boolean;
   isAdmin: boolean;
   counts: { activitiesToAnswer: number; assessmentsToTake: number; membersToReview: number; notesUnread: number };
   upcoming: UpcomingActivity[];
@@ -56,7 +55,7 @@ export default function MemberHomeView({ profile, profileAvatarUrl, userId, hasP
   return (
     <section className="section">
       <div className="container m-home">
-        <MemberHero profile={profile} avatarUrl={profileAvatarUrl} userId={userId} hasPassword={hasPassword} securityPhrase={securityPhrase} canEditAccessDirectly={canEditAccessDirectly} allClear={attention.length === 0} />
+        <MemberHero profile={profile} avatarUrl={profileAvatarUrl} userId={userId} hasPassword={hasPassword} securityPhrase={securityPhrase} allClear={attention.length === 0} />
 
         <div className="m-home-grid">
           <div className="m-home-main">

@@ -6,6 +6,7 @@ import Avatar from "@/components/admin/ui/Avatar";
 import BirthdayBadge from "@/components/member/BirthdayBadge";
 import Select from "@/components/ui/Select";
 import { graduationLabels, graduationOptions, graduationTracks, isCommander, rankGroups, rankLabels } from "@/lib/member-access";
+import { canGrantRank } from "@/lib/rank-grants";
 import type { DkRank, GraduationLevel, MemberProfile } from "@/lib/types";
 
 export type RequestAdjustments = Partial<{
@@ -117,7 +118,7 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
       const isSelf = member.id === currentUserId;
       const newRegistration = member.status === "pendente";
       const dataRequest = Boolean(member.access_request_id);
-      const graduationReview = principal && Boolean(member.graduation_review_needed);
+      const graduationReview = Boolean(member.graduation_review_needed) && (principal || !isSelf);
       const busy = busyId === member.id;
       const blocked = isSelf || (newRegistration && !canManage(member));
 
@@ -127,6 +128,8 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
       const shown: RequestValues = draft ?? requested;
       const adjustments = draft ? adjustmentsOf(requested, draft) : {};
       const adjusted = Object.keys(adjustments).length > 0;
+      // Pedido (ou ajuste) que concede patente de General: só o ADM Principal aprova.
+      const needsPrincipal = dataRequest && !canGrantRank(principal, member.rank, shown.rank);
 
       const rows: Row[] = [
         { key: "rank", kind: "rank", label: "Patente", from: rankLabels[member.rank], to: rankLabels[shown.rank], asked: rankLabels[requested.rank] },
@@ -171,6 +174,7 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
             {newRegistration && <span className="badge pendente">Novo cadastro</span>}
             {dataRequest && <span className="badge pendente">Conferência de dados</span>}
             {graduationReview && <span className="badge pendente">Graduação a revisar</span>}
+            {needsPrincipal && !isSelf && <span className="badge pendente">Requer ADM Principal</span>}
           </div>
         </header>
 
@@ -198,7 +202,7 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
                       : <Select
                         id={selectId}
                         value={draft[row.key] as string}
-                        options={row.kind === "rank" ? rankOptions : levelOptions}
+                        options={row.kind === "rank" ? rankOptions.filter((option) => option.value === draft.rank || canGrantRank(principal, member.rank, option.value)) : levelOptions}
                         onChange={(value) => updateDraft(member.id, { [row.key]: value } as Partial<RequestValues>)}
                         disabled={busy}
                       />}
@@ -222,12 +226,12 @@ export default function MemberQueue({ members, currentUserId, principal, busyId,
             ? <>
               <button className="button button-ghost" type="button" disabled={busy} onClick={() => stopAdjust(member.id)}>Cancelar</button>
               <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X aria-hidden="true" /> Recusar</button>
-              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve", adjusted ? adjustments : undefined)}><Check aria-hidden="true" /> {adjusted ? "Aprovar ajustado" : "Aprovar"}</button>
+              <button className="button button-primary" type="button" disabled={busy || needsPrincipal} onClick={() => onReviewRequest(member, "approve", adjusted ? adjustments : undefined)}><Check aria-hidden="true" /> {adjusted ? "Aprovar ajustado" : "Aprovar"}</button>
             </>
             : <>
               <button className="button button-ghost" type="button" disabled={busy} onClick={() => startAdjust(member)}><SlidersHorizontal aria-hidden="true" /> Ajustar</button>
               <button className="button button-ghost" type="button" disabled={busy} onClick={() => onReviewRequest(member, "reject")}><X aria-hidden="true" /> Recusar</button>
-              <button className="button button-primary" type="button" disabled={busy} onClick={() => onReviewRequest(member, "approve")}><Check aria-hidden="true" /> Aprovar</button>
+              <button className="button button-primary" type="button" disabled={busy || needsPrincipal} onClick={() => onReviewRequest(member, "approve")}><Check aria-hidden="true" /> Aprovar</button>
             </>)}
 
           {newRegistration && !isSelf && canManage(member) && <>

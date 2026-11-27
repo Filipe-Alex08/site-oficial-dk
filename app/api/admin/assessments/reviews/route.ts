@@ -21,6 +21,9 @@ export async function POST(request: Request) {
     actor.admin.from("assessment_items").select("id,assessment_id,question_type").eq("id", itemId).maybeSingle(),
     actor.admin.from("assessment_answers").select("assignment_id,item_id,open_answer").eq("assignment_id", assignmentId).eq("item_id", itemId).maybeSingle(),
   ]);
+  if (assignment?.member_id === actor.user.id) {
+    return NextResponse.json({ error: "Você não pode corrigir a própria avaliação." }, { status: 403 });
+  }
   if (!assignment || assignment.status !== "aguardando_correcao" || !item || item.assessment_id !== assignment.assessment_id || item.question_type !== "aberta" || !answer?.open_answer?.trim()) {
     return NextResponse.json({ error: "Resposta aberta não encontrada ou já encerrada." }, { status: 404 });
   }

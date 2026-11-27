@@ -3,6 +3,17 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { requireAdmin } from "@/lib/admin-auth";
 import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+
+// A chave de serviço ignora a RLS: antes de alterar ou excluir, a leitura com a
+// sessão de quem chamou confirma que o documento é visível para essa pessoa.
+// Sem isso, bastaria apagar os requisitos de um documento oculto para abri-lo.
+async function canSeeDocument(id: string) {
+  const supabase = await createClient();
+  if (!supabase) return false;
+  const { data } = await supabase.from("documents").select("id").eq("id", id).maybeSingle();
+  return Boolean(data);
+}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const caller = await requireAdmin(["principal", "membros"]);
@@ -29,6 +40,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
 
   const { id } = await params;
+  if (!(await canSeeDocument(id))) return NextResponse.json({ error: "Documento não encontrado ou sem permissão de acesso." }, { status: 404 });
+
   const { error } = await admin.from("documents").update({ access_logic: logic, access_rules: rules }).eq("id", id);
   if (error) {
     console.error("Falha ao atualizar regras de documento", error);
@@ -53,6 +66,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
 
   const { id } = await params;
+  if (!(await canSeeDocument(id))) return NextResponse.json({ error: "Documento não encontrado ou sem permissão de acesso." }, { status: 404 });
+
   const { data: document, error: readError } = await admin
     .from("documents")
     .select("file_path, file_name, title")

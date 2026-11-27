@@ -14,6 +14,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { data: assignment } = await actor.admin.from("assessment_assignments").select("*").eq("id", id).maybeSingle();
   if (!assignment) return NextResponse.json({ error: "Indicação não encontrada." }, { status: 404 });
+  if (assignment.member_id === actor.user.id) {
+    return NextResponse.json({ error: "Você não pode administrar a própria avaliação." }, { status: 403 });
+  }
 
   if (action === "cancel") {
     if (assignment.status !== "convidado") return NextResponse.json({ error: "Somente uma indicação ainda não iniciada pode ser cancelada." }, { status: 409 });

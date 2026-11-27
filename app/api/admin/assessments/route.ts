@@ -27,7 +27,8 @@ export async function GET() {
   const assignments = new Map((assignmentsResult.data ?? []).map((assignment) => [assignment.id, assignment]));
   const reviews = (pendingAnswersResult.data ?? [])
     .map((answer) => ({ ...answer, item: openItems.get(answer.item_id), assignment: assignments.get(answer.assignment_id) }))
-    .filter((review) => review.item && review.assignment?.status === "aguardando_correcao");
+    // As respostas do próprio gestor ficam de fora: outra pessoa corrige (e o gabarito não vem junto).
+    .filter((review) => review.item && review.assignment?.status === "aguardando_correcao" && review.assignment.member_id !== actor.user.id);
 
   return NextResponse.json({
     actor: {

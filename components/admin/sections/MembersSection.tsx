@@ -22,8 +22,9 @@ import BirthdayBadge from "@/components/member/BirthdayBadge";
 import { GraduationInsignias, RankInsignia } from "@/components/member/Insignia";
 import CountBadge from "@/components/ui/CountBadge";
 import Select from "@/components/ui/Select";
-import { adminRoleOptions, graduationLabels, graduationOptions, graduationTracks, highestGraduation, isCommander, memberKindLabels, memberKindOptions, rankGroups, rankLabels } from "@/lib/member-access";
+import { adminRoleOptions, graduationOptions, graduationTracks, highestGraduation, isCommander, memberKindLabels, memberKindOptions, rankGroups } from "@/lib/member-access";
 import { friendlyError } from "@/lib/friendly-error";
+import { canGrantRank } from "@/lib/rank-grants";
 import { matchesGraduation, matchesRank, matchesSearch, type GraduationFilter, type RankFilter, type TrackFilter } from "@/lib/member-filters";
 import type { AdminRole, DkRank, GraduationLevel, MemberKind, MemberProfile } from "@/lib/types";
 
@@ -81,8 +82,8 @@ export default function MembersSection() {
 
   // Inclui a própria solicitação do admin: aparece só como aviso e não entra no selo.
   const membersQueue = useMemo(() => members.filter((member) =>
-    member.status === "pendente" || Boolean(member.access_request_id) || (principal && Boolean(member.graduation_review_needed)),
-  ), [members, principal]);
+    member.status === "pendente" || Boolean(member.access_request_id) || (Boolean(member.graduation_review_needed) && (principal || member.id !== currentUserId)),
+  ), [members, principal, currentUserId]);
   // Busca, patente e graduação valem para a lista e para os contadores da situação.
   const searched = useMemo(
     () => members.filter((member) => matchesSearch(member, memberSearch) && matchesRank(member, rankFilter) && matchesGraduation(member, graduationFilter, trackFilter, commanderOnly)),
@@ -129,12 +130,10 @@ export default function MembersSection() {
     return member.id === currentUserId;
   }
 
-  function isOtherPrincipal(member: MemberProfile) {
-    return !isSelfTarget(member) && (memberRoles[member.id] || []).includes("principal");
-  }
-
+  // Patente, graduação e comando: qualquer pessoa, menos a própria conta (exceto o ADM
+  // Principal). A própria mudança passa pelo pedido que outro administrador aprova.
   function canEditAccess(member: MemberProfile) {
-    return principal || (!isSelfTarget(member) && !isOtherPrincipal(member));
+    return principal || !isSelfTarget(member);
   }
 
   function canManageMember(member: MemberProfile) {
@@ -166,7 +165,7 @@ export default function MembersSection() {
   }
 
   function editMember(member: MemberProfile) {
-    if (!canEditAccess(member)) return toast.error("Esta conta só pode ser alterada por outro ADM Principal.");
+    if (!canEditAccess(member)) return toast.error("Os próprios acessos só mudam com a aprovação de outro administrador.");
     setMemberForm({
       id: member.id,
       full_name: member.full_name,
@@ -207,14 +206,14 @@ export default function MembersSection() {
     const response = await fetch(`/api/admin/members/${memberForm.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(principal ? {
+      body: JSON.stringify({
         member_kind: memberForm.member_kind,
         rank: memberForm.rank,
         graduation_cavalaria: memberForm.graduation_cavalaria,
         graduation_arquearia: memberForm.graduation_arquearia,
         commander_cavalaria: memberForm.commander_cavalaria,
         commander_arquearia: memberForm.commander_arquearia,
-      } : { member_kind: memberForm.member_kind }),
+      }),
     });
     const result = await response.json();
     if (!response.ok) return toast.error(friendlyError(result.error));
@@ -318,7 +317,7 @@ export default function MembersSection() {
             {
               key: "actions", header: "Ações", srOnlyHeader: true, className: "row-actions",
               render: (member) => {
-                if (!canEditAccess(member) && !canManageMember(member)) return <small>{isSelfTarget(member) ? "Sua própria conta" : "Protegido: outro ADM Principal"}</small>;
+                if (!canEditAccess(member) && !canManageMember(member)) return <small>Sua própria conta</small>;
                 const manage = canManageMember(member);
                 return <RowMenu label={`Ações de ${member.nickname}`} items={[
                   { label: "Editar acessos", icon: <Pencil />, hidden: !canEditAccess(member), onSelect: () => editMember(member) },
@@ -355,22 +354,17 @@ export default function MembersSection() {
           </div>
         </section>
         <section className="form-section">
-          <FormSectionHead title="Patente e graduação" hint={principal ? "Alterações valem na hora." : "Somente o ADM Principal altera estes dados."} />
+          <FormSectionHead title="Patente e graduação" hint="Alterações valem na hora." />
           <div className="form-section-body">
-            {principal ? <>
-              <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
-              {graduationTracks.map((track) => {
-                const hasLevel = memberForm[track.field] !== "sem_graduacao";
-                return <div className="field" key={track.value}>
-                  <label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label>
-                  <Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel, ...(value === "sem_graduacao" ? { [track.commanderField]: false } : {}) })} />
-                  <label className="check-field" htmlFor={`member-${track.commanderField}`}><input id={`member-${track.commanderField}`} type="checkbox" disabled={!hasLevel} checked={hasLevel && memberForm[track.commanderField]} onChange={(event) => setMemberForm({ ...memberForm, [track.commanderField]: event.target.checked })} /> Comandante de {track.label}</label>
-                </div>;
-              })}
-            </> : <dl className="readonly-list">
-              <div><dt>Patente</dt><dd>{rankLabels[memberForm.rank]}</dd></div>
-              {graduationTracks.map((track) => <div key={track.value}><dt>Graduação em {track.label}</dt><dd>{graduationLabels[memberForm[track.field]]}{memberForm[track.commanderField] ? " · Comandante" : ""}</dd></div>)}
-            </dl>}
+            <div className="field"><label htmlFor="member-rank">Patente</label><Select id="member-rank" value={memberForm.rank} options={rankGroups.flatMap((group) => group.ranks.filter((rank) => canGrantRank(principal, formMember?.rank ?? memberForm.rank, rank.value)).map((rank) => ({ value: rank.value, label: rank.label, group: group.category })))} onChange={(value) => setMemberForm({ ...memberForm, rank: value as DkRank })} /></div>
+            {graduationTracks.map((track) => {
+              const hasLevel = memberForm[track.field] !== "sem_graduacao";
+              return <div className="field" key={track.value}>
+                <label htmlFor={`member-${track.field}`}>Graduação em {track.label}</label>
+                <Select id={`member-${track.field}`} value={memberForm[track.field]} options={graduationOptions.map((item) => ({ value: item.value, label: item.label }))} onChange={(value) => setMemberForm({ ...memberForm, [track.field]: value as GraduationLevel, ...(value === "sem_graduacao" ? { [track.commanderField]: false } : {}) })} />
+                <label className="check-field" htmlFor={`member-${track.commanderField}`}><input id={`member-${track.commanderField}`} type="checkbox" disabled={!hasLevel} checked={hasLevel && memberForm[track.commanderField]} onChange={(event) => setMemberForm({ ...memberForm, [track.commanderField]: event.target.checked })} /> Comandante de {track.label}</label>
+              </div>;
+            })}
           </div>
         </section>
         {principal && <section className="form-section">

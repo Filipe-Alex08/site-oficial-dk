@@ -446,11 +446,6 @@ textarea.is-short { min-height: 84px; }
 .form-more[open] > summary svg { transform: rotate(180deg); }
 .form-more-body { display: grid; gap: 16px; padding: 4px 16px 18px; }
 
-.readonly-list { display: grid; margin: 0; border: 1px solid var(--border); border-radius: var(--r-md); }
-.readonly-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; }
-.readonly-list > div + div { border-top: 1px solid var(--border); }
-.readonly-list dt { color: var(--text-muted); font-size: 0.86rem; }
-.readonly-list dd { margin: 0; font-weight: 600; font-size: 0.9rem; text-align: right; }
 
 /* Tabelas */
 .table-wrap {

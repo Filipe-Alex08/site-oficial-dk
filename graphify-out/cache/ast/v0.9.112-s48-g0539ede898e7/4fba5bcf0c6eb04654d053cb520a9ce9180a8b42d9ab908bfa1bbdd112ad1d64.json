@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_031_profiles_no_direct_update_sql", "label": "031_profiles_no_direct_update.sql", "file_type": "code", "source_file": "supabase/migrations/031_profiles_no_direct_update.sql", "source_location": null}], "edges": []}

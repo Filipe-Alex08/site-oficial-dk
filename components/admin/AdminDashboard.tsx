@@ -101,9 +101,9 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const dashboardQuery = useQuery({ queryKey: dashboardKey, queryFn: load, enabled: Boolean(supabase) });
 
   // Selos das abas: só contam o que exige ação e somem quando a ação é feita.
-  // Membros: cadastro pendente, dados a conferir ou (ADM Principal) graduação a revisar.
+  // Membros: cadastro pendente, dados a conferir ou graduação a revisar (a própria, só o ADM Principal).
   const membersNeedingAction = useMemo(() => members.filter((member) =>
-    member.status === "pendente" || (Boolean(member.access_request_id) && member.id !== currentUserId) || (principal && member.graduation_review_needed),
+    member.status === "pendente" || (Boolean(member.access_request_id) && member.id !== currentUserId) || (member.graduation_review_needed && (principal || member.id !== currentUserId)),
   ).length, [members, principal, currentUserId]);
 
   // Mesma chave de cache da aba Avaliações: corrigir uma resposta lá atualiza o selo aqui.

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_029_documents_follow_access_rules_sql", "label": "029_documents_follow_access_rules.sql", "file_type": "code", "source_file": "supabase/migrations/029_documents_follow_access_rules.sql", "source_location": null}], "edges": []}

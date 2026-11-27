@@ -174,7 +174,7 @@ Ser Membro ou Oficial não concede automaticamente nenhuma permissão administra
 
 ## 8. Documentos e PDFs internos
 
-Somente o ADM Principal poderá enviar e excluir PDFs pelo menu **Documentos** do painel administrativo.
+O ADM Principal e o ADM de Membros podem enviar PDFs pelo menu **Documentos** do painel administrativo. O ADM de Membros só vê, edita e exclui os documentos liberados pela própria patente e graduação (migração 029); o ADM Principal vê todos.
 
 Os níveis disponíveis são:
 
@@ -290,7 +290,7 @@ npm.cmd start
 
 Aplique `supabase/migrations/011_member_access_requests.sql` após as migrações anteriores e antes de disponibilizar a nova edição de perfil. O cadastro pede somente convite, e-mail, senha, nome e apelido. Patente e graduação começam como Recruta e Sem graduação; os demais dados ficam vazios.
 
-Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros, na aba **Aguardando ação**. Antes de aprovar, o administrador pode usar **Ajustar** para corrigir a patente e a graduação de cada trilha pedidas; o que foi pedido e o que foi gravado ficam registrados na auditoria (aba Logs), com a indicação de que houve ajuste. Ninguém analisa a própria solicitação. Administradores com um papel em `user_admin_roles` podem alterar diretamente esses três campos do próprio perfil. A autorização é conferida no banco, independentemente da interface. Ser gestor de avaliações sem papel de ADM não concede essa exceção.
+Depois da aprovação da conta e do login, o membro pode preencher os dados no perfil. O signo é calculado pela data de nascimento. Patente, graduação e ordem informadas pelo membro ficam pendentes em uma solicitação separada dos acessos efetivos. O ADM Principal ou ADM de Membros confere e aprova ou recusa a solicitação na seção Membros, na aba **Aguardando ação**. Antes de aprovar, o administrador pode usar **Ajustar** para corrigir a patente e a graduação de cada trilha pedidas; o que foi pedido e o que foi gravado ficam registrados na auditoria (aba Logs), com a indicação de que houve ajuste. Ninguém analisa a própria solicitação. O ADM de Membros também altera patente, graduação e comando direto em **Membros → Editar acessos**, de qualquer pessoa menos a própria (inclusive de outros administradores), e pode aprovar o pedido de outro administrador. A própria mudança sempre espera outro administrador; o banco reforça essa regra (migração 030). Somente o ADM Principal altera os próprios dados direto pelo painel. Situação e nível interno de outro administrador continuam restritos ao ADM Principal. Só o ADM Principal concede as patentes de General. Nenhum usuário logado atualiza `profiles` direto no banco (migração 031): toda mudança passa pela API do site ou pelas funções do próprio membro. Nas avaliações, ninguém indica, corrige, encerra, cancela nem libera repetição da própria prova. O membro só apaga a própria resposta de presença com a lista aberta (migração 032).
 
 ### Templates de publicações e atividades
 

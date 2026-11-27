@@ -19,7 +19,7 @@ type EditableProfile = Pick<MemberProfile, "full_name" | "nickname" | "birth_dat
  * Botão "Editar perfil" e o modal de edição. `children` (opcional) é a visão
  * somente leitura renderizada no servidor, mostrada acima do botão.
  */
-export default function EditMemberProfile({ profile, hasPassword = true, securityPhrase = "", canEditAccessDirectly = false, children }: { profile: MemberProfile; hasPassword?: boolean; securityPhrase?: string; canEditAccessDirectly?: boolean; children?: ReactNode }) {
+export default function EditMemberProfile({ profile, hasPassword = true, securityPhrase = "", children }: { profile: MemberProfile; hasPassword?: boolean; securityPhrase?: string; children?: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -200,7 +200,6 @@ export default function EditMemberProfile({ profile, hasPassword = true, securit
           profile={profile}
           hasPassword={hasPassword}
           securityPhrase={securityPhrase}
-          canEditAccessDirectly={canEditAccessDirectly}
           form={form}
           setForm={setForm}
           password={password}

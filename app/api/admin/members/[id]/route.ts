@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { requireAdmin } from "@/lib/admin-auth";
 import { graduationOptions, memberKindOptions, rankOptions } from "@/lib/member-access";
+import { canGrantRank } from "@/lib/rank-grants";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AdminRole } from "@/lib/types";
+import type { AdminRole, DkRank } from "@/lib/types";
 
 const ALLOWED_STATUSES = ["pendente", "aprovado", "recusado", "suspenso", "desativado"] as const;
 type MemberStatus = (typeof ALLOWED_STATUSES)[number];
+const GENERAL_RANK_DENIED = "Somente o ADM Principal concede patentes de General.";
 
 const GRADUATION_TRACK_FIELDS = ["graduation_cavalaria", "graduation_arquearia"] as const;
 const COMMANDER_FIELDS = ["commander_cavalaria", "commander_arquearia"] as const;
@@ -34,7 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const [{ data: target }, { data: roleRows }] = await Promise.all([
     admin
       .from("profiles")
-      .select("id, full_name, nickname, status, rank, graduation_cavalaria, graduation_arquearia, commander_cavalaria, commander_arquearia, access_request_id, requested_rank, requested_graduation_cavalaria, requested_graduation_arquearia, requested_commander_cavalaria, requested_commander_arquearia")
+      .select("id, full_name, nickname, status, member_kind, rank, graduation_cavalaria, graduation_arquearia, commander_cavalaria, commander_arquearia, access_request_id, requested_rank, requested_graduation_cavalaria, requested_graduation_arquearia, requested_commander_cavalaria, requested_commander_arquearia")
       .eq("id", id)
       .maybeSingle(),
     admin.from("user_admin_roles").select("role").eq("user_id", id),
@@ -47,11 +49,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const targetIsAdmin = targetRoles.length > 0;
   const isSelf = id === caller.user.id;
 
-  // A membros admin may manage regular members, but never another administrator.
-  if (targetIsAdmin && !caller.isPrincipal) {
-    return NextResponse.json({ error: "Somente o ADM Principal pode alterar outro administrador." }, { status: 403 });
+  // A membros admin edits rank, graduation and command of anyone else, administrators
+  // included. Status and membership level of another administrator stay with the principal.
+  // The panel always sends member_kind, so only an actual change counts.
+  const changesAccount = body.status !== undefined
+    || (body.member_kind !== undefined && body.member_kind !== target.member_kind);
+  if (targetIsAdmin && !caller.isPrincipal && changesAccount) {
+    return NextResponse.json({ error: "Somente o ADM Principal altera a situação ou o nível interno de outro administrador." }, { status: 403 });
   }
-  // Non-principal admins cannot change their own access (self-escalation).
+  // Non-principal admins cannot change their own access (self-escalation): their own
+  // rank only changes through a request that another administrator approves.
   if (isSelf && !caller.isPrincipal) {
     return NextResponse.json({ error: "Você não pode alterar os próprios acessos." }, { status: 403 });
   }
@@ -121,6 +128,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         applied[commanderField] = false;
       }
     }
+    if (requestAction === "approve" && !canGrantRank(caller.isPrincipal, target.rank, applied.rank)) {
+      return NextResponse.json({ error: GENERAL_RANK_DENIED }, { status: 403 });
+    }
     const adjusted = ADJUSTABLE_FIELDS.some((field) => applied[field] !== requested[field]);
 
     const changes = {
@@ -181,11 +191,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const rank = body.rank;
   if (rank !== undefined) {
-    if (!caller.isPrincipal) {
-      return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
-    }
     if (!rankOptions.some((item) => item.value === rank)) {
       return NextResponse.json({ error: "Patente inválida." }, { status: 400 });
+    }
+    if (!canGrantRank(caller.isPrincipal, target.rank, rank as DkRank)) {
+      return NextResponse.json({ error: GENERAL_RANK_DENIED }, { status: 403 });
     }
     update.rank = rank as string;
   }
@@ -193,25 +203,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   for (const field of GRADUATION_TRACK_FIELDS) {
     const level = body[field];
     if (level === undefined) continue;
-    if (!caller.isPrincipal) {
-      return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
-    }
     if (!graduationOptions.some((item) => item.value === level)) {
       return NextResponse.json({ error: "Graduação inválida." }, { status: 400 });
     }
     update[field] = level as string;
   }
 
-  // Comandante da trilha: mesma regra da graduação (só o ADM Principal grava direto) e
-  // exige graduação na trilha, olhando o valor que ficará em vigor.
+  // Comandante da trilha: exige graduação na trilha, olhando o valor que ficará em vigor.
   for (const graduationField of GRADUATION_TRACK_FIELDS) {
     const commanderField = COMMANDER_OF[graduationField];
     const commander = body[commanderField];
     const resultingLevel = (update[graduationField] as string | undefined) ?? target[graduationField];
     if (commander !== undefined) {
-      if (!caller.isPrincipal) {
-        return NextResponse.json({ error: "Somente o ADM Principal altera patente e graduação." }, { status: 403 });
-      }
       if (typeof commander !== "boolean") {
         return NextResponse.json({ error: "Comando inválido." }, { status: 400 });
       }

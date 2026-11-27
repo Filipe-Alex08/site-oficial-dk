@@ -73,8 +73,10 @@ export default function AttendancePanel({ activities, userId, initialFilter = "t
         const { error } = await supabase.from("activity_attendance").upsert({ activity_id: activity.id, user_id: userId, response, guest_count: response === "vai" ? form.guest_count : 0, note: form.note.trim() || null }, { onConflict: "activity_id,user_id" });
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("activity_attendance").delete().eq("activity_id", activity.id).eq("user_id", userId);
+        const { data: removed, error } = await supabase.from("activity_attendance").delete().eq("activity_id", activity.id).eq("user_id", userId).select("activity_id");
         if (error) throw error;
+        // A regra do banco não devolve erro ao recusar a exclusão: só não apaga nada.
+        if (!removed?.length) throw new Error("A resposta não foi removida. A lista de presença pode estar fechada.");
       }
       return { activity, response };
     },

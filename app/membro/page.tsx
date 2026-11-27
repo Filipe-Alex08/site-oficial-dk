@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Painel do Membro" };
 
 export default async function MemberPage() {
   // Perfil, papéis e permissões saem juntos (e compartilhados com o resto da requisição).
-  const { supabase, user, profile, roles: roleList } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
 
   if (!supabase) return <Unavailable />;
   if (!user) redirect("/area-do-membro/login");
@@ -41,7 +41,6 @@ export default async function MemberPage() {
         userId={user.id}
         hasPassword={usesPasswordLogin(user)}
         securityPhrase={readSecurityPhrase(user.user_metadata)}
-        canEditAccessDirectly={roleList.length > 0}
         isAdmin={isAdmin}
         counts={counts}
         upcoming={(upcomingData ?? []) as UpcomingActivity[]}

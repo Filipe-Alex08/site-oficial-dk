@@ -23,6 +23,9 @@ export async function POST(request: Request) {
   if (!memberIds.length || memberIds.length > 50 || memberIds.some((id) => !uuid.test(id))) {
     return NextResponse.json({ error: "Selecione de 1 a 50 integrantes válidos." }, { status: 400 });
   }
+  if (memberIds.includes(actor.user.id)) {
+    return NextResponse.json({ error: "Você não pode indicar a si mesmo: outro responsável precisa criar a indicação." }, { status: 403 });
+  }
   const expiresAt = body.expires_at ? new Date(String(body.expires_at)) : null;
   if (expiresAt && (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date())) {
     return NextResponse.json({ error: "A data limite precisa estar no futuro." }, { status: 400 });
