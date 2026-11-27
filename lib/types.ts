@@ -85,8 +85,6 @@ export type MediaItem = {
   sort_order: number;
 };
 
-export type GameCategory = "objetivos" | "batalhas" | "pontaria" | "duelos" | "busca" | "desportivos" | "lendas" | "resistencia" | "taverna";
-
 export type Game = {
   id: string;
   /** Usado na URL: /atividades/jogos/<slug> */

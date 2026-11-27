@@ -13,7 +13,7 @@ function load(file) {
 }
 
 const { games } = load("lib/content.ts");
-const { gameCatalogMetadata } = load("lib/game-catalog.ts");
+const { gameCategories, gameCategoryLabels } = load("lib/game-catalog.ts");
 const { gameFieldMaps } = load("lib/game-maps.ts");
 
 const expectedMaps = new Map([
@@ -61,11 +61,11 @@ test("every game has a unique, URL-safe slug", () => {
 });
 
 test("every game belongs to a supported catalog category", () => {
-  const supported = new Set(["objetivos", "batalhas", "pontaria", "duelos", "busca", "desportivos", "lendas", "resistencia", "taverna"]);
+  const supported = new Set(Object.keys(gameCategoryLabels));
   const represented = new Set();
 
   for (const game of games) {
-    const categories = gameCatalogMetadata[game.id]?.categories;
+    const categories = gameCategories[game.id];
     assert.ok(Array.isArray(categories) && categories.length > 0, game.name);
     assert.equal(new Set(categories).size, categories.length, game.name);
     for (const category of categories) {
@@ -74,7 +74,7 @@ test("every game belongs to a supported catalog category", () => {
     }
   }
 
-  assert.equal(Object.keys(gameCatalogMetadata).length, games.length);
+  assert.equal(Object.keys(gameCategories).length, games.length);
   assert.deepEqual([...represented].sort(), [...supported].sort());
 });
 

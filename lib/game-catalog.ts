@@ -1,86 +1,51 @@
-import type { Game, GameCategory } from "@/lib/types";
-
-type GameOverride = Partial<Pick<Game,
-  "summary" | "objective" | "teamFormation" | "rules" | "victory" | "equipment" | "safety"
->>;
-
-type GameCatalogMetadata = {
-  categories: [GameCategory, ...GameCategory[]];
-  overrides?: GameOverride;
+/** Filtros do catálogo, na ordem em que aparecem na tela. */
+export const gameCategoryLabels = {
+  objetivos: "Objetivos",
+  batalhas: "Batalhas",
+  pontaria: "Pontaria",
+  duelos: "Duelos",
+  busca: "Busca",
+  desportivos: "Desportivos",
+  lendas: "Lendas",
+  resistencia: "Resistência",
+  taverna: "Taverna",
 };
 
+export type GameCategory = keyof typeof gameCategoryLabels;
+
 /**
- * Metadados exclusivos do catálogo interativo. Eles ficam separados do
- * conteúdo geral do site para que a área de Jogos possa evoluir sem alterar
- * links institucionais ou integrações sociais mantidas no mesmo módulo.
+ * Categorias de cada jogo. A primeira é a que aparece no cartão.
+ * O texto dos jogos fica em `lib/content.ts`.
  */
-export const gameCatalogMetadata: Record<string, GameCatalogMetadata> = {
-  "captura-bandeira": { categories: ["objetivos"] },
-  Trollball: { categories: ["objetivos"] },
-  "batalha-campal": { categories: ["batalhas"] },
-  "Archery-Tag": { categories: ["pontaria"] },
-  "Guerra-pelas-Fitas": {
-    categories: ["objetivos"],
-    overrides: {
-      teamFormation: "Três equipes, normalmente com 4 ou 5 participantes cada.",
-      rules: [
-        "Cada participante começa com 3 fitas e possui 1 ponto de vida.",
-        "As fitas podem ser encontradas pelo campo ou conquistadas ao derrotar adversários.",
-        "Ao derrotar um adversário, quem aplicou o golpe final recebe 1 fita dele.",
-        "Quem fica sem fitas é eliminado e fica fora até o fim da rodada.",
-        "Não é permitido trocar, doar ou abandonar fitas.",
-        "As fitas não podem ser utilizadas como equipamento de ataque ou defesa.",
-      ],
-    },
-  },
-  "Batalha-de-Campo-com-Conquista": {
-    categories: ["batalhas"],
-    overrides: {
-      teamFormation: "Cinco equipes com 11 ou mais participantes cada, incluindo 1 líder, 2 capitães e os demais combatentes.",
-      rules: [
-        "Todos os integrantes possuem 1 ponto de vida, incluindo líder e capitães.",
-        "A estratégia deve considerar a proteção da liderança e o avanço contra os comandantes adversários.",
-      ],
-    },
-  },
-  "Mate-o-Rei": { categories: ["objetivos"] },
-  "Rapto-da-Princesa": { categories: ["objetivos"] },
-  "Defesa-da-Vila": {
-    categories: ["pontaria"],
-    overrides: {
-      summary: "Um arqueiro defende a vila de três jogadores que avançam pelo campo, um por vez.",
-      objective: "Acertar os três jogadores-alvo que avançam rumo à vila, usando o menor número de flechas e no menor tempo possível.",
-      teamFormation: "Um arqueiro por vez e três jogadores-alvo. A vila fica atrás do arqueiro.",
-      rules: [
-        "Cada participante possui 1 ponto de vida.",
-        "O arqueiro dispõe de 5 flechas para acertar os 3 jogadores-alvo.",
-        "Somente um jogador-alvo pode avançar por vez. Os demais aguardam nos pontos SAFE.",
-        "Enquanto outro jogador avança, quem estiver em um ponto SAFE deve aguardar.",
-        "O arqueiro deve permanecer na área de tiro demarcada e só pode disparar contra o jogador que está avançando fora dos pontos SAFE.",
-      ],
-      victory: "Vence o arqueiro que acertar os três jogadores-alvo no menor tempo, dentro do limite de cinco flechas.",
-      safety: "Delimite a área de tiro e as três zonas SAFE. Mantenha a arena isolada durante os disparos e respeite a proteção dos jogadores nas zonas SAFE.",
-    },
-  },
-  "Duelo-de-Arqueiros": { categories: ["duelos", "pontaria"] },
-  "Batalha-de-Cerco": { categories: ["batalhas"] },
-  "Rei-da-Mesa": { categories: ["duelos"] },
-  "caca-ovos-dragao": { categories: ["busca", "objetivos", "lendas"] },
-  "captura-espiao": { categories: ["busca", "objetivos", "lendas"] },
-  "escolta": { categories: ["objetivos", "lendas"] },
-  "invasao": { categories: ["batalhas", "objetivos", "lendas"] },
-  "linha-morte": { categories: ["resistencia", "batalhas", "objetivos"] },
-  "tacobol": { categories: ["desportivos"] },
-  "arremesso-javelim": { categories: ["pontaria", "desportivos", "lendas"] },
-  "cabo-guerra": { categories: ["desportivos", "resistencia", "lendas"] },
-  "corrida-maca": { categories: ["taverna", "desportivos"] },
-  "corrida-drakares": { categories: ["lendas", "batalhas", "resistencia"] },
-  "destruicao-reino": { categories: ["lendas", "batalhas", "objetivos"] },
-  "todos-contra-todos": { categories: ["batalhas", "resistencia"] },
-  "jogos-vorazes": { categories: ["resistencia", "batalhas", "busca"] },
-  "sobrevivencia-selva": { categories: ["resistencia", "batalhas", "objetivos"] },
-  "conto-bardo": { categories: ["taverna", "lendas"] },
-  "damas": { categories: ["taverna", "lendas"] },
-  "quoits": { categories: ["pontaria", "desportivos", "taverna", "lendas"] },
-  "xadrez": { categories: ["taverna", "lendas"] },
+export const gameCategories: Record<string, [GameCategory, ...GameCategory[]]> = {
+  "captura-bandeira": ["objetivos"],
+  Trollball: ["objetivos"],
+  "batalha-campal": ["batalhas"],
+  "Archery-Tag": ["pontaria"],
+  "Guerra-pelas-Fitas": ["objetivos"],
+  "Batalha-de-Campo-com-Conquista": ["batalhas"],
+  "Mate-o-Rei": ["objetivos"],
+  "Rapto-da-Princesa": ["objetivos"],
+  "Defesa-da-Vila": ["pontaria"],
+  "Duelo-de-Arqueiros": ["duelos", "pontaria"],
+  "Batalha-de-Cerco": ["batalhas"],
+  "Rei-da-Mesa": ["duelos"],
+  "caca-ovos-dragao": ["busca", "objetivos", "lendas"],
+  "captura-espiao": ["busca", "objetivos", "lendas"],
+  escolta: ["objetivos", "lendas"],
+  invasao: ["batalhas", "objetivos", "lendas"],
+  "linha-morte": ["resistencia", "batalhas", "objetivos"],
+  tacobol: ["desportivos"],
+  "arremesso-javelim": ["pontaria", "desportivos", "lendas"],
+  "cabo-guerra": ["desportivos", "resistencia", "lendas"],
+  "corrida-maca": ["taverna", "desportivos"],
+  "corrida-drakares": ["lendas", "batalhas", "resistencia"],
+  "destruicao-reino": ["lendas", "batalhas", "objetivos"],
+  "todos-contra-todos": ["batalhas", "resistencia"],
+  "jogos-vorazes": ["resistencia", "batalhas", "busca"],
+  "sobrevivencia-selva": ["resistencia", "batalhas", "objetivos"],
+  "conto-bardo": ["taverna", "lendas"],
+  damas: ["taverna", "lendas"],
+  quoits: ["pontaria", "desportivos", "taverna", "lendas"],
+  xadrez: ["taverna", "lendas"],
 };
