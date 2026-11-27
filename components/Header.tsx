@@ -192,7 +192,7 @@ export default function Header() {
       <div className="header-inner">
         <Link className="brand" href="/" aria-label="Death Knights, página inicial" onClick={() => setOpen(false)}>
           <Image className="brand-mark" src="/images/dk-emblem.webp" alt="Brasão DK Swordplay BH MG" width={48} height={48} />
-          <span className="brand-copy"><strong>Death Knights</strong><small>Swordplay em Belo Horizonte</small></span>
+          <span className="brand-copy"><strong>Death Knights</strong><small>Grupo de Swordplay</small></span>
         </Link>
 
         <button className="menu-toggle" type="button" aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open} onClick={() => setOpen(!open)}>

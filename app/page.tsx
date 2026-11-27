@@ -42,7 +42,6 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="container home-hero-layout">
           <div className="home-hero-content">
-            <p className="eyebrow">Death Knights · Belo Horizonte</p>
             <h1>
               Swordplay
               <span>todo domingo</span>
