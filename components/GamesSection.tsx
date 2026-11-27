@@ -4,29 +4,21 @@ import { Search } from "lucide-react";
 import { useRef, useState } from "react";
 import GameCard from "@/components/GameCard";
 import { games } from "@/lib/content";
-import { gameCatalogMetadata } from "@/lib/game-catalog";
+import { gameCategories, gameCategoryLabels, type GameCategory } from "@/lib/game-catalog";
 import { gameFieldMaps } from "@/lib/game-maps";
 import { normalizeSearch } from "@/lib/search";
-import type { GameCategory } from "@/lib/types";
 
-const categories = {
-  todos: "Todas",
-  objetivos: "Objetivos",
-  batalhas: "Batalhas",
-  arquearia: "Arquearia",
-  duelos: "Duelos",
-} satisfies Record<"todos" | GameCategory, string>;
+const filterLabels: Record<"todos" | GameCategory, string> = { todos: "Todas", ...gameCategoryLabels };
 
-type Filter = keyof typeof categories;
+type Filter = keyof typeof filterLabels;
 
 const catalog = games.map((game) => {
-  const metadata = gameCatalogMetadata[game.id];
-  if (!metadata) throw new Error(`Jogo sem metadados de catálogo: ${game.id}`);
-  const catalogGame = { ...game, ...metadata.overrides, fieldMap: gameFieldMaps[game.id] };
+  const categories = gameCategories[game.id];
+  if (!categories) throw new Error(`Jogo sem categoria no catálogo: ${game.id}`);
   return {
-    game: catalogGame,
-    gameCategories: metadata.categories,
-    searchText: normalizeSearch(`${catalogGame.name} ${catalogGame.summary}`),
+    game: { ...game, fieldMap: gameFieldMaps[game.id] },
+    categories,
+    searchText: normalizeSearch(`${game.name} ${game.summary}`),
   };
 });
 
@@ -35,8 +27,8 @@ export default function GamesSection() {
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const terms = normalizeSearch(search).split(" ").filter(Boolean);
-  const visibility = catalog.map(({ gameCategories, searchText }) =>
-    (category === "todos" || gameCategories.includes(category))
+  const visibility = catalog.map(({ categories, searchText }) =>
+    (category === "todos" || categories.includes(category))
     && terms.every((term) => searchText.includes(term))
   );
   const count = visibility.filter(Boolean).length;
@@ -59,7 +51,7 @@ export default function GamesSection() {
         </div>
         <div className="catalog-controls">
           <div className="chip-group" role="group" aria-label="Filtrar modalidades">
-            {(Object.keys(categories) as Filter[]).map((filter) => (
+            {(Object.keys(filterLabels) as Filter[]).map((filter) => (
               <button
                 key={filter}
                 type="button"
@@ -67,7 +59,7 @@ export default function GamesSection() {
                 aria-pressed={filter === category}
                 onClick={() => setCategory(filter)}
               >
-                {categories[filter]}
+                {filterLabels[filter]}
               </button>
             ))}
           </div>
@@ -84,11 +76,11 @@ export default function GamesSection() {
           </label>
         </div>
         <div className="games-list">
-          {catalog.map(({ game, gameCategories }, index) => (
+          {catalog.map(({ game, categories }, index) => (
             <GameCard
               key={game.id}
               game={game}
-              category={categories[gameCategories[0]]}
+              category={filterLabels[categories[0]]}
               hidden={!visibility[index]}
             />
           ))}

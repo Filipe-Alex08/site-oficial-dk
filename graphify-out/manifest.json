@@ -120,8 +120,8 @@
     "semantic_hash": "ab056655138b919fd6cfe1c2812f96ec"
   },
   "app/api/admin/members/[id]/route.ts": {
-    "mtime": 1795807147.1188326,
-    "seen": 1795807419.22837,
+    "mtime": 1795816357.1340766,
+    "seen": 1795816364.4329133,
     "ast_hash": "754f90e60b77befd0271f99f4b691a87",
     "semantic_hash": ""
   },
@@ -216,8 +216,8 @@
     "semantic_hash": "c4a94804128442d81a25ae5febd77786"
   },
   "app/api/register/route.ts": {
-    "mtime": 1795807146.644609,
-    "seen": 1795807419.2283986,
+    "mtime": 1795816357.1345985,
+    "seen": 1795816364.4329395,
     "ast_hash": "865ed679f4a0ea3599b736ea7d15bc6d",
     "semantic_hash": ""
   },
@@ -258,8 +258,8 @@
     "semantic_hash": ""
   },
   "app/atividades/jogos/[slug]/page.tsx": {
-    "mtime": 1795213176.0211968,
-    "seen": 1795213621.0126019,
+    "mtime": 1795816103.6321497,
+    "seen": 1795816364.4329534,
     "ast_hash": "11206401f7f5941846e78c408f6f13a2",
     "semantic_hash": ""
   },
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "components/GamesSection.tsx": {
-    "mtime": 1795213257.905684,
-    "seen": 1795213621.0127141,
-    "ast_hash": "f7930a932b57b9a736458ca2d8c7ed09",
+    "mtime": 1795816103.568673,
+    "seen": 1795816364.4330037,
+    "ast_hash": "2115eb59e4949fa9e6a891d0ddb8e828",
     "semantic_hash": ""
   },
   "components/Header.tsx": {
@@ -624,8 +624,8 @@
     "semantic_hash": "a5b30be95233ebe29c0cadb826b8edcc"
   },
   "components/admin/LogsViewer.tsx": {
-    "mtime": 1795807151.202051,
-    "seen": 1795807419.228502,
+    "mtime": 1795816357.1345985,
+    "seen": 1795816364.4330409,
     "ast_hash": "0bbebd7115f4440df62acfb3ad8099ee",
     "semantic_hash": ""
   },
@@ -1062,10 +1062,10 @@
     "semantic_hash": "ea34b5b1ae1da02635422c51a4fd017c"
   },
   "lib/content.ts": {
-    "mtime": 1794357210.2987618,
-    "seen": 1795105968.7580166,
-    "ast_hash": "ce7563a7c5b7cd012ab79266bc0f3370",
-    "semantic_hash": "ce7563a7c5b7cd012ab79266bc0f3370"
+    "mtime": 1795816103.2751813,
+    "seen": 1795816364.4331615,
+    "ast_hash": "4d551de28c895d326d27d6e4b0ff5041",
+    "semantic_hash": ""
   },
   "lib/friendly-error.ts": {
     "mtime": 1794357210.3210866,
@@ -1074,10 +1074,10 @@
     "semantic_hash": "ad9a30e3fac8161fe2e9b178ee68ad61"
   },
   "lib/game-catalog.ts": {
-    "mtime": 1794963220.5940554,
-    "seen": 1795105968.7580187,
-    "ast_hash": "14538f3806a728be4523977fb41d6f2c",
-    "semantic_hash": "14538f3806a728be4523977fb41d6f2c"
+    "mtime": 1795816103.453699,
+    "seen": 1795816364.4331644,
+    "ast_hash": "07cdf62da367cd8ab7a7c22b5c0c99d8",
+    "semantic_hash": ""
   },
   "lib/game-maps.ts": {
     "mtime": 1794963220.5940554,
@@ -1248,9 +1248,9 @@
     "semantic_hash": "f63714d7c549fbcc9154f8693324478a"
   },
   "lib/types.ts": {
-    "mtime": 1795622495.8374505,
-    "seen": 1795622531.7378817,
-    "ast_hash": "b1a817076c65f3e17254869e764dbdec",
+    "mtime": 1795816103.569176,
+    "seen": 1795816364.4332137,
+    "ast_hash": "d5bf465bc4b9d8c0169902c6b85297d9",
     "semantic_hash": ""
   },
   "lib/version.ts": {
@@ -1278,9 +1278,9 @@
     "semantic_hash": "5202a685f32068ab14e3f01e4e0c38ed"
   },
   "next-env.d.ts": {
-    "mtime": 1795807371.0660012,
-    "seen": 1795807419.228683,
-    "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
+    "mtime": 1795816165.5935328,
+    "seen": 1795816364.4332206,
+    "ast_hash": "c7b887684e81cfa5830eeeb7286485f6",
     "semantic_hash": ""
   },
   "next.config.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": "920dc8d66d992f3526cedb067e9f6246"
   },
   "package.json": {
-    "mtime": 1795807110.0273488,
-    "seen": 1795807419.2286856,
+    "mtime": 1795816357.169425,
+    "seen": 1795816364.4332232,
     "ast_hash": "dbb6974da7aaf0a8c20def6512bbf34a",
     "semantic_hash": ""
   },
@@ -1542,10 +1542,10 @@
     "semantic_hash": "701e95534452c3a8f6325364b50f162a"
   },
   "tests/game-maps.test.cjs": {
-    "mtime": 1794963220.6318386,
-    "seen": 1795105968.7581067,
-    "ast_hash": "1d75ecfe90aed8c682e361a24a7fc06b",
-    "semantic_hash": "1d75ecfe90aed8c682e361a24a7fc06b"
+    "mtime": 1795816103.5940719,
+    "seen": 1795816364.4333038,
+    "ast_hash": "e0d63693b81b10ca15cc3abe1f9e3049",
+    "semantic_hash": ""
   },
   "tests/google-login.test.cjs": {
     "mtime": 1795121516.718858,
@@ -1608,8 +1608,8 @@
     "semantic_hash": "80881ac625bd7197ad1b0d362049ffa3"
   },
   "tests/profile-flow.test.cjs": {
-    "mtime": 1795807177.5974917,
-    "seen": 1795807419.2287836,
+    "mtime": 1795816357.1729748,
+    "seen": 1795816364.4333205,
     "ast_hash": "891425fb356732dfc088c0398f5c35b3",
     "semantic_hash": ""
   },
@@ -2136,20 +2136,20 @@
     "semantic_hash": ""
   },
   "scripts/build-email-templates.mjs": {
-    "mtime": 1795807054.4471762,
-    "seen": 1795807419.228693,
-    "ast_hash": "3e3980add57a11389851f53f50d40462",
+    "mtime": 1795816357.170456,
+    "seen": 1795816364.433231,
+    "ast_hash": "df564761a1e3a778021e3b0fb028e614",
     "semantic_hash": ""
   },
   "tests/email-templates.test.cjs": {
-    "mtime": 1795807289.021625,
-    "seen": 1795807419.2287652,
-    "ast_hash": "84175486020bb1371a64937885acdb50",
+    "mtime": 1795816357.1724732,
+    "seen": 1795816364.4333029,
+    "ast_hash": "c5cc667a1a4d4ca835856b14f298b445",
     "semantic_hash": ""
   },
   "docs/EMAILS.md": {
-    "mtime": 1795807412.0661383,
-    "seen": 1795807419.2287998,
+    "mtime": 1795816357.1353784,
+    "seen": 1795816364.4333375,
     "ast_hash": "da6f49989cfe6ea2e7aba83451acf347",
     "semantic_hash": ""
   },
@@ -2406,27 +2406,27 @@
     "semantic_hash": ""
   },
   "lib/site-email.ts": {
-    "mtime": 1795807146.1987112,
-    "seen": 1795807419.2286646,
-    "ast_hash": "2c3299191bc08181a7986e03b6b2a125",
+    "mtime": 1795816357.167421,
+    "seen": 1795816364.4332023,
+    "ast_hash": "6ddfbf6e8afe53550b5504b709aa4230",
     "semantic_hash": ""
   },
   "public/email-templates/assuntos-site.json": {
-    "mtime": 1795807054.868051,
-    "seen": 1795807419.2286882,
-    "ast_hash": "81fd60fa221d9389523870a83a70be19",
+    "mtime": 1795816357.1699557,
+    "seen": 1795816364.4332259,
+    "ast_hash": "1583d4370a37870dc81a1f548ce6bdb1",
     "semantic_hash": ""
   },
   "public/email-templates/cadastro_aprovado.html": {
-    "mtime": 1795807054.8675506,
-    "seen": 1795807419.2288094,
-    "ast_hash": "ebcd82086326d7e401917f483701ab7c",
+    "mtime": 1795816357.1699557,
+    "seen": 1795816364.4333456,
+    "ast_hash": "8c090a6a77d81c13df7ec4fc7ff07cdd",
     "semantic_hash": ""
   },
   "public/email-templates/cadastro_recebido.html": {
-    "mtime": 1795807054.8670504,
-    "seen": 1795807419.2288146,
-    "ast_hash": "98e23ae95bec3965175a77fef0c97fd6",
+    "mtime": 1795816357.170456,
+    "seen": 1795816364.433347,
+    "ast_hash": "fe5b35a30e436f5c844e8157a6e45405",
     "semantic_hash": ""
   },
   "public/images/dk-foto-atividades.webp": {
@@ -2466,8 +2466,8 @@
     "semantic_hash": ""
   },
   "package-lock.json": {
-    "mtime": 1795807110.1133268,
-    "seen": 1795807419.2289443,
+    "mtime": 1795816357.1684215,
+    "seen": 1795816364.4334602,
     "ast_hash": "96636a7412885eab568ac5f409f1db43",
     "semantic_hash": ""
   }
