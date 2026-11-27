@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
 import { logEvent } from "@/lib/app-log";
 import { getClientIp } from "@/lib/client-ip";
 import { maskEmail } from "@/lib/log-sanitize";
+import { sendSiteEmail } from "@/lib/site-email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHash } from "node:crypto";
 
@@ -148,6 +149,8 @@ export async function POST(request: Request) {
 
     pendingUserId = null;
     logEvent({ category: "cadastro", action: "cadastro", message: "Novo cadastro aguardando aprovação", actorId: authData.user.id, request, details: { email: maskEmail(String(body.email)), apelido: String(body.nickname).trim() } });
+    // Depois da resposta: o cadastro não espera o servidor de e-mail.
+    after(() => sendSiteEmail("cadastro_recebido", profile.email));
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     if (pendingUserId) {

@@ -1,6 +1,6 @@
-# E-mails de autenticação (português e assinatura)
+# E-mails (autenticação, cadastro e assinatura)
 
-Os e-mails de "esqueci minha senha", troca de e-mail e convite saem do **servidor de Auth do Supabase**, não do site. Dois ajustes fazem eles parecerem e serem confiáveis: o **texto em português** e a **assinatura do domínio** (SPF, DKIM e DMARC).
+Os e-mails de "esqueci minha senha", troca de e-mail e convite saem do **servidor de Auth do Supabase**, não do site (os avisos de cadastro são a exceção: veja a seção 4). Dois ajustes fazem eles parecerem e serem confiáveis: o **texto em português** e a **assinatura do domínio** (SPF, DKIM e DMARC).
 
 ## 1. Texto em português
 
@@ -52,3 +52,32 @@ O DKIM assina o e-mail por baixo, mas o membro não vê isso. A **frase de segur
 - **Vale a partir do momento em que os modelos em português estiverem colados** no Supabase (seção 1); antes disso os e-mails continuam no texto padrão.
 - A **troca de e-mail não mostra a frase** de propósito: o Auth usa o mesmo modelo para o endereço atual e para o novo, e `user_metadata` é editável pelo próprio usuário. Mostrar esse texto ao endereço novo deixaria um membro mal-intencionado escrever o que quisesse num e-mail "oficial" enviado a outra pessoa. Esse e-mail se confere pelos dois endereços citados no corpo e pelo DKIM.
 - Se um dia for preciso um código impossível de forjar *calculado por e-mail* (por exemplo, um selo que o membro cola numa página do site para conferir), isso exige enviar os e-mails pelo próprio site com o "Send Email Hook" do Auth, em vez dos modelos. É mais trabalho e só vale se a frase não bastar.
+
+## 4. E-mails enviados pelo site (cadastro)
+
+O Auth não tem modelo para "cadastro aguardando aprovação" nem para "conta aprovada" (e o cadastro cria a conta já confirmada, então ele não envia nada). Estes dois quem envia é o **site** (`lib/site-email.ts`), pelo mesmo SMTP do Brevo.
+
+| Arquivo | Quando é enviado |
+|---|---|
+| `cadastro_recebido.html` | Logo depois de um cadastro concluído com convite |
+| `cadastro_aprovado.html` | Quando um administrador muda a situação da conta para aprovado (inclui reativar uma conta recusada, suspensa ou desativada) |
+
+- Têm o mesmo layout e a mesma sintaxe dos modelos do Auth (`{{ .Email }}`, `{{ .ConfirmationURL }}` no botão **Entrar**, quadro da frase de segurança), saem do mesmo `scripts/build-email-templates.mjs` e os assuntos ficam em `assuntos-site.json`. O site só entende essas variáveis e o `if/else` da frase.
+- **Não cole no painel do Supabase** nem acrescente em `assuntos.json`: o Auth não os usa. Publicar o site já aplica o texto novo.
+- Nome e apelido não entram no texto de propósito: são digitados por quem se cadastra.
+
+### Configurar
+Acrescente ao `.env.local` (na sua máquina e no servidor; o deploy não toca nos `.env*` de lá) os mesmos valores do SMTP do Supabase:
+
+```
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=<"Login" da página SMTP do Brevo>
+SMTP_PASS=<SMTP key do Brevo>
+SMTP_ADMIN_EMAIL=<remetente validado no Brevo>
+SMTP_SENDER_NAME=Death Knights
+```
+
+No servidor, edite o arquivo à mão (a chave é um segredo; não passe pelo `set-env.ps1`) e reinicie o site ou publique de novo. O botão do e-mail de aprovação usa `NEXT_PUBLIC_SITE_URL`.
+
+Sem essas variáveis o cadastro e a aprovação funcionam normalmente, só sem os avisos. Em **Admin → Logs → E-mails** aparece `email_enviado`, `email_falhou` (com o motivo) ou `email_nao_configurado`. Uma falha não é reenviada.

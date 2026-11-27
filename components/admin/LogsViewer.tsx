@@ -54,6 +54,7 @@ const serverCategoryOptions = [
   { value: "auth", label: "Login" },
   { value: "cadastro", label: "Cadastro" },
   { value: "conta", label: "Conta" },
+  { value: "email", label: "E-mails" },
   { value: "permissao", label: "Permissões" },
   { value: "request", label: "Erros de requisição" },
   { value: "console", label: "Console do servidor" },

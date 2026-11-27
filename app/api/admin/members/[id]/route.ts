@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { requireAdmin } from "@/lib/admin-auth";
+import { requestOrigin } from "@/lib/api-guard";
+import { logEvent } from "@/lib/app-log";
 import { graduationOptions, memberKindOptions, rankOptions } from "@/lib/member-access";
 import { canGrantRank } from "@/lib/rank-grants";
+import { readSecurityPhrase } from "@/lib/security-phrase";
+import { sendSiteEmail } from "@/lib/site-email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminRole, DkRank } from "@/lib/types";
 
@@ -14,6 +18,17 @@ const GRADUATION_TRACK_FIELDS = ["graduation_cavalaria", "graduation_arquearia"]
 const COMMANDER_FIELDS = ["commander_cavalaria", "commander_arquearia"] as const;
 const ADJUSTABLE_FIELDS = ["rank", ...GRADUATION_TRACK_FIELDS, ...COMMANDER_FIELDS] as const;
 const COMMANDER_OF = { graduation_cavalaria: "commander_cavalaria", graduation_arquearia: "commander_arquearia" } as const;
+
+/** O endereço e a frase de segurança vêm do Auth, que é onde o login os confere. */
+async function notifyApproval(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string, loginUrl: string) {
+  const { data, error } = await admin.auth.admin.getUserById(id);
+  const email = data?.user?.email;
+  if (error || !email) {
+    logEvent({ level: "erro", category: "email", action: "email_falhou", message: "Aviso de aprovação não enviado: conta sem e-mail disponível", details: { modelo: "cadastro_aprovado", membro: id } });
+    return;
+  }
+  await sendSiteEmail("cadastro_aprovado", email, { actionUrl: loginUrl, securityPhrase: readSecurityPhrase(data.user.user_metadata) });
+}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const caller = await requireAdmin(["principal", "membros"]);
@@ -238,6 +253,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   await logAdminAudit(caller.user.id, "profiles", id, "update", { changes: update });
+
+  // Só quando a situação muda para aprovado: salvar de novo não repete o aviso.
+  if (update.status === "aprovado" && target.status !== "aprovado") {
+    const loginUrl = `${requestOrigin(request)}/area-do-membro/login`;
+    after(() => notifyApproval(admin, id, loginUrl));
+  }
   return NextResponse.json({ success: true });
 }
 

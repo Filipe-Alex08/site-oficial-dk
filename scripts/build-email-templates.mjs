@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Gera os modelos de e-mail do Supabase Auth em português (public/email-templates).
+// Gera os modelos de e-mail em português (public/email-templates).
 //
 // Os e-mails de autenticação saem do servidor de Auth (GoTrue), não do site, então o
 // texto vive nestes modelos e é colado no painel (ou apontado por variável de
-// ambiente, no servidor próprio). Veja docs/EMAILS.md.
+// ambiente, no servidor próprio). Já os do cadastro (recebido e aprovado) não existem
+// no Auth: quem os envia é o site (lib/site-email.ts), com o mesmo layout e a mesma
+// sintaxe de variáveis. Veja docs/EMAILS.md.
 //
 // O layout é um só (tabelas e estilos em linha, que é o que os leitores de e-mail
 // aceitam, sem imagens externas para não depender de "carregar imagens") e cada
@@ -62,6 +64,26 @@ const templates = {
   },
 };
 
+// Enviados pelo site. Só o endereço da própria conta entra no texto: nome e apelido são
+// digitados por quem se cadastra e não podem virar texto de um e-mail "oficial".
+// Ficam fora de assuntos.json, que é a lista do que vai para o Auth.
+const siteTemplates = {
+  cadastro_recebido: {
+    phrase: false, // conta recém-criada ainda não tem frase
+    subject: `Recebemos seu cadastro — ${BRAND}`,
+    title: "Cadastro recebido",
+    intro: "O cadastro da conta {{ .Email }} foi realizado e agora aguarda a aprovação de um administrador. Você receberá outro e-mail quando o acesso for liberado.",
+    outro: "Se não foi você, ignore este e-mail.",
+  },
+  cadastro_aprovado: {
+    subject: `Seu acesso foi liberado — ${BRAND}`,
+    title: "Acesso liberado",
+    intro: "O cadastro da conta {{ .Email }} foi aprovado. Você já pode entrar na área dos membros.",
+    button: "Entrar",
+    outro: "Entre com o e-mail e a senha do seu cadastro.",
+  },
+};
+
 // Frase de segurança do membro (user_metadata.frase_seguranca, veja lib/security-phrase.ts).
 // Um e-mail falso não sabe a frase; sem ela definida, o e-mail ensina a criar.
 // A troca de e-mail NÃO leva a frase: o GoTrue usa o mesmo modelo para o endereço
@@ -82,6 +104,8 @@ const PHRASE_BLOCK = `{{ if .Data.frase_seguranca }}
 function render({ title, intro, button, code, outro, phrase = true }) {
   const action = code
     ? `<p style="margin:0 0 24px;font-size:30px;letter-spacing:8px;font-weight:700;color:#111827;text-align:center">${code}</p>`
+    : !button
+    ? ""
     : `<p style="margin:0 0 24px;text-align:center"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 28px;border-radius:8px;background:#b91c1c;color:#ffffff;font-weight:700;font-size:16px;text-decoration:none">${button}</a></p>
           <p style="margin:0 0 24px;font-size:13px;color:#6b7280;word-break:break-all">Se o botão não funcionar, copie e cole este endereço no navegador:<br><a href="{{ .ConfirmationURL }}" style="color:#b91c1c">{{ .ConfirmationURL }}</a></p>`;
   return `<!doctype html>
@@ -113,9 +137,15 @@ function render({ title, intro, button, code, outro, phrase = true }) {
 `;
 }
 
-await mkdir(outDir, { recursive: true });
-for (const [name, template] of Object.entries(templates)) {
-  await writeFile(path.join(outDir, `${name}.html`), render(template), "utf8");
+async function writeGroup(group, subjectsFile) {
+  for (const [name, template] of Object.entries(group)) {
+    await writeFile(path.join(outDir, `${name}.html`), render(template), "utf8");
+  }
+  const subjects = Object.fromEntries(Object.entries(group).map(([name, template]) => [name, template.subject]));
+  await writeFile(path.join(outDir, subjectsFile), `${JSON.stringify(subjects, null, 2)}\n`, "utf8");
 }
-await writeFile(path.join(outDir, "assuntos.json"), `${JSON.stringify(Object.fromEntries(Object.entries(templates).map(([name, template]) => [name, template.subject])), null, 2)}\n`, "utf8");
-console.log(`${Object.keys(templates).length} modelos gerados em ${outDir}`);
+
+await mkdir(outDir, { recursive: true });
+await writeGroup(templates, "assuntos.json");
+await writeGroup(siteTemplates, "assuntos-site.json");
+console.log(`${Object.keys(templates).length + Object.keys(siteTemplates).length} modelos gerados em ${outDir}`);
