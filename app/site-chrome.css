@@ -206,7 +206,7 @@
    por último e a base recortada em ameias. A foto e o véu são os mesmos na home e nas
    páginas internas. */
 .home-hero, .page-hero {
-  --hero-photo: url("/images/dk-hero.webp");
+  --hero-photo: url("/images/dk-foto-capa.webp");
   --hero-pos: center 40%;
   position: relative;
   isolation: isolate;
@@ -214,12 +214,14 @@
 }
 /* Banners das páginas internas são faixas baixas e largas: cada um ajusta o próprio enquadramento
    (e, se precisar, o véu) para que o assunto da foto apareça em vez de só o meio do quadro. */
-.page-hero--default { --hero-pos: center 30%; }
-.page-hero--training { --hero-photo: url("/images/dk-training.webp"); --hero-pos: center 24%; }
-.page-hero--events { --hero-photo: url("/images/dk-events.webp"); --hero-pos: center 40%; --hero-veil: 0.62; }
-/* No celular só cabe um trecho da largura da foto; ancora à direita. */
+.page-hero--default { --hero-pos: 58% 45%; }
+.page-hero--training { --hero-photo: url("/images/dk-foto-atividades.webp"); --hero-pos: center 38%; }
+.page-hero--events { --hero-photo: url("/images/dk-foto-eventos.webp"); --hero-pos: center 48%; --hero-veil: 0.62; }
+/* No celular só cabe um trecho da largura da foto; cada banner ancora no assunto. */
 @media (max-width: 720px) {
-  .page-hero--events { --hero-pos: 82% 40%; --hero-veil: 0.5; }
+  .page-hero--default { --hero-pos: 64% 45%; }
+  .page-hero--training { --hero-pos: 30% 45%; }
+  .page-hero--events { --hero-pos: 80% 50%; }
 }
 .home-hero::after, .page-hero::after {
   content: "";
@@ -249,7 +251,7 @@
   mask: var(--ornament-battlement) repeat-x left bottom / 48px var(--battlement-h);
 }
 
-.home-hero { display: flex; align-items: center; min-height: clamp(460px, 62vh, 600px); --hero-pos: center 48%; }
+.home-hero { display: flex; align-items: center; min-height: clamp(460px, 62vh, 600px); --hero-pos: 58% 45%; }
 .home-hero-layout { padding-block: 64px; }
 .home-hero-content { max-width: 640px; }
 .home-hero-content h1 {
@@ -389,7 +391,7 @@
 @media (max-width: 760px) {
   .container, .page-hero-inner { width: min(100% - 32px, 1240px); }
   .header-inner { width: calc(100% - 32px); gap: 12px; }
-  .home-hero { min-height: 540px; --hero-pos: 64% center; }
+  .home-hero { min-height: 540px; --hero-pos: 64% 45%; }
   .home-hero::before { background: var(--ornament-grain), rgba(6, 6, 7, 0.82); }
   .page-hero { min-height: 260px; }
   .page-hero::before { background: var(--ornament-grain), rgba(8, 8, 8, 0.86); }

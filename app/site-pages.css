@@ -33,9 +33,9 @@
   transition: opacity var(--dur-3);
 }
 .home-portal:hover .portal-photo { opacity: 1; }
-.home-portal-activities { --photo: url("/images/dk-training.webp"); }
-.home-portal-media { --photo: url("/images/dk-hero.webp"); }
-.home-portal-events { --photo: url("/images/dk-events.webp"); }
+.home-portal-activities { --photo: url("/images/dk-foto-atividades.webp"); }
+.home-portal-media { --photo: url("/images/dk-foto-capa.webp"); }
+.home-portal-events { --photo: url("/images/dk-foto-eventos.webp"); }
 .home-portal-body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; padding: 26px; }
 .home-portal-heading { display: flex; align-items: center; gap: 10px; }
 .home-portal h2 { font-family: var(--font-body), system-ui, sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 0; }
@@ -51,7 +51,7 @@
   position: relative;
   min-height: 280px;
   margin: 24px 0 24px 24px;
-  background: url("/images/dk-training.webp") center / cover;
+  background: url("/images/dk-foto-boas-vindas.webp") center 72% / cover;
   clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
 }
 /* Moldura recuada 8px que acompanha o recorte diagonal da foto: um polígono único desenha o anel

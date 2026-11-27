@@ -59,8 +59,8 @@
   position: relative;
   isolation: isolate;
   /* Entrar (e as telas de senha). O cadastro troca a foto logo abaixo. */
-  --auth-photo: url("/images/dk-entrar.webp");
-  background: var(--ornament-grain), var(--auth-photo) 50% 40% / cover;
+  --auth-photo: url("/images/dk-foto-entrar.webp");
+  background: var(--ornament-grain), var(--auth-photo) 45% 60% / cover;
 }
 /* Vinheta leve (as fotos já são escuras): as bordas se apagam e a direita termina na cor do fundo. */
 .auth-banner::before {
@@ -74,7 +74,7 @@
   box-shadow: inset 0 0 44px 4px rgba(8, 8, 8, 0.5);
 }
 .auth-banner .battlement { display: none; }
-.auth-page-wide .auth-banner { --auth-photo: url("/images/dk-registro.webp"); background-position: 70% center; }
+.auth-page-wide .auth-banner { --auth-photo: url("/images/dk-foto-cadastro.webp"); background-position: 35% 50%; }
 
 /* Cota de malha bem leve atrás da placa, como no rodapé. */
 .auth-stage {
@@ -178,8 +178,8 @@
 
 @media (max-width: 899px) {
   .auth-page { grid-template-columns: minmax(0, 1fr); align-content: start; grid-template-rows: auto 1fr; }
-  .auth-banner { height: 170px; background-position: 50% 21%; }
-  .auth-page-wide .auth-banner { background-position: 50% 28%; }
+  .auth-banner { height: 170px; background-position: 45% 52%; }
+  .auth-page-wide .auth-banner { background-position: 50% 60%; }
   /* Os dois seletores igualam a força das regras do desktop. */
   .auth-banner::before, .auth-page-wide .auth-banner::before { background: radial-gradient(ellipse 80% 110% at 50% 45%, transparent 0 45%, rgba(8, 8, 8, 0.75) 100%); box-shadow: inset 0 0 30px 4px rgba(8, 8, 8, 0.55); }
   .auth-stage::before { -webkit-mask: var(--ornament-scales) 0 0 / 20px 20px; mask: var(--ornament-scales) 0 0 / 20px 20px; }
