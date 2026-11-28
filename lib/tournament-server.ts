@@ -5,6 +5,7 @@ import {
   distributeTournamentMatches,
   isAcceptingInvites,
   isTournamentActivityAvailable,
+  isUpcomingTournamentActivity,
   newTournament,
   postponeTournamentMatch,
   recordTournamentResult,
@@ -135,9 +136,17 @@ async function requireAvailableActivity(admin: AdminClient, id: unknown) {
   return activity;
 }
 
+async function requireUpcomingActivity(admin: AdminClient, id: unknown) {
+  const activity = await requireAvailableActivity(admin, id);
+  if (!isUpcomingTournamentActivity(activity)) {
+    throw new TournamentError("A atividade selecionada já aconteceu. Escolha uma atividade futura.", 409);
+  }
+  return activity;
+}
+
 export async function createTournament(admin: AdminClient, actorId: string, value: unknown) {
   const settings = parseTournamentSettings(value);
-  if (settings.firstActivityId) await requireAvailableActivity(admin, settings.firstActivityId);
+  if (settings.firstActivityId) await requireUpcomingActivity(admin, settings.firstActivityId);
   const { data, error } = await admin.from("tournaments")
     .insert({ state: newTournament(settings), created_by: actorId })
     .select(recordFields)
@@ -172,7 +181,11 @@ export async function applyTournamentAction(admin: AdminClient, state: Tournamen
     case "settings": {
       requireInvitesOpen(state);
       const settings = parseTournamentSettings(data.settings);
-      if (settings.firstActivityId) await requireAvailableActivity(admin, settings.firstActivityId);
+      if (settings.firstActivityId) {
+        // A escolha já salva pode ter passado sem impedir a edição dos demais campos.
+        const unchanged = settings.firstActivityId === state.settings.firstActivityId;
+        await (unchanged ? requireAvailableActivity : requireUpcomingActivity)(admin, settings.firstActivityId);
+      }
       state.settings = settings;
       return { action: "editar_torneio", details: { title: settings.title }, message: "Configuração do torneio atualizada." };
     }
@@ -207,7 +220,7 @@ export async function applyTournamentAction(admin: AdminClient, state: Tournamen
       const members = await listTournamentMembers(admin);
       closeTournamentRegistration(state, new Set(members.map((member) => member.id)));
       const firstActivity = state.settings.firstActivityId ? await activityForTournament(admin, state.settings.firstActivityId) : null;
-      const scheduled = firstActivity && isTournamentActivityAvailable(firstActivity) ? distributeTournamentMatches(state, firstActivity.id) : 0;
+      const scheduled = firstActivity && isUpcomingTournamentActivity(firstActivity) ? distributeTournamentMatches(state, firstActivity.id) : 0;
       return {
         action: "sortear_torneio",
         details: { inscritos: state.entries.filter((entry) => entry.registered).length, lutas_agendadas: scheduled },
@@ -215,7 +228,7 @@ export async function applyTournamentAction(admin: AdminClient, state: Tournamen
       };
     }
     case "distribute": {
-      const activity = await requireAvailableActivity(admin, data.activityId);
+      const activity = await requireUpcomingActivity(admin, data.activityId);
       const scheduled = distributeTournamentMatches(state, activity.id);
       if (!scheduled) throw new TournamentError("Não há lutas disponíveis que caibam no limite desta atividade.", 409);
       return { action: "distribuir_lutas", details: { activity_id: activity.id, lutas: scheduled }, message: `${scheduled} luta(s) vinculada(s) à atividade.` };

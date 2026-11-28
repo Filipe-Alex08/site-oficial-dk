@@ -98,6 +98,12 @@ export function isTournamentActivityAvailable(activity: TournamentActivity) {
   return activity.status === "confirmado" || activity.status === "a_definir";
 }
 
+// Agendamentos em lote exigem uma atividade futura. O vínculo manual de uma luta
+// aceita as já realizadas, para permitir o lançamento posterior do resultado.
+export function isUpcomingTournamentActivity(activity: TournamentActivity, now = Date.now()) {
+  return isTournamentActivityAvailable(activity) && Date.parse(activity.starts_at) >= now;
+}
+
 export function setTournamentRegistration(state: TournamentState, memberId: string, registered: boolean) {
   const entry = state.entries.find((item) => item.id === memberId);
   if (!entry) throw new TournamentError("O torneio exige um convite do ADM de Atividades.", 403);

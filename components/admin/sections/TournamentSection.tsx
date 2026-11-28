@@ -14,7 +14,7 @@ import TournamentBoard, { formatTournamentDate } from "@/components/TournamentBo
 import Select from "@/components/ui/Select";
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import {
-  isAcceptingInvites, isTournamentActivityAvailable, tournamentFormatLabels, tournamentMatchIsReady, tournamentStatusLabels,
+  isAcceptingInvites, isTournamentActivityAvailable, isUpcomingTournamentActivity, tournamentFormatLabels, tournamentMatchIsReady, tournamentStatusLabels,
   type TournamentAdminAction, type TournamentMatch, type TournamentMember, type TournamentRecord, type TournamentSettings, type TournamentSummary,
 } from "@/lib/tournaments";
 
@@ -36,7 +36,10 @@ export default function TournamentSection({ active }: { active: boolean }) {
   const [selection, setSelection] = useState("");
   const [form, setForm] = useState<"create" | "settings" | null>(null);
   const [calendarId, setCalendarId] = useState("");
-  const [matchDialog, setMatchDialog] = useState<{ id: string; mode: "schedule" | "result" } | null>(null);
+  const [matchDialog, setMatchDialog] = useState<{ id: string; mode: "schedule" | "result"; basis: string } | null>(null);
+  // Retrato do que estava na tela ao abrir a edição: a consulta se atualiza sozinha
+  // e a revisão enviada passa a ser a nova, mas os campos continuam os antigos.
+  const [settingsBasis, setSettingsBasis] = useState("");
   const key = ["admin-tournaments", currentUserId];
   const list = useQuery({
     queryKey: key, enabled: active,
@@ -52,9 +55,15 @@ export default function TournamentSection({ active }: { active: boolean }) {
   });
   const record = detail.data?.tournament;
   const state = record?.state;
-  const options = useMemo(() => activities.filter(isTournamentActivityAvailable).map((activity) => ({
-    value: activity.id, label: `${activity.title} · ${formatTournamentDate(activity.starts_at)}`,
-  })), [activities]);
+  const { options, upcomingOptions } = useMemo(() => {
+    const entries = activities.filter(isTournamentActivityAvailable).map((activity) => {
+      const upcoming = isUpcomingTournamentActivity(activity);
+      const label = `${activity.title} · ${formatTournamentDate(activity.starts_at)}${upcoming ? "" : " · já realizada"}`;
+      return { value: activity.id, label, upcoming };
+    });
+    return { options: entries, upcomingOptions: entries.filter((entry) => entry.upcoming) };
+  }, [activities]);
+  const settingsOptions = options.filter((option) => option.upcoming || option.value === state?.settings.firstActivityId);
 
   const mutation = useMutation({
     mutationFn: async (action: Action) => {
@@ -88,6 +97,16 @@ export default function TournamentSection({ active }: { active: boolean }) {
     }
   }
 
+  function changedSince(basis: string, current: unknown) {
+    if (JSON.stringify(current) === basis) return false;
+    toast.error("Outro ADM alterou estes dados. Cancele e abra novamente para conferir.");
+    return true;
+  }
+
+  function openMatchDialog(match: TournamentMatch, mode: "schedule" | "result") {
+    setMatchDialog({ id: match.id, mode, basis: JSON.stringify(match) });
+  }
+
   async function closeRegistration() {
     if (await confirm({
       title: "Encerrar inscrições e sortear?",
@@ -101,9 +120,9 @@ export default function TournamentSection({ active }: { active: boolean }) {
     const activity = activities.find((item) => item.id === match.activityId);
     const canRecord = activity && activity.status !== "cancelado" && activity.status !== "adiado";
     return <div className="tournament-row-actions">
-      <button className="text-button" type="button" disabled={mutation.isPending || !options.length} onClick={() => setMatchDialog({ id: match.id, mode: "schedule" })}>{match.activityId ? "Reagendar" : "Agendar"}</button>
+      <button className="text-button" type="button" disabled={mutation.isPending || !options.length} onClick={() => openMatchDialog(match, "schedule")}>{match.activityId ? "Reagendar" : "Agendar"}</button>
       {match.activityId && <button className="text-button" type="button" disabled={mutation.isPending} onClick={() => void run({ action: "postpone", matchId: match.id })}>Adiar</button>}
-      {canRecord && <button className="text-button" type="button" disabled={mutation.isPending} onClick={() => setMatchDialog({ id: match.id, mode: "result" })}>Registrar resultado</button>}
+      {canRecord && <button className="text-button" type="button" disabled={mutation.isPending} onClick={() => openMatchDialog(match, "result")}>Registrar resultado</button>}
     </div>;
   }
 
@@ -112,7 +131,7 @@ export default function TournamentSection({ active }: { active: boolean }) {
 
   return <div className="tournament-stack">
     <AdminTitle eyebrow="Atividades" title="Torneio" action={!form && <button className="button button-primary" type="button" onClick={() => setForm("create")} disabled={busy}><Plus aria-hidden="true" /> Novo torneio</button>} />
-    {form === "create" ? <TournamentForm activityOptions={options} busy={busy} onSave={(settings) => void run({ action: "create", settings })} onCancel={() => setForm(null)} />
+    {form === "create" ? <TournamentForm activityOptions={upcomingOptions} busy={busy} onSave={(settings) => void run({ action: "create", settings })} onCancel={() => setForm(null)} />
       : <>
         {list.isPending && <p role="status">Carregando torneios…</p>}
         {list.isError && <p role="alert">{list.error.message} <button type="button" className="text-button" onClick={() => void list.refetch()}>Tentar novamente</button></p>}
@@ -126,10 +145,10 @@ export default function TournamentSection({ active }: { active: boolean }) {
         </div>}
         {selectedId && detail.isPending && <p role="status">Carregando o torneio…</p>}
         {selectedId && detail.isError && <p role="alert">{detail.error.message} <button type="button" className="text-button" onClick={() => void detail.refetch()}>Tentar novamente</button></p>}
-        {state && form === "settings" && <TournamentForm key={selectedId} initial={state.settings} activityOptions={options} busy={busy} onSave={(settings) => void run({ action: "settings", settings })} onCancel={() => setForm(null)} />}
+        {state && form === "settings" && <TournamentForm key={selectedId} initial={state.settings} activityOptions={settingsOptions} busy={busy} onSave={(settings) => { if (!changedSince(settingsBasis, state.settings)) void run({ action: "settings", settings }); }} onCancel={() => setForm(null)} />}
         {state && form !== "settings" && <>
           <Panel title={state.settings.title} description={`${tournamentFormatLabels[state.settings.format]} · ${tournamentStatusLabels[state.status]}`}
-            actions={isAcceptingInvites(state) && <button type="button" className="button button-ghost" onClick={() => setForm("settings")} disabled={busy}>Editar configuração</button>}>
+            actions={isAcceptingInvites(state) && <button type="button" className="button button-ghost" onClick={() => { setSettingsBasis(JSON.stringify(state.settings)); setForm("settings"); }} disabled={busy}>Editar configuração</button>}>
             <div className="tournament-stack">
               {state.settings.description && <p className="tournament-copy">{state.settings.description}</p>}
               <p>Até {state.settings.fightsPerActivity} {state.settings.fightsPerActivity === 1 ? "luta" : "lutas"} por integrante em cada atividade.</p>
@@ -142,16 +161,16 @@ export default function TournamentSection({ active }: { active: boolean }) {
           {state.settings.rules && <Panel title="Regulamento"><p className="tournament-copy">{state.settings.rules}</p></Panel>}
           {isAcceptingInvites(state) && detail.data && <TournamentInvitations key={selectedId} candidates={detail.data.members} entries={state.entries} busy={busy} onAction={run} />}
           {state.status === "em_andamento" && <Panel title="Distribuir lutas no calendário">
-            {options.length ? <div className="tournament-controls">
+            {upcomingOptions.length ? <div className="tournament-controls">
               <div className="field">
                 <label htmlFor="tournament-distribute-activity">Atividade do calendário</label>
-                <Select id="tournament-distribute-activity" value={calendarId} options={[{ value: "", label: "Selecione uma atividade" }, ...options]} onChange={setCalendarId} disabled={busy} />
+                <Select id="tournament-distribute-activity" value={calendarId} options={[{ value: "", label: "Selecione uma atividade" }, ...upcomingOptions]} onChange={setCalendarId} disabled={busy} />
               </div>
-              <button type="button" className="button button-primary" disabled={busy || !options.some((option) => option.value === calendarId)} onClick={() => void run({ action: "distribute", activityId: calendarId })}>Distribuir lutas disponíveis</button>
+              <button type="button" className="button button-primary" disabled={busy || !upcomingOptions.some((option) => option.value === calendarId)} onClick={() => void run({ action: "distribute", activityId: calendarId })}>Distribuir lutas disponíveis</button>
             </div> : <button className="button button-ghost" type="button" onClick={() => setSection("calendario")}>Cadastrar uma atividade no calendário</button>}
           </Panel>}
           <TournamentBoard state={state} activities={activities} actions={state.status === "em_andamento" ? matchActions : undefined} />
-          {active && matchDialog && editingMatch && <TournamentMatchDialog key={editingMatch.id} mode={matchDialog.mode} match={editingMatch} state={state} activityOptions={options} busy={busy} onAction={run} onClose={() => setMatchDialog(null)} />}
+          {active && matchDialog && editingMatch && <TournamentMatchDialog key={editingMatch.id} mode={matchDialog.mode} match={editingMatch} state={state} activityOptions={options} busy={busy} onAction={async (action) => !changedSince(matchDialog.basis, editingMatch) && run(action)} onClose={() => setMatchDialog(null)} />}
         </>}
       </>}
   </div>;

@@ -170,3 +170,25 @@ test("membro suspenso é bloqueado antes de consultar qualquer inscrição", asy
   const response = await route.PATCH(new Request("https://dk.test/api/member/tournaments", { method: "PATCH" }));
   assert.equal(response.status, 403);
 });
+
+test("distribuição e primeira atividade recusam datas passadas, mas o vínculo manual as aceita", async () => {
+  const server = load("lib/tournament-server.ts", {
+    "next/server": { NextResponse: Response },
+    "@/lib/tournaments": model,
+  });
+  const past = { id: crypto.randomUUID(), status: "confirmado", starts_at: "2020-01-01T00:00:00Z" };
+  const admin = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: past, error: null }) }) }) }) };
+  const { state, approved } = opened(4);
+  const settings = { ...state.settings, firstActivityId: past.id };
+
+  await assert.rejects(server.createTournament(admin, "adm", settings), { status: 409 });
+  await assert.rejects(server.applyTournamentAction(admin, state, { action: "settings", settings }), { status: 409 });
+  state.settings.firstActivityId = past.id;
+  await server.applyTournamentAction(admin, state, { action: "settings", settings });
+
+  model.closeTournamentRegistration(state, approved);
+  await assert.rejects(server.applyTournamentAction(admin, state, { action: "distribute", activityId: past.id }), { status: 409 });
+  const fight = state.matches.find((match) => model.tournamentMatchIsReady(state, match));
+  await server.applyTournamentAction(admin, state, { action: "schedule", matchId: fight.id, activityId: past.id });
+  assert.equal(fight.activityId, past.id);
+});
