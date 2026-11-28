@@ -1,63 +1,83 @@
+/* Torneios internos. Cartões, tabelas, listas e formulários vêm das primitivas do
+   painel e da área do membro; aqui ficam só os ajustes próprios do torneio. */
 .tournament-stack {
   display: grid;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
   min-width: 0;
 }
+.tournament-stack > .admin-panel { margin-bottom: 0; }
 
 .tournament-copy {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-
-.tournament-list, .tournament-podium, .tournament-names {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 0;
-  margin: 0;
+.tournament-intro { padding: var(--space-4) var(--space-5); }
+@media (max-width: 620px) {
+  .tournament-intro { padding-inline: var(--space-4); }
 }
+.tournament-intro + .tournament-facts:not(:empty) { border-top: 1px solid var(--border); }
 
-.tournament-list li, .tournament-podium li, .tournament-names li {
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface-1);
-}
+/* Dados do torneio e pódio: a lista rótulo/valor do Resumo, com valores em texto. */
+.stat-list.tournament-facts dd { font-size: var(--fs-md); text-align: right; overflow-wrap: anywhere; }
 
-.tournament-list li { flex: 1 1 15rem; min-width: 0; }
-.tournament-list a { display: flex; align-items: center; gap: 10px; padding: 12px; overflow-wrap: anywhere; }
-.tournament-list a svg { flex: 0 0 18px; color: var(--accent-bright); }
-.tournament-list small, .tournament-table small, .tournament-standing small { display: block; color: var(--text-muted); }
-.tournament-podium li { flex: 1 1 9rem; display: grid; padding: 12px; gap: 4px; }
-.tournament-podium span { color: var(--text-muted); }
-.tournament-names li { padding: 6px 10px; }
-
-.tournament-standings {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: 14px;
-}
-
-.tournament-standings h4 { margin-bottom: 8px; }
-.tournament-table th, .tournament-table td, .tournament-standing th, .tournament-standing td { padding: 9px 12px; text-align: left; }
-.tournament-table table { min-width: 35rem; }
-.tournament-table td { vertical-align: top; }
-.tournament-table a { text-decoration: underline; }
+.tournament-picker { flex: 1 1 240px; max-width: 460px; min-width: 0; }
+.tournament-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+/* Os conjuntos de nomes quebram a linha: no celular, a rolagem dos filtros os cortaria. */
+.tournament-fieldset .filter-chips { flex-wrap: wrap; margin-inline: 0; padding-inline: 0; overflow: visible; }
+.tournament-leagues { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.tournament-leagues li { display: flex; align-items: center; gap: var(--space-2); }
+.tournament-leagues input { flex: 1; min-width: 0; }
+.tournament-leagues input[aria-invalid="true"], .tournament-fieldset input[type="datetime-local"][aria-invalid="true"] { border-color: var(--danger); }
+.tournament-add-league { justify-self: start; }
+/* O que a configuração atual produz no sorteio. */
+.tournament-outlook { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); }
+.tournament-dialog-fields { display: grid; gap: var(--space-4); }
 
 .tournament-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 10px;
+  gap: var(--space-3);
+}
+.tournament-controls > .field { flex: 1 1 15rem; min-width: 0; }
+
+/* Convites: mesma lista de escolha de membros de Presenças, com várias seleções. */
+.tournament-invite-search { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+.tournament-invite-list { max-height: 18rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.tournament-invite-list li + li { border-top: 1px solid var(--border); }
+.tournament-invite-list label { display: flex; align-items: center; gap: var(--space-3); min-height: 48px; padding: var(--space-2) var(--space-4); cursor: pointer; }
+.tournament-invite-list label:hover { background: var(--hover-veil); }
+.tournament-invite-list label:has(input:checked) { background: var(--accent-veil); box-shadow: inset 3px 0 0 var(--accent-bright); }
+
+/* A tabela já está dentro de um cartão: sem a segunda moldura. */
+.admin-panel-flush > .tournament-matches > .table-wrap { border: 0; border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.tournament-matches a { text-decoration: underline; text-underline-offset: 3px; }
+.tournament-matches .data-table td { vertical-align: top; }
+
+/* Classificação: tabela curta, que precisa caber inteira em qualquer largura. */
+.tournament-standings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.tournament-standings section { min-width: 0; background: var(--surface-1); }
+.tournament-standings h4 { padding: var(--space-3) var(--space-4); font-family: var(--font-body), system-ui, sans-serif; font-size: 0.98rem; font-weight: 650; }
+.tournament-standings table { min-width: 0; }
+.tournament-standings th { position: static; }
+.tournament-standings th, .tournament-standings td { padding: 9px 8px; text-align: center; font-variant-numeric: tabular-nums; }
+.tournament-standings th:first-child, .tournament-standings td:first-child { width: 100%; padding-left: var(--space-4); text-align: left; overflow-wrap: anywhere; }
+.tournament-standings th:last-child, .tournament-standings td:last-child { padding-right: var(--space-4); }
+
+/* Lista de torneios do membro: os selos acompanham a linha. */
+.tournament-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-2); }
+@media (max-width: 620px) {
+  .m-attention .tournament-link { flex-wrap: wrap; }
+  .tournament-link .m-attention-text { flex-basis: calc(100% - 56px - var(--space-4)); }
+  .tournament-link .tournament-tags { justify-content: flex-start; margin-left: calc(40px + var(--space-4)); }
 }
 
-.tournament-controls > .field { flex: 1 1 15rem; min-width: 0; }
-.tournament-row-actions { display: grid; justify-items: start; gap: 6px; }
-.tournament-stack fieldset { border: 0; min-width: 0; padding: 0; margin: 0; }
-.tournament-invite-list {
-  max-height: 15rem;
-  overflow: auto;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
+.tournament-names { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }

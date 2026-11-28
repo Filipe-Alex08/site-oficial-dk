@@ -113,6 +113,19 @@ export function setTournamentRegistration(state: TournamentState, memberId: stri
   return true;
 }
 
+/** O que a configuração produz no sorteio: inscritos necessários, vagas na fase final e o destino do terceiro lugar. */
+export function tournamentDrawOutlook({ format, leagueNames, qualifiersPerLeague, thirdPlace }: TournamentSettings) {
+  const leagues = format === "ligas" ? leagueNames.length : 0;
+  const qualifiers = Math.max(1, qualifiersPerLeague);
+  // No mata-mata sem ligas, o número de classificados só se conhece no sorteio.
+  const finalists = leagues ? leagues * qualifiers : null;
+  const third = !thirdPlace ? "nao_premiado" as const
+    : finalists === null ? "depende" as const
+      : finalists >= 4 ? "luta_extra" as const
+        : finalists === 3 ? "semifinal" as const : "sem_vaga" as const;
+  return { minimumEntries: leagues ? leagues * Math.max(2, qualifiers) : 2, finalists, thirdPlace: third };
+}
+
 function shuffle<T>(items: T[]): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index--) {

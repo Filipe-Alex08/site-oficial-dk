@@ -192,3 +192,42 @@ test("distribuição e primeira atividade recusam datas passadas, mas o vínculo
   await server.applyTournamentAction(admin, state, { action: "schedule", matchId: fight.id, activityId: past.id });
   assert.equal(fight.activityId, past.id);
 });
+
+test("o resumo do formulário bate com o que o sorteio realmente faz", () => {
+  const leagues = (count) => ["Água", "Terra", "Fogo", "Ar"].slice(0, count);
+  const cases = [
+    { names: leagues(2), qualifiers: 1, third: "sem_vaga", extra: false, podium: 2 },
+    { names: leagues(3), qualifiers: 1, third: "semifinal", extra: false, podium: 3 },
+    { names: leagues(2), qualifiers: 2, third: "luta_extra", extra: true, podium: 3 },
+    { names: leagues(4), qualifiers: 3, third: "luta_extra", extra: true, podium: 3 },
+    { names: leagues(2), qualifiers: 2, thirdPlace: false, third: "nao_premiado", extra: false, podium: 2 },
+  ];
+  for (const item of cases) {
+    const settings = { format: "ligas", leagueNames: item.names, qualifiersPerLeague: item.qualifiers, thirdPlace: item.thirdPlace ?? true };
+    const outlook = model.tournamentDrawOutlook(settings);
+    assert.equal(outlook.thirdPlace, item.third);
+    assert.equal(outlook.finalists, item.names.length * item.qualifiers);
+
+    const short = opened(outlook.minimumEntries - 1, settings);
+    assert.throws(() => model.closeTournamentRegistration(short.state, short.approved), /insuficiente|pelo menos dois/);
+
+    const { state, approved } = opened(outlook.minimumEntries, settings);
+    model.closeTournamentRegistration(state, approved);
+    for (let step = 0; state.status !== "concluido" && step < 500; step++) {
+      complete(state, state.matches.find((match) => model.tournamentMatchIsReady(state, match)));
+    }
+    assert.equal(state.status, "concluido");
+    assert.equal(state.qualifiedIds.length, outlook.finalists);
+    assert.equal(state.matches.some((match) => match.stage === "terceiro_lugar"), item.extra);
+    assert.equal(model.tournamentPodium(state).length, item.podium);
+  }
+
+  const knockout = { format: "mata_mata", leagueNames: [], qualifiersPerLeague: 1, thirdPlace: true };
+  const outlook = model.tournamentDrawOutlook(knockout);
+  assert.deepEqual([outlook.minimumEntries, outlook.finalists, outlook.thirdPlace], [2, null, "depende"]);
+  for (const [count, extra] of [[3, false], [4, true]]) {
+    const { state, approved } = opened(count, knockout);
+    model.closeTournamentRegistration(state, approved);
+    assert.equal(state.matches.some((match) => match.stage === "terceiro_lugar"), extra);
+  }
+});
