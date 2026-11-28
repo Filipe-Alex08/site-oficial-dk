@@ -66,7 +66,9 @@ stable
 security invoker
 set search_path = ''
 as $$
-  select public.has_admin_role('gestao');
+  -- 'gestao' nasce na 033, e o deploy aplica as pendentes numa só transação.
+  -- Passando por text, o valor só vira enum quando a função é executada.
+  select public.has_admin_role('gestao'::text::public.admin_role);
 $$;
 
 create or replace function public.can_delegate_assessment_managers()
