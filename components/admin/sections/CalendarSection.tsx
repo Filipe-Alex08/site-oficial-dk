@@ -114,7 +114,7 @@ export default function CalendarSection({ active }: { active: boolean }) {
 
   return <div>
     <AdminTitle
-      eyebrow="Conteúdo"
+      eyebrow="Atividades"
       title="Calendário"
       action={<button className="button button-primary" type="button" onClick={openNew}><CalendarPlus aria-hidden="true" /> Nova atividade</button>}
     />

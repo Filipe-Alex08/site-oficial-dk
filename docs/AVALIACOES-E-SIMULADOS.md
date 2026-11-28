@@ -6,11 +6,7 @@ O módulo registra avaliações de indicação para patentes e graduações. Cad
 
 ## Responsáveis
 
-- Generais de Brigada, Divisão e Exército: acesso automático;
-- Major, Tenente-Coronel e Coronel: acesso somente após delegação de um General;
-- demais integrantes e ADMs: sem acesso à administração das avaliações.
-
-O papel **Gestor de Avaliações** não altera patente, graduação nem os quatro papéis administrativos existentes.
+O ADM de Gestão e o ADM Principal administram as avaliações. O ADM Principal atribui o papel em **Pessoas → Membros**.
 
 ## Fluxo
 
@@ -55,9 +51,9 @@ As avaliações publicadas guardam uma fotografia das questões utilizadas. Alte
 - Gabaritos e alternativas corretas ficam somente no servidor.
 - Respostas deixam de aceitar alterações após a entrega.
 - O encerramento por tempo usa o menor prazo entre a data limite e a duração configurada.
-- Um Gestor de Avaliações pode encerrar uma tentativa em andamento; respostas não preenchidas contam como erro e a ação fica na auditoria.
+- O ADM de Gestão e o ADM Principal podem encerrar uma tentativa em andamento. Respostas não preenchidas contam como erro e a ação fica na auditoria.
 - Concessões, indicações, início, entrega e correções entram no histórico de auditoria.
-- Somente um General pode apagar uma tentativa por falha excepcional; a justificativa fica registrada. No fluxo normal, a repetição exige uma nova indicação.
+- O ADM Principal pode liberar uma nova tentativa em caso excepcional. A justificativa fica registrada. No fluxo normal, a repetição exige uma nova indicação.
 
 ## Rotas principais
 
@@ -65,7 +61,7 @@ As avaliações publicadas guardam uma fotografia das questões utilizadas. Alte
 |---|---|
 | Histórico do integrante | `/membro/simulados` |
 | Tentativa individual | `/membro/simulados/[token]` |
-| Administração | `/admin`, menu **Avaliações** |
+| Administração | `/admin`, **Conteúdo → Avaliações** |
 
 ## Ativação
 

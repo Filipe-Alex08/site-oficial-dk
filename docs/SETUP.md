@@ -60,7 +60,7 @@ O script cria tabelas, índices, tipos, funções e políticas de Row Level Secu
 - Membro e Oficial como níveis internos independentes da patente;
 - patentes de Recruta a General de Exército;
 - graduações Bronze, Prata e Ouro com acesso progressivo;
-- quatro níveis administrativos independentes;
+- papéis administrativos independentes;
 - documentos privados em PDF;
 - confirmação de presença nas atividades;
 - bucket privado `dk-documents` no Supabase Storage.
@@ -165,16 +165,27 @@ values ('UUID-DO-USUARIO', 'principal');
 |---|---|---|
 | `principal` | ADM Principal | Acesso completo |
 | `midias` | ADM de Mídias | Publicações e galerias |
-| `atividades` | ADM de Atividades | Calendário e eventos |
-| `membros` | ADM de Membros | Convites, aprovação e acesso dos membros |
+| `atividades` | ADM de Atividades | Calendário e Torneio |
+| `gestao` | ADM de Gestão | Documentos e Avaliações |
+| `membros` | ADM de Membros | Membros, Convites e Presenças |
 
-O ADM Principal também herda as permissões dos outros três perfis. Depois de entrar em `/admin`, ele poderá abrir **Membros**, editar um integrante e marcar ou remover cada papel administrativo.
+O ADM Principal também herda as permissões dos outros perfis. Depois de entrar em `/admin`, ele poderá abrir **Pessoas → Membros**, editar um integrante e marcar ou remover cada papel administrativo.
+
+Para ativar o novo painel, execute as migrações abaixo no SQL Editor, cada uma em uma execução separada, após as migrações anteriores e antes de publicar o código.
+
+1. `033_admin_role_gestao.sql`
+2. `034_admin_section_permissions.sql`
+3. `035_internal_tournaments.sql`
+
+O ADM Principal atribui o novo papel em **Pessoas → Membros**. As delegações anteriores de avaliações ficam registradas no banco para histórico.
+
+Em **Atividades → Torneio**, cadastre a edição e convide integrantes aprovados. Ao abrir as inscrições, cada convidado confirma ou cancela a própria participação em **Torneios**, na área do membro. O prazo configurado limita as inscrições e o botão **Encerrar inscrições e sortear** gera os confrontos. Vincule as lutas a atividades do calendário e registre os resultados para avançar as fases e calcular o pódio.
 
 Ser Membro ou Oficial não concede automaticamente nenhuma permissão administrativa. A marcação de Oficial é feita manualmente pelo ADM de Membros.
 
 ## 8. Documentos e PDFs internos
 
-O ADM Principal e o ADM de Membros podem enviar PDFs pelo menu **Documentos** do painel administrativo. O ADM de Membros só vê, edita e exclui os documentos liberados pela própria patente e graduação (migração 029); o ADM Principal vê todos.
+O ADM Principal e o ADM de Gestão podem enviar PDFs em **Conteúdo → Documentos**. O ADM de Gestão vê, edita e exclui os documentos liberados pela própria patente e graduação (migração 029). O ADM Principal vê todos.
 
 Os níveis disponíveis são:
 
@@ -186,7 +197,7 @@ O acesso de graduação é progressivo: Prata também acessa Bronze, e Ouro aces
 
 ## 9. Presença nas atividades
 
-O ADM de Atividades informa início, término, local e se a confirmação está aberta. Em `/membro/atividades`, cada integrante aprovado poderá:
+O ADM de Atividades configura o calendário e a abertura da lista. O ADM de Membros consulta e corrige as respostas em **Pessoas → Presenças**. Em `/membro/atividades`, cada integrante aprovado pode fazer o seguinte.
 
 - marcar **Vou** ou **Não vou**;
 - informar convidados ou recrutas que irão com ele;
@@ -214,11 +225,7 @@ Execute `supabase/migrations/009_assessment_module.sql` e depois `supabase/migra
 - resultados vinculados ao perfil;
 - histórico de ações dos responsáveis.
 
-O acesso administrativo é independente dos quatro papéis de ADM:
-
-- General de Brigada, General de Divisão e General de Exército possuem acesso automático;
-- Major, Tenente-Coronel e Coronel precisam receber a permissão **Gestor de Avaliações** de um General;
-- ser ADM Principal, isoladamente, não permite criar ou corrigir avaliações.
+O ADM de Gestão e o ADM Principal administram avaliações em **Conteúdo → Avaliações**. A liberação excepcional de outra tentativa é reservada ao ADM Principal.
 
 As questões, alternativas corretas e gabaritos não possuem permissão de leitura direta para o navegador. Todas as operações passam por rotas do servidor que validam a sessão, o perfil aprovado e a indicação individual.
 
@@ -270,7 +277,7 @@ Depois da configuração inicial, os testes devem seguir esta ordem:
 15. tentativa de abrir o link com outra conta;
 16. entrega da avaliação e verificação do bloqueio de segunda tentativa;
 17. correção da questão aberta e conferência do resultado no perfil;
-18. delegação e revogação do Gestor de Avaliações para um Oficial Superior.
+18. concessão e revogação do papel ADM de Gestão para um membro aprovado.
 
 O roteiro completo, com a matriz de permissões esperada, está em `docs/TESTES-ACESSO.md`.
 

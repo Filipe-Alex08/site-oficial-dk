@@ -35,19 +35,20 @@ export const getViewer = cache(async () => {
     return { supabase, user, profile: null as MemberProfile | null, roles: [] as string[], canManageAssessments: false, canViewLogs: false };
   }
 
-  const [{ data: profileData }, { data: roleData }, { data: canManageAssessments }, { data: canViewLogs }] = await Promise.all([
+  const [{ data: profileData }, { data: roleData }, { data: canViewLogs }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("user_admin_roles").select("role").eq("user_id", user.id),
-    supabase.rpc("can_manage_assessments"),
     supabase.rpc("can_view_logs"),
   ]);
 
+  const profile = (profileData ?? null) as MemberProfile | null;
+  const roles = (roleData ?? []).map((item) => item.role as string);
   return {
     supabase,
     user,
-    profile: (profileData ?? null) as MemberProfile | null,
-    roles: (roleData ?? []).map((item) => item.role as string),
-    canManageAssessments: Boolean(canManageAssessments),
+    profile,
+    roles,
+    canManageAssessments: profile?.status === "aprovado" && (roles.includes("principal") || roles.includes("gestao")),
     canViewLogs: Boolean(canViewLogs),
   };
 });

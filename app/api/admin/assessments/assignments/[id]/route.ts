@@ -54,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   if (action === "reset") {
-    if (!actor.canDelegate) return NextResponse.json({ error: "Somente um General pode liberar uma repetição excepcional." }, { status: 403 });
+    if (!actor.canReset) return NextResponse.json({ error: "Somente o ADM Principal pode liberar uma repetição excepcional." }, { status: 403 });
     const reason = String(body?.reason ?? "").trim();
     if (reason.length < 10 || reason.length > 1000) return NextResponse.json({ error: "Registre uma justificativa de 10 a 1.000 caracteres." }, { status: 400 });
     if (assignment.status === "convidado") return NextResponse.json({ error: "Esta indicação ainda não foi iniciada." }, { status: 409 });

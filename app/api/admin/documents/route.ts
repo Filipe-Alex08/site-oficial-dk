@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { requireAdmin } from "@/lib/admin-auth";
+import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
 import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const caller = await requireAdmin(["principal", "membros"]);
-  if (!caller) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
+  if (!isSameOriginRequest(request)) return forbidden();
+  const caller = await requireAdmin(["gestao"]);
+  if (!caller) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Gestão." }, { status: 403 });
 
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });

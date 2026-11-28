@@ -28,6 +28,7 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 - Graduações Bronze, Prata e Ouro com acesso progressivo
 - Documentos e PDFs privados conforme o nível de acesso
 - Confirmação de presença em atividades, convidados e observações
+- Torneios internos com inscrição por convite, agenda de lutas, ligas e mata-mata
 - Lista formatada para compartilhamento no WhatsApp
 - Nome, apelido, patente, ordem, casa, camisa e builds
 - Identificação automática do signo pela data de nascimento
@@ -39,10 +40,10 @@ Site completo do DK em Belo Horizonte, desenvolvido com Next.js, TypeScript e Su
 
 - ADM Principal: acesso completo
 - ADM de Mídias: publicações
-- ADM de Atividades: calendário
-- ADM de Membros: cadastros, convites e exclusão
-- ADM Principal: documentos privados e atribuição dos quatro papéis de ADM
-- Gestores de Avaliações: Generais e Oficiais Superiores autorizados
+- ADM de Atividades: calendário e torneio
+- ADM de Gestão: documentos e avaliações
+- ADM de Membros: membros, convites e presenças
+- O ADM Principal atribui os papéis administrativos aos integrantes
 - Banco de questões por patente, graduação, Cavalaria e Arquearia
 - Controle por Row Level Security no banco
 

@@ -65,6 +65,7 @@ const auditCategoryOptions = [
   { value: "invites", label: "Convites" },
   { value: "log_viewer_permissions", label: "Permissão Ver logs" },
   { value: "avaliacoes", label: "Avaliações" },
+  { value: "tournaments", label: "Torneios" },
 ];
 const auditCategoryLabel: Record<string, string> = Object.fromEntries(auditCategoryOptions.filter((o) => o.value).map((o) => [o.value, o.label]));
 
@@ -132,7 +133,7 @@ export default function LogsViewer() {
   }
 
   return <section>
-    <AdminTitle eyebrow="Gestão" title="Logs" description="Mantidos por 7 dias." />
+    <AdminTitle eyebrow="Administração" title="Logs" description="Mantidos por 7 dias." />
 
     <div className="admin-subtabs" role="tablist" aria-label="Tipo de log" onKeyDown={onTabListKeyDown}>
       {sections.map((item) => <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { jsonApiFetch } from "@/lib/api-client";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, CircleHelp, Pencil, RefreshCw, Save, UserRound, XCircle } from "lucide-react";
@@ -39,7 +40,7 @@ export default function AttendanceManager() {
   const history = useQuery({ queryKey: ["admin-attendance", memberId], gcTime: 0, enabled: Boolean(memberId), queryFn: ({ signal }) => readJson<History>(`/api/admin/attendance?memberId=${memberId}`, signal) });
   const mutation = useMutation({
     mutationFn: async (correction: Correction) => {
-      const response = await fetch("/api/admin/attendance", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(correction) });
+      const response = await jsonApiFetch("/api/admin/attendance", correction, { method: "PATCH" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível salvar a correção.");
     },
