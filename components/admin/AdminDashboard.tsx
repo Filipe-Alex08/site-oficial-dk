@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpenCheck, CalendarPlus, ChevronRight, FileText, ImagePlus, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ScrollText, Search, ShieldCheck, SlidersHorizontal, TicketPlus, UserCog } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, CalendarPlus, ChevronRight, FileText, ImagePlus, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ScrollText, Search, ShieldCheck, SlidersHorizontal, TicketPlus, Trophy, UserCog } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -22,6 +22,7 @@ import MediaSection from "@/components/admin/sections/MediaSection";
 import MembersSection from "@/components/admin/sections/MembersSection";
 import OverviewSection from "@/components/admin/sections/OverviewSection";
 import SettingsSection from "@/components/admin/sections/SettingsSection";
+import TournamentSection from "@/components/admin/sections/TournamentSection";
 import CountBadge from "@/components/ui/CountBadge";
 import { createClient } from "@/lib/supabase/client";
 import type { Activity, AdminRole, MemberProfile, Post } from "@/lib/types";
@@ -39,12 +40,13 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   const canMedia = principal || roles.includes("midias");
   const canCalendar = principal || roles.includes("atividades");
   const canMembers = principal || roles.includes("membros");
+  const canDocuments = principal || roles.includes("gestao");
   const allowed: AdminSection[] = [
     "resumo",
     ...(canMedia ? ["midias" as const] : []),
-    ...(canCalendar ? ["calendario" as const, "presencas" as const] : []),
-    ...(canMembers ? ["membros" as const, "convites" as const] : []),
-    ...(canMembers ? ["documentos" as const] : []),
+    ...(canCalendar ? ["calendario" as const, "torneio" as const] : []),
+    ...(canMembers ? ["membros" as const, "convites" as const, "presencas" as const] : []),
+    ...(canDocuments ? ["documentos" as const] : []),
     ...(canManageAssessments ? ["simulados" as const] : []),
     ...(canViewLogs ? ["logs" as const] : []),
     ...(principal ? ["configuracoes" as const] : []),
@@ -136,15 +138,18 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
   // Modelo único de navegação: barra lateral, barra inferior e paleta de comandos leem a mesma lista.
   const nav: AdminNavItem[] = [
     { id: "resumo", label: "Resumo", icon: <LayoutDashboard />, group: "Visão geral" },
-    ...(canMedia ? [{ id: "midias" as const, label: "Mídias", icon: <ImagePlus />, group: "Conteúdo" }] : []),
-    ...(canCalendar ? [{ id: "calendario" as const, label: "Calendário", icon: <CalendarPlus />, group: "Conteúdo" }] : []),
-    ...(canMembers ? [{ id: "documentos" as const, label: "Documentos", icon: <FileText />, group: "Conteúdo" }] : []),
+    ...(canCalendar ? [
+      { id: "calendario" as const, label: "Calendário", icon: <CalendarPlus />, group: "Atividades" },
+      { id: "torneio" as const, label: "Torneio", icon: <Trophy />, group: "Atividades" },
+    ] : []),
+    ...(canDocuments ? [{ id: "documentos" as const, label: "Documentos", icon: <FileText />, group: "Conteúdo" }] : []),
+    ...(canManageAssessments ? [{ id: "simulados" as const, label: "Avaliações", icon: <BookOpenCheck />, group: "Conteúdo", badge: pendingReviews, badgeLabel: "respostas a corrigir" }] : []),
     ...(canMembers ? [{ id: "membros" as const, label: "Membros", icon: <UserCog />, group: "Pessoas", badge: membersNeedingAction, badgeLabel: "membros aguardando ação" }] : []),
     ...(canMembers ? [{ id: "convites" as const, label: "Convites", icon: <TicketPlus />, group: "Pessoas" }] : []),
-    ...(canCalendar ? [{ id: "presencas" as const, label: "Presenças", icon: <ShieldCheck />, group: "Pessoas" }] : []),
-    ...(canManageAssessments ? [{ id: "simulados" as const, label: "Avaliações", icon: <BookOpenCheck />, group: "Gestão", badge: pendingReviews, badgeLabel: "respostas a corrigir" }] : []),
-    ...(canViewLogs ? [{ id: "logs" as const, label: "Logs", icon: <ScrollText />, group: "Gestão" }] : []),
-    ...(principal ? [{ id: "configuracoes" as const, label: "Configurações", icon: <SlidersHorizontal />, group: "Gestão" }] : []),
+    ...(canMembers ? [{ id: "presencas" as const, label: "Presenças", icon: <ShieldCheck />, group: "Pessoas" }] : []),
+    ...(canMedia ? [{ id: "midias" as const, label: "Mídias", icon: <ImagePlus />, group: "" }] : []),
+    ...(canViewLogs ? [{ id: "logs" as const, label: "Logs", icon: <ScrollText />, group: "Administração" }] : []),
+    ...(principal ? [{ id: "configuracoes" as const, label: "Configurações", icon: <SlidersHorizontal />, group: "Administração" }] : []),
   ];
   const navGroups = nav.reduce<Array<{ label: string; items: AdminNavItem[] }>>((all, item) => {
     const group = all.find((entry) => entry.label === item.group);
@@ -197,7 +202,7 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
           </div>
           <nav aria-label="Seções do painel">
             {navGroups.map((group) => <div className="admin-nav-group" key={group.label}>
-              <span className="admin-nav-label">{group.label}</span>
+              {group.label && <span className="admin-nav-label">{group.label}</span>}
               {group.items.map((item) => <AdminNav key={item.id} item={item} active={section === item.id} onClick={() => setSection(item.id)} />)}
             </div>)}
           </nav>
@@ -219,13 +224,14 @@ export default function AdminDashboard({ roles, canManageAssessments = false, ca
             </button>
           </div>
 
-          {section === "presencas" && canCalendar && <AttendanceManager />}
+          {section === "presencas" && canMembers && <AttendanceManager />}
           {section === "resumo" && <OverviewSection />}
           {canMedia && keep("midias", <MediaSection active={section === "midias"} />)}
           {canCalendar && keep("calendario", <CalendarSection active={section === "calendario"} />)}
+          {canCalendar && keep("torneio", <TournamentSection active={section === "torneio"} />)}
           {canMembers && keep("membros", <MembersSection />)}
           {canMembers && keep("convites", <InvitesSection />)}
-          {section === "documentos" && canMembers && <DocumentManager />}
+          {section === "documentos" && canDocuments && <DocumentManager />}
           {section === "simulados" && canManageAssessments && <AssessmentAdmin />}
           {section === "logs" && canViewLogs && <LogsViewer />}
           {section === "configuracoes" && principal && <SettingsSection />}

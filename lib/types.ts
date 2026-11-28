@@ -111,7 +111,7 @@ export type Game = {
   }>;
 };
 
-export type AdminRole = "principal" | "midias" | "atividades" | "membros";
+export type AdminRole = "principal" | "midias" | "atividades" | "gestao" | "membros";
 
 export type AssessmentQuestionType = "objetiva" | "aberta";
 export type AssessmentScopeType = "patente" | "graduacao";
@@ -190,14 +190,6 @@ export type AssessmentAssignment = {
   passed?: boolean | null;
   created_at: string;
   updated_at: string;
-};
-
-export type AssessmentManagerPermission = {
-  user_id: string;
-  granted_by?: string | null;
-  active: boolean;
-  granted_at: string;
-  revoked_at?: string | null;
 };
 
 export type DocumentAudience = "todos" | "oficiais" | "graduacao";

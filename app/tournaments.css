@@ -1,0 +1,63 @@
+.tournament-stack {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tournament-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tournament-list, .tournament-podium, .tournament-names {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+
+.tournament-list li, .tournament-podium li, .tournament-names li {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+
+.tournament-list li { flex: 1 1 15rem; min-width: 0; }
+.tournament-list a { display: flex; align-items: center; gap: 10px; padding: 12px; overflow-wrap: anywhere; }
+.tournament-list a svg { flex: 0 0 18px; color: var(--accent-bright); }
+.tournament-list small, .tournament-table small, .tournament-standing small { display: block; color: var(--text-muted); }
+.tournament-podium li { flex: 1 1 9rem; display: grid; padding: 12px; gap: 4px; }
+.tournament-podium span { color: var(--text-muted); }
+.tournament-names li { padding: 6px 10px; }
+
+.tournament-standings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 14px;
+}
+
+.tournament-standings h4 { margin-bottom: 8px; }
+.tournament-table th, .tournament-table td, .tournament-standing th, .tournament-standing td { padding: 9px 12px; text-align: left; }
+.tournament-table table { min-width: 35rem; }
+.tournament-table td { vertical-align: top; }
+.tournament-table a { text-decoration: underline; }
+
+.tournament-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.tournament-controls > .field { flex: 1 1 15rem; min-width: 0; }
+.tournament-row-actions { display: grid; justify-items: start; gap: 6px; }
+.tournament-stack fieldset { border: 0; min-width: 0; padding: 0; margin: 0; }
+.tournament-invite-list {
+  max-height: 15rem;
+  overflow: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}

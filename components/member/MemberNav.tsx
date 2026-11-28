@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { CalendarCheck, ClipboardCheck, FileText, House, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { CalendarCheck, ClipboardCheck, FileText, House, NotebookPen, PanelLeftClose, PanelLeftOpen, Settings, Trophy } from "lucide-react";
 import CountBadge from "@/components/ui/CountBadge";
 import { useStoredFlag } from "@/components/admin/useStoredFlag";
 
@@ -22,6 +22,7 @@ export default function MemberNav({ isAdmin, badges }: { isAdmin: boolean; badge
   const items: NavItem[] = [
     { href: "/membro", label: "Início", icon: <House />, count: 0, countLabel: "", exact: true },
     { href: "/membro/atividades", label: "Atividades", icon: <CalendarCheck />, count: badges.activitiesToAnswer, countLabel: "atividades sem resposta" },
+    { href: "/membro/torneios", label: "Torneios", icon: <Trophy />, count: 0, countLabel: "" },
     { href: "/membro/documentos", label: "Documentos", icon: <FileText />, count: 0, countLabel: "" },
     ...(badges.notesEnabled ? [{ href: "/membro/anotacoes", label: "Anotações", icon: <NotebookPen />, count: badges.notesUnread, countLabel: "anotações não lidas" }] : []),
     { href: "/membro/simulados", label: "Avaliações", icon: <ClipboardCheck />, count: badges.assessmentsToTake, countLabel: "avaliações para fazer" },

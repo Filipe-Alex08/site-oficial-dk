@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,7 +17,7 @@ async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data
 }
 
 export async function GET(request: Request) {
-  if (!(await requireAdmin(["principal", "atividades"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  if (!(await requireAdmin(["membros"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
   const memberId = new URL(request.url).searchParams.get("memberId");
@@ -47,7 +48,8 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await requireAdmin(["principal", "atividades"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  if (!isSameOriginRequest(request)) return forbidden();
+  if (!(await requireAdmin(["membros"]))) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Servidor não configurado." }, { status: 503 });
   const body = await request.json().catch(() => null);

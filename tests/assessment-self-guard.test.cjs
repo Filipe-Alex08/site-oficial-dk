@@ -37,7 +37,7 @@ function harness(memberId) {
       return query;
     },
   };
-  const actor = { user: { id: ME }, profile: { nickname: "Gestor", rank: "general_brigada" }, admin, canManage: true, canDelegate: true };
+  const actor = { user: { id: ME }, profile: { nickname: "Gestor", rank: "general_brigada" }, admin, canManage: true, canReset: true };
   const mocks = {
     "next/server": { NextResponse: { json: (body, init) => Response.json(body, init) } },
     "@/lib/assessment-server": { requireAssessmentManager: async () => actor },

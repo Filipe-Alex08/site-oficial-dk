@@ -63,18 +63,8 @@ export const generalAssessmentRanks: DkRank[] = [
   "general_exercito",
 ];
 
-export const delegableAssessmentRanks: DkRank[] = [
-  "major",
-  "tenente_coronel",
-  "coronel",
-];
-
 export function isGeneralAssessmentRank(rank: DkRank) {
   return generalAssessmentRanks.includes(rank);
-}
-
-export function isDelegableAssessmentRank(rank: DkRank) {
-  return delegableAssessmentRanks.includes(rank);
 }
 
 export function isAssessmentQuestionCount(value: number): value is (typeof assessmentQuestionCountOptions)[number] {

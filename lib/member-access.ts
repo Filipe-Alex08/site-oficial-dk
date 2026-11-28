@@ -134,6 +134,7 @@ export const adminRoleOptions: Array<{ value: AdminRole; label: string }> = [
   { value: "principal", label: "ADM Principal" },
   { value: "midias", label: "ADM de Mídias" },
   { value: "atividades", label: "ADM de Atividades" },
+  { value: "gestao", label: "ADM de Gestão" },
   { value: "membros", label: "ADM de Membros" },
 ];
 

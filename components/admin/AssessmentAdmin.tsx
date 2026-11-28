@@ -18,7 +18,6 @@ import {
   RotateCcw,
   Search,
   Send,
-  ShieldCheck,
   Shuffle,
   Square,
   UserCheck,
@@ -39,14 +38,12 @@ import {
   assessmentQuestionTypeOptions,
   assessmentScopeOptions,
   assessmentTrackOptions,
-  delegableAssessmentRanks,
 } from "@/lib/assessments";
 import { graduationLabels, graduationOptions, rankGroups, rankLabels, rankShortLabels } from "@/lib/member-access";
 import type {
   Assessment,
   AssessmentAssignment,
   AssessmentDifficulty,
-  AssessmentManagerPermission,
   AssessmentQuestion,
   AssessmentQuestionType,
   AssessmentScopeType,
@@ -55,7 +52,7 @@ import type {
   GraduationLevel,
 } from "@/lib/types";
 
-type AdminTab = "resumo" | "questoes" | "avaliacoes" | "indicacoes" | "correcoes" | "resultados" | "permissoes";
+type AdminTab = "resumo" | "questoes" | "avaliacoes" | "indicacoes" | "correcoes" | "resultados";
 type MemberSummary = { id: string; full_name: string; nickname: string; rank: DkRank; status: string };
 type PendingReview = {
   assignment_id: string;
@@ -67,12 +64,11 @@ type PendingReview = {
   assignment: AssessmentAssignment;
 };
 type AssessmentAdminData = {
-  actor: { id: string; nickname: string; rank: DkRank; canDelegate: boolean };
+  actor: { id: string; nickname: string; rank: DkRank; canReset: boolean };
   questions: AssessmentQuestion[];
   assessments: Assessment[];
   assignments: AssessmentAssignment[];
   members: MemberSummary[];
-  permissions: AssessmentManagerPermission[];
   reviews: PendingReview[];
 };
 
@@ -165,7 +161,6 @@ export default function AssessmentAdmin() {
 
   const memberById = useMemo(() => new Map(data?.members.map((member) => [member.id, member]) ?? []), [data?.members]);
   const assessmentById = useMemo(() => new Map(data?.assessments.map((assessment) => [assessment.id, assessment]) ?? []), [data?.assessments]);
-  const permissionByUser = useMemo(() => new Map(data?.permissions.map((permission) => [permission.user_id, permission]) ?? []), [data?.permissions]);
 
   const filteredQuestions = useMemo(() => {
     const search = questionSearch.trim().toLocaleLowerCase("pt-BR");
@@ -340,34 +335,15 @@ export default function AssessmentAdmin() {
     }
   }
 
-  async function togglePermission(userId: string, active: boolean) {
-    setBusy(true);
-    setError("");
-    try {
-      await requestJson("/api/admin/assessments/permissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, active }),
-      });
-      showNotice(active ? "Permissão de Gestor de Avaliações concedida." : "Permissão de Gestor de Avaliações removida.");
-      await assessmentQuery.refetch();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Não foi possível alterar a permissão.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (loading && !data) return <div className="assessment-loading"><LoaderCircle className="spin" /><p>Carregando avaliações…</p></div>;
   if (!data) return <div className="empty-state"><FileQuestion /><h2>Avaliações indisponíveis</h2><p>Tente novamente em alguns instantes.</p><button className="button button-primary" type="button" onClick={() => void assessmentQuery.refetch()}><RefreshCw /> Tentar novamente</button></div>;
 
   const publishedAssessments = data.assessments.filter((assessment) => assessment.status === "publicado");
   const completedAssignments = data.assignments.filter((assignment) => assignment.status === "corrigido");
-  const seniorOfficers = data.members.filter((member) => delegableAssessmentRanks.includes(member.rank));
 
   return <div className="assessment-admin-module">
     <AdminTitle
-      eyebrow="Gestão"
+      eyebrow="Conteúdo"
       title="Avaliações"
       action={<button className="icon-button" type="button" onClick={() => void assessmentQuery.refetch()} disabled={loading} title={loading ? "Atualizando…" : "Atualizar"} aria-label="Atualizar avaliações"><RefreshCw className={loading ? "spin" : ""} aria-hidden="true" /></button>}
     />
@@ -379,7 +355,6 @@ export default function AssessmentAdmin() {
       <AssessmentTab label="Indicações" icon={<Send />} active={tab === "indicacoes"} onClick={() => setTab("indicacoes")} count={data.assignments.length} />
       <AssessmentTab label="Correções" icon={<PenLine />} active={tab === "correcoes"} onClick={() => setTab("correcoes")} count={data.reviews.length} alert />
       <AssessmentTab label="Resultados" icon={<Award />} active={tab === "resultados"} onClick={() => setTab("resultados")} count={completedAssignments.length} />
-      {data.actor.canDelegate && <AssessmentTab label="Permissões" icon={<ShieldCheck />} active={tab === "permissoes"} onClick={() => setTab("permissoes")} />}
     </div>
 
     {tab === "resumo" && <section className="assessment-admin-panel">
@@ -442,7 +417,7 @@ export default function AssessmentAdmin() {
         <button className="button button-primary" type="submit" disabled={busy || !effectiveAssignmentAssessmentId || !assignmentMemberIds.size}>{busy ? <LoaderCircle className="spin" /> : <Link2 />} Gerar {assignmentMemberIds.size || ""} link(s)</button>
       </form>
       <div className="assessment-list-heading"><div><h3>Indicações registradas</h3></div></div>
-      <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Situação</th><th>Início / conclusão</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>{data.assignments.map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankShortLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td><span className={`assessment-status status-${assignment.status}`}>{assessmentAssignmentStatusLabels[assignment.status]}</span></td><td><small>{assignment.started_at ? `Início: ${formatDate(assignment.started_at)}` : "Ainda não iniciou"}</small><small>{assignment.submitted_at ? `Fim: ${formatDate(assignment.submitted_at)}` : "Ainda não concluiu"}</small></td><td>{formatDate(assignment.expires_at)}</td><td className="row-actions"><button type="button" onClick={() => void copyAssignmentLink(assignment)} aria-label="Copiar link" title="Copiar link"><Copy /></button><button type="button" onClick={() => shareAssignment(assignment)} aria-label="Compartilhar no WhatsApp" title="WhatsApp"><MessageCircle /></button>{assignment.member_id !== data.actor.id && assignment.status === "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "cancel")} aria-label="Cancelar indicação" title="Cancelar indicação"><X /></button>}{assignment.member_id !== data.actor.id && assignment.status === "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "close")} aria-label="Encerrar avaliação e calcular resultado" title="Encerrar e calcular"><Square /></button>}{assignment.member_id !== data.actor.id && data.actor.canDelegate && assignment.status !== "convidado" && assignment.status !== "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "reset")} aria-label="Liberar nova tentativa excepcional" title="Liberar nova tentativa"><RotateCcw /></button>}</td></tr>)}</tbody></table></div>
+      <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Situação</th><th>Início / conclusão</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>{data.assignments.map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankShortLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td><span className={`assessment-status status-${assignment.status}`}>{assessmentAssignmentStatusLabels[assignment.status]}</span></td><td><small>{assignment.started_at ? `Início: ${formatDate(assignment.started_at)}` : "Ainda não iniciou"}</small><small>{assignment.submitted_at ? `Fim: ${formatDate(assignment.submitted_at)}` : "Ainda não concluiu"}</small></td><td>{formatDate(assignment.expires_at)}</td><td className="row-actions"><button type="button" onClick={() => void copyAssignmentLink(assignment)} aria-label="Copiar link" title="Copiar link"><Copy /></button><button type="button" onClick={() => shareAssignment(assignment)} aria-label="Compartilhar no WhatsApp" title="WhatsApp"><MessageCircle /></button>{assignment.member_id !== data.actor.id && assignment.status === "convidado" && <button type="button" onClick={() => void changeAssignment(assignment, "cancel")} aria-label="Cancelar indicação" title="Cancelar indicação"><X /></button>}{assignment.member_id !== data.actor.id && assignment.status === "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "close")} aria-label="Encerrar avaliação e calcular resultado" title="Encerrar e calcular"><Square /></button>}{assignment.member_id !== data.actor.id && data.actor.canReset && assignment.status !== "convidado" && assignment.status !== "em_andamento" && <button type="button" onClick={() => void changeAssignment(assignment, "reset")} aria-label="Liberar nova tentativa excepcional" title="Liberar nova tentativa"><RotateCcw /></button>}</td></tr>)}</tbody></table></div>
     </section>}
 
     {tab === "correcoes" && <section className="assessment-admin-panel">
@@ -455,10 +430,6 @@ export default function AssessmentAdmin() {
       <div className="table-wrap assessment-table"><table><thead><tr><th>Integrante</th><th>Avaliação</th><th>Indicação</th><th>Acertos</th><th>Erros</th><th>Resultado</th><th>Conclusão</th></tr></thead><tbody>{data.assignments.filter((assignment) => assignment.status === "corrigido" || assignment.status === "aguardando_correcao").map((assignment) => <tr key={assignment.id}><td><strong>{memberById.get(assignment.member_id)?.nickname ?? "Membro"}</strong><small>{rankShortLabels[memberById.get(assignment.member_id)?.rank ?? "recruta"]}</small></td><td>{assessmentById.get(assignment.assessment_id)?.title ?? "Avaliação"}</td><td>nº {assignment.indication_number}</td><td>{assignment.correct_count ?? "—"}</td><td>{assignment.incorrect_count ?? "—"}</td><td>{assignment.status === "aguardando_correcao" ? <span className="assessment-status status-aguardando_correcao">Aguardando correção</span> : <><strong>{Number(assignment.score_percent ?? 0).toFixed(1)}%</strong><small>{assignment.passed ? "Aprovado" : "Não aprovado"}</small></>}</td><td>{formatDate(assignment.graded_at ?? assignment.submitted_at)}</td></tr>)}</tbody></table></div>
     </section>}
 
-    {tab === "permissoes" && data.actor.canDelegate && <section className="assessment-admin-panel">
-      <div className="assessment-list-heading"><div><h3>Gestores de Avaliações</h3><p>Generais possuem acesso automático. A delegação abaixo é exclusiva para Oficiais Superiores.</p></div></div>
-      {seniorOfficers.length ? <div className="assessment-permission-list">{seniorOfficers.map((member) => { const permission = permissionByUser.get(member.id); const active = Boolean(permission?.active); return <article key={member.id}><div className="assessment-permission-avatar">{member.nickname.slice(0, 2).toUpperCase()}</div><div><strong>{member.nickname}</strong><span>{member.full_name} · {rankShortLabels[member.rank]}</span></div><button className={`assessment-permission-toggle ${active ? "active" : ""}`} type="button" onClick={() => void togglePermission(member.id, !active)} disabled={busy} aria-pressed={active}><span>{active ? "Autorizado" : "Sem acesso"}</span><i /></button></article>; })}</div> : <div className="empty-state"><ShieldCheck /><h2>Nenhum Oficial Superior disponível</h2><p>Majores, Tenentes-Coronéis e Coronéis aprovados aparecerão aqui.</p></div>}
-    </section>}
     {resetDialog && <AdminDialog
       size="sm"
       title="Liberar nova tentativa?"

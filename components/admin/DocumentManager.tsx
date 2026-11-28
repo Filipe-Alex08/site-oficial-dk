@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import { Award, CircleHelp, ExternalLink, FileText, FileUp, Pencil, Plus, Shield, Trash2, Upload, X } from "lucide-react";
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ export default function DocumentManager() {
   const documents = documentsQuery.data ?? [];
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch("/api/admin/documents", { method: "POST", body: formData });
+      const response = await apiFetch("/api/admin/documents", { method: "POST", body: formData });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível enviar o documento.");
     },
@@ -63,7 +64,7 @@ export default function DocumentManager() {
   });
   const saveRulesMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: editRules }) });
+      const response = await apiFetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ access_logic: "or", access_rules: editRules }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar as regras.");
     },
@@ -72,7 +73,7 @@ export default function DocumentManager() {
   });
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/admin/documents/${id}`, { method: "DELETE" });
+      const response = await apiFetch(`/api/admin/documents/${id}`, { method: "DELETE" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível excluir o documento.");
     },

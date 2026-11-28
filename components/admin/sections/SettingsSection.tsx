@@ -63,7 +63,7 @@ export default function SettingsSection() {
   const scopeHint = notesScopeOptions.find((option) => option.value === current?.commanderScope)?.description;
 
   return <div>
-    <AdminTitle eyebrow="Gestão" title="Configurações" />
+    <AdminTitle eyebrow="Administração" title="Configurações" />
     {settingsQuery.isPending && <p className="empty-state" role="status">Carregando…</p>}
     {settingsQuery.isError && <p className="empty-state" role="alert">{settingsQuery.error.message} <button className="text-button" type="button" onClick={() => void settingsQuery.refetch()}>Tentar novamente</button></p>}
 

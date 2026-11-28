@@ -7,7 +7,7 @@ import { useDialogBehavior } from "@/components/admin/ui/useDialogBehavior";
 import CountBadge from "@/components/ui/CountBadge";
 
 /** Ordem em que as seções disputam as vagas fixas da barra (as demais vão para "Mais"). */
-const priority: AdminSection[] = ["resumo", "membros", "calendario", "midias", "simulados", "presencas", "convites", "documentos", "logs", "configuracoes"];
+const priority: AdminSection[] = ["resumo", "membros", "calendario", "torneio", "midias", "simulados", "presencas", "convites", "documentos", "logs", "configuracoes"];
 
 /** Navegação do painel no celular: quatro atalhos fixos e uma folha com todo o resto. */
 export default function AdminBottomBar({ nav, section, onSelect }: { nav: AdminNavItem[]; section: AdminSection; onSelect: (id: AdminSection) => void }) {
@@ -46,7 +46,7 @@ function Sheet({ nav, section, onClose, onSelect }: { nav: AdminNavItem[]; secti
     <section ref={ref} className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header><h3 id={titleId}>Todas as seções</h3><button className="admin-dialog-close sheet-close" type="button" onClick={onClose} aria-label="Fechar"><X size={18} aria-hidden="true" /></button></header>
       {groups.map((group) => <div className="sheet-group" key={group.label}>
-        <span className="admin-nav-label">{group.label}</span>
+        {group.label && <span className="admin-nav-label">{group.label}</span>}
         <div className="sheet-grid">
           {group.items.map((item) => <button key={item.id} type="button" className={item.id === section ? "active" : ""} onClick={() => onSelect(item.id)}>
             {item.icon}<span>{item.label}</span><CountBadge count={item.badge ?? 0} label={item.badgeLabel ?? "pendências"} />

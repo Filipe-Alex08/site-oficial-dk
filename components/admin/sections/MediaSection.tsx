@@ -192,7 +192,6 @@ export default function MediaSection({ active }: { active: boolean }) {
 
   return <div>
     <AdminTitle
-      eyebrow="Conteúdo"
       title="Mídias"
       action={<button className="button button-primary" type="button" onClick={openNew}><Plus aria-hidden="true" /> Nova publicação</button>}
     />

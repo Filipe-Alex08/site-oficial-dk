@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { requireAdmin } from "@/lib/admin-auth";
+import { forbidden, isSameOriginRequest } from "@/lib/api-guard";
 import { graduationOptions, rankOptions } from "@/lib/member-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -16,8 +17,9 @@ async function canSeeDocument(id: string) {
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const caller = await requireAdmin(["principal", "membros"]);
-  if (!caller) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
+  if (!isSameOriginRequest(request)) return forbidden();
+  const caller = await requireAdmin(["gestao"]);
+  if (!caller) return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Gestão." }, { status: 403 });
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -56,10 +58,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return NextResponse.json({ success: true });
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const caller = await requireAdmin(["principal", "membros"]);
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOriginRequest(request)) return forbidden();
+  const caller = await requireAdmin(["gestao"]);
   if (!caller) {
-    return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Membros." }, { status: 403 });
+    return NextResponse.json({ error: "Acesso permitido ao ADM Principal ou ADM de Gestão." }, { status: 403 });
   }
 
   const admin = createAdminClient();

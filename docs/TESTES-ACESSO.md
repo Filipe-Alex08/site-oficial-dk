@@ -11,15 +11,15 @@ Use este roteiro somente depois de configurar o Supabase e criar o primeiro ADM 
 5. Como ADM de Membros ou Principal, confira os valores atuais e os informados na seção Membros. Recuse uma solicitação e confirme que os acessos permanecem iguais. Envie outra, aprove e confira os novos valores efetivos.
 6. Altere uma solicitação enquanto outro administrador visualiza a versão anterior. A tentativa de aprovar a versão antiga deve falhar sem sobrescrever os novos dados.
 7. Como administrador, altere a própria patente, graduação e ordem no perfil. Confira a aplicação direta, sem solicitação pendente. Repita com ADM de Mídias e de Atividades.
-8. Como membro sem papel de ADM, tente chamar a função de edição diretamente. Os campos de acesso devem continuar pendentes. Usuários sem sessão ou suspensos não podem editar. Um gestor de avaliações sem papel de ADM deve seguir o fluxo de aprovação.
+8. Como membro sem papel de ADM, tente chamar a função de edição diretamente. Os campos de acesso devem continuar pendentes. Usuários sem sessão ou suspensos não podem editar.
 
 ## 1. Regras esperadas
 
 | Perfil | Área do membro | Documentos gerais | Documentos de Oficial | Documentos de graduação | Avaliação indicada | Gestão de avaliações | CMS |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Cadastro pendente | Não | Não | Não | Não | Não | Não | Não |
-| Membro aprovado | Sim | Sim | Não | Conforme graduação | Sim | Não | Somente se possuir um papel de ADM |
-| Oficial aprovado | Sim | Sim | Conforme patente mínima | Conforme graduação | Sim | Conforme patente e delegação | Somente se possuir um papel de ADM |
+| Membro aprovado | Sim | Sim | Não | Conforme graduação | Sim | Conforme papel de ADM | Somente se possuir um papel de ADM |
+| Oficial aprovado | Sim | Sim | Conforme patente mínima | Conforme graduação | Sim | Conforme papel de ADM | Somente se possuir um papel de ADM |
 
 Ser Oficial não transforma o usuário em administrador. Patente, graduação e papel de ADM são controles separados.
 
@@ -34,15 +34,15 @@ Ser Oficial não transforma o usuário em administrador. Patente, graduação e 
 
 Nos documentos de Oficial, a patente funciona da mesma forma: o integrante acessa materiais cuja patente mínima seja igual ou inferior à sua patente, desde que esteja marcado como Oficial.
 
-## 3. Quatro níveis administrativos
+## 3. Papéis administrativos
 
-| Ação | Principal | Mídias | Atividades | Membros |
-|---|---:|---:|---:|---:|
-| Publicações e galerias | Sim | Sim | Não | Não |
-| Calendário | Sim | Não | Sim | Não |
-| Membros e convites | Sim | Não | Não | Sim |
-| Atribuir papéis de ADM | Sim | Não | Não | Não |
-| Enviar e excluir PDFs internos | Sim | Não | Não | Não |
+| Ação | Principal | Mídias | Atividades | Gestão | Membros |
+|---|---:|---:|---:|---:|---:|
+| Publicações e galerias | Sim | Sim | Não | Não | Não |
+| Calendário e torneio | Sim | Não | Sim | Não | Não |
+| Membros, convites e presenças | Sim | Não | Não | Não | Sim |
+| Documentos e avaliações | Sim | Não | Não | Sim | Não |
+| Atribuir papéis de ADM | Sim | Não | Não | Não | Não |
 
 Para testar corretamente, utilize contas diferentes. Não atribua vários papéis à mesma conta durante o teste inicial.
 
@@ -90,9 +90,9 @@ Prepare duas contas aprovadas: um General e um integrante indicado. Para validar
 12. Use **Encerrar avaliação** em uma tentativa de teste e confirme que respostas não preenchidas contam como erro.
 13. Entregue a outra avaliação normalmente e confirme que as respostas não podem ser alteradas.
 14. Se houver resposta aberta, confirme a situação **Aguardando correção**.
-15. Entre como General, corrija a resposta e confira o resultado final no histórico do integrante.
+15. Entre como ADM de Gestão, corrija a resposta e confira o resultado final no histórico do integrante.
 16. Gere uma nova indicação para o mesmo integrante e confirme que ela recebe outro número, outro link e um novo sorteio.
-17. Conceda a permissão de Gestor de Avaliações ao Oficial Superior e teste o acesso.
-18. Revogue a permissão e confirme que o painel deixa de ser acessível.
+17. Conceda o papel ADM de Gestão a um integrante aprovado e teste o acesso.
+18. Revogue o papel e confirme que a aba Avaliações deixa de ser acessível.
 
-O ADM Principal sem uma patente autorizada e sem delegação não deve acessar o módulo de avaliações. O gabarito também não deve aparecer nas respostas das rotas usadas pelo integrante.
+Confirme que o ADM Principal acessa o módulo mesmo com patente de Recruta. O gabarito fica restrito às rotas dos responsáveis pelas avaliações.
