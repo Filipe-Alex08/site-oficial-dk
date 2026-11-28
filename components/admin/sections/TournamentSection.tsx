@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trophy } from "lucide-react";
+import { CalendarPlus, CalendarSync, Clock, Pencil, Plus, TicketPlus, Trophy, UserX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAdminData } from "@/components/admin/AdminDataContext";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -9,8 +9,12 @@ import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { useToast } from "@/components/admin/ToastProvider";
 import TournamentForm from "@/components/admin/TournamentForm";
 import TournamentMatchDialog from "@/components/admin/TournamentMatchDialog";
+import DataTable from "@/components/admin/ui/DataTable";
 import Panel from "@/components/admin/ui/Panel";
-import TournamentBoard, { formatTournamentDate } from "@/components/TournamentBoard";
+import RowMenu from "@/components/admin/ui/RowMenu";
+import StatusBadge from "@/components/admin/ui/StatusBadge";
+import { SearchField, Toolbar } from "@/components/admin/ui/Toolbar";
+import TournamentBoard, { formatTournamentDate, tournamentMatchName, TournamentStatusBadge } from "@/components/TournamentBoard";
 import Select from "@/components/ui/Select";
 import { apiFetch, jsonApiFetch } from "@/lib/api-client";
 import {
@@ -35,6 +39,8 @@ export default function TournamentSection({ active }: { active: boolean }) {
   const confirm = useConfirm();
   const [selection, setSelection] = useState("");
   const [form, setForm] = useState<"create" | "settings" | null>(null);
+  // Trocar a chave descarta o rascunho do torneio novo (ao cancelar ou depois de criar).
+  const [draft, setDraft] = useState(0);
   const [calendarId, setCalendarId] = useState("");
   const [matchDialog, setMatchDialog] = useState<{ id: string; mode: "schedule" | "result"; basis: string } | null>(null);
   // Retrato do que estava na tela ao abrir a edição: a consulta se atualiza sozinha
@@ -49,7 +55,7 @@ export default function TournamentSection({ active }: { active: boolean }) {
   const selectedId = selection || choices[0]?.id || "";
   const detailKey = [...key, selectedId];
   const detail = useQuery({
-    queryKey: detailKey, enabled: active && Boolean(selectedId) && form !== "create",
+    queryKey: detailKey, enabled: active && Boolean(selectedId),
     queryFn: async ({ signal }) => readResponse<Detail>(await apiFetch(`${endpoint}?id=${selectedId}`, { signal })),
     refetchInterval: active ? 30_000 : false,
   });
@@ -79,6 +85,7 @@ export default function TournamentSection({ active }: { active: boolean }) {
       queryClient.setQueryData<Detail>([...key, tournament.id], (previous) => previous ? { ...previous, tournament } : undefined);
       setSelection(tournament.id);
       if (action.action === "create" || action.action === "settings") setForm(null);
+      if (action.action === "create") setDraft((current) => current + 1);
       toast.success(message);
       await queryClient.invalidateQueries({ queryKey: key });
     },
@@ -119,60 +126,64 @@ export default function TournamentSection({ active }: { active: boolean }) {
     if (!state || !tournamentMatchIsReady(state, match)) return null;
     const activity = activities.find((item) => item.id === match.activityId);
     const canRecord = activity && activity.status !== "cancelado" && activity.status !== "adiado";
-    return <div className="tournament-row-actions">
-      <button className="text-button" type="button" disabled={mutation.isPending || !options.length} onClick={() => openMatchDialog(match, "schedule")}>{match.activityId ? "Reagendar" : "Agendar"}</button>
-      {match.activityId && <button className="text-button" type="button" disabled={mutation.isPending} onClick={() => void run({ action: "postpone", matchId: match.id })}>Adiar</button>}
-      {canRecord && <button className="text-button" type="button" disabled={mutation.isPending} onClick={() => openMatchDialog(match, "result")}>Registrar resultado</button>}
-    </div>;
+    return <RowMenu label={`Ações de ${tournamentMatchName(state, match)}`} items={[
+      { label: "Registrar resultado", icon: <Pencil />, hidden: !canRecord, disabled: mutation.isPending, onSelect: () => openMatchDialog(match, "result") },
+      { label: match.activityId ? "Reagendar" : "Agendar", icon: match.activityId ? <CalendarSync /> : <CalendarPlus />, disabled: mutation.isPending || !options.length, onSelect: () => openMatchDialog(match, "schedule") },
+      { label: "Adiar", icon: <Clock />, hidden: !match.activityId, disabled: mutation.isPending, onSelect: () => void run({ action: "postpone", matchId: match.id }) },
+    ]} />;
   }
 
   const editingMatch = state?.matches.find((item) => item.id === matchDialog?.id);
   const busy = mutation.isPending;
 
-  return <div className="tournament-stack">
-    <AdminTitle eyebrow="Atividades" title="Torneio" action={!form && <button className="button button-primary" type="button" onClick={() => setForm("create")} disabled={busy}><Plus aria-hidden="true" /> Novo torneio</button>} />
-    {form === "create" ? <TournamentForm activityOptions={upcomingOptions} busy={busy} onSave={(settings) => void run({ action: "create", settings })} onCancel={() => setForm(null)} />
-      : <>
-        {list.isPending && <p role="status">Carregando torneios…</p>}
-        {list.isError && <p role="alert">{list.error.message} <button type="button" className="text-button" onClick={() => void list.refetch()}>Tentar novamente</button></p>}
-        {list.isSuccess && choices.length === 0 && <div className="empty-state"><Trophy aria-hidden="true" /><h3>Nenhum torneio cadastrado</h3><p>Use Novo torneio para definir o formato e convidar integrantes.</p></div>}
-        {choices.length > 0 && <div className="tournament-controls">
+  return <div>
+    <AdminTitle eyebrow="Atividades" title="Torneio" action={<button className="button button-primary" type="button" onClick={() => setForm("create")} disabled={busy}><Plus aria-hidden="true" /> Novo torneio</button>} />
+    {list.isPending && <p className="empty-state" role="status">Carregando torneios…</p>}
+    {list.isError && <p className="empty-state" role="alert">{list.error.message} <button type="button" className="text-button" onClick={() => void list.refetch()}>Tentar novamente</button></p>}
+    {list.isSuccess && choices.length === 0 && <div className="empty-state"><Trophy aria-hidden="true" /><h3>Nenhum torneio cadastrado</h3></div>}
+    {choices.length > 0 && <Toolbar filters={<div className="tournament-picker">
+      <label className="sr-only" htmlFor="admin-tournament-selection">Torneio</label>
+      <Select id="admin-tournament-selection" value={selectedId} options={choices.map((item) => ({ value: item.id, label: `${item.title} · ${tournamentStatusLabels[item.status]}` }))}
+        onChange={(id) => { setSelection(id); setForm(null); setCalendarId(""); setMatchDialog(null); }} disabled={busy} />
+    </div>} />}
+    {selectedId && detail.isPending && <p className="empty-state" role="status">Carregando o torneio…</p>}
+    {selectedId && detail.isError && <p className="empty-state" role="alert">{detail.error.message} <button type="button" className="text-button" onClick={() => void detail.refetch()}>Tentar novamente</button></p>}
+    {state && <div className="tournament-stack">
+      <Panel title={state.settings.title} description={tournamentFormatLabels[state.settings.format]} flush
+        actions={<>
+          <TournamentStatusBadge status={state.status} />
+          {isAcceptingInvites(state) && <button type="button" className="button button-ghost" onClick={() => { setSettingsBasis(JSON.stringify(state.settings)); setForm("settings"); }} disabled={busy}><Pencil aria-hidden="true" /> Editar configuração</button>}
+          {state.status === "rascunho" && <button type="button" className="button button-primary" disabled={busy} onClick={() => void run({ action: "open" })}>Abrir inscrições</button>}
+          {state.status === "inscricoes" && <button type="button" className="button button-primary" disabled={busy} onClick={() => void closeRegistration()}>Encerrar inscrições e sortear</button>}
+        </>}>
+        {state.settings.description && <p className="tournament-intro tournament-copy">{state.settings.description}</p>}
+        <dl className="stat-list tournament-facts">
+          <div><dt>Limite de lutas por integrante em cada atividade</dt><dd>{state.settings.fightsPerActivity}</dd></div>
+          {state.settings.opensAt && <div><dt>Abertura das inscrições</dt><dd>{formatTournamentDate(state.settings.opensAt)}</dd></div>}
+          {state.settings.closesAt && <div><dt>Prazo de inscrição</dt><dd>{formatTournamentDate(state.settings.closesAt)}</dd></div>}
+        </dl>
+      </Panel>
+      {state.settings.rules && <Panel title="Regulamento"><p className="tournament-copy">{state.settings.rules}</p></Panel>}
+      {isAcceptingInvites(state) && detail.data && <TournamentInvitations key={selectedId} candidates={detail.data.members} entries={state.entries} busy={busy} onAction={run} />}
+      {state.status === "em_andamento" && <Panel title="Distribuir lutas no calendário">
+        {upcomingOptions.length ? <div className="tournament-controls">
           <div className="field">
-            <label htmlFor="admin-tournament-selection">Torneio</label>
-            <Select id="admin-tournament-selection" value={selectedId} options={choices.map((item) => ({ value: item.id, label: `${item.title} · ${tournamentStatusLabels[item.status]}` }))}
-              onChange={(id) => { setSelection(id); setForm(null); setCalendarId(""); setMatchDialog(null); }} disabled={busy} />
+            <label htmlFor="tournament-distribute-activity">Atividade do calendário</label>
+            <Select id="tournament-distribute-activity" value={calendarId} options={[{ value: "", label: "Selecione uma atividade" }, ...upcomingOptions]} onChange={setCalendarId} disabled={busy} />
           </div>
-        </div>}
-        {selectedId && detail.isPending && <p role="status">Carregando o torneio…</p>}
-        {selectedId && detail.isError && <p role="alert">{detail.error.message} <button type="button" className="text-button" onClick={() => void detail.refetch()}>Tentar novamente</button></p>}
-        {state && form === "settings" && <TournamentForm key={selectedId} initial={state.settings} activityOptions={settingsOptions} busy={busy} onSave={(settings) => { if (!changedSince(settingsBasis, state.settings)) void run({ action: "settings", settings }); }} onCancel={() => setForm(null)} />}
-        {state && form !== "settings" && <>
-          <Panel title={state.settings.title} description={`${tournamentFormatLabels[state.settings.format]} · ${tournamentStatusLabels[state.status]}`}
-            actions={isAcceptingInvites(state) && <button type="button" className="button button-ghost" onClick={() => { setSettingsBasis(JSON.stringify(state.settings)); setForm("settings"); }} disabled={busy}>Editar configuração</button>}>
-            <div className="tournament-stack">
-              {state.settings.description && <p className="tournament-copy">{state.settings.description}</p>}
-              <p>Até {state.settings.fightsPerActivity} {state.settings.fightsPerActivity === 1 ? "luta" : "lutas"} por integrante em cada atividade.</p>
-              {state.settings.opensAt && <p>Abertura em {formatTournamentDate(state.settings.opensAt)}.</p>}
-              {state.settings.closesAt && <p>Prazo de inscrição em {formatTournamentDate(state.settings.closesAt)}.</p>}
-              {state.status === "rascunho" && <div><button type="button" className="button button-primary" disabled={busy} onClick={() => void run({ action: "open" })}>Abrir inscrições</button></div>}
-              {state.status === "inscricoes" && <div><button type="button" className="button button-primary" disabled={busy} onClick={() => void closeRegistration()}>Encerrar inscrições e sortear</button></div>}
-            </div>
-          </Panel>
-          {state.settings.rules && <Panel title="Regulamento"><p className="tournament-copy">{state.settings.rules}</p></Panel>}
-          {isAcceptingInvites(state) && detail.data && <TournamentInvitations key={selectedId} candidates={detail.data.members} entries={state.entries} busy={busy} onAction={run} />}
-          {state.status === "em_andamento" && <Panel title="Distribuir lutas no calendário">
-            {upcomingOptions.length ? <div className="tournament-controls">
-              <div className="field">
-                <label htmlFor="tournament-distribute-activity">Atividade do calendário</label>
-                <Select id="tournament-distribute-activity" value={calendarId} options={[{ value: "", label: "Selecione uma atividade" }, ...upcomingOptions]} onChange={setCalendarId} disabled={busy} />
-              </div>
-              <button type="button" className="button button-primary" disabled={busy || !upcomingOptions.some((option) => option.value === calendarId)} onClick={() => void run({ action: "distribute", activityId: calendarId })}>Distribuir lutas disponíveis</button>
-            </div> : <button className="button button-ghost" type="button" onClick={() => setSection("calendario")}>Cadastrar uma atividade no calendário</button>}
-          </Panel>}
-          <TournamentBoard state={state} activities={activities} actions={state.status === "em_andamento" ? matchActions : undefined} />
-          {active && matchDialog && editingMatch && <TournamentMatchDialog key={editingMatch.id} mode={matchDialog.mode} match={editingMatch} state={state} activityOptions={options} busy={busy} onAction={async (action) => !changedSince(matchDialog.basis, editingMatch) && run(action)} onClose={() => setMatchDialog(null)} />}
-        </>}
-      </>}
+          <button type="button" className="button button-primary" disabled={busy || !upcomingOptions.some((option) => option.value === calendarId)} onClick={() => void run({ action: "distribute", activityId: calendarId })}>Distribuir lutas disponíveis</button>
+        </div> : <button className="button button-ghost" type="button" onClick={() => setSection("calendario")}><CalendarPlus aria-hidden="true" /> Cadastrar uma atividade no calendário</button>}
+      </Panel>}
+      <TournamentBoard state={state} activities={activities} actions={state.status === "em_andamento" ? matchActions : undefined} />
+    </div>}
+    <TournamentForm key={draft} activityOptions={upcomingOptions} open={active && form === "create"} busy={busy}
+      onSave={(settings) => void run({ action: "create", settings })}
+      onClose={() => setForm(null)}
+      onCancel={() => { setForm(null); setDraft((current) => current + 1); }} />
+    {state && form === "settings" && <TournamentForm key={selectedId} initial={state.settings} activityOptions={settingsOptions} open={active} busy={busy}
+      onSave={(settings) => { if (!changedSince(settingsBasis, state.settings)) void run({ action: "settings", settings }); }}
+      onClose={() => setForm(null)} onCancel={() => setForm(null)} />}
+    {state && active && matchDialog && editingMatch && <TournamentMatchDialog key={editingMatch.id} mode={matchDialog.mode} match={editingMatch} state={state} activityOptions={options} busy={busy} onAction={async (action) => !changedSince(matchDialog.basis, editingMatch) && run(action)} onClose={() => setMatchDialog(null)} />}
   </div>;
 }
 
@@ -198,34 +209,41 @@ function TournamentInvitations({ candidates, entries, busy, onAction }: {
     }
   }
 
-  return <div className="tournament-stack">
-    <Panel title="Convites do torneio" description={`${registered} confirmado(s) de ${entries.length} convidado(s)`}>
-      <div className="tournament-stack">
-        {available.length > 0 && <>
-          <label className="field">Buscar integrante aprovado<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
-          <ul className="tournament-invite-list" aria-label="Integrantes disponíveis">
-            {matches.map((member) => <li key={member.id}><label className="check-field">
-              <input type="checkbox" checked={selection.includes(member.id)} disabled={busy}
-                onChange={(event) => setSelected(event.target.checked ? [...selection, member.id] : selection.filter((id) => id !== member.id))} />
-              {member.nickname}
-            </label></li>)}
-          </ul>
-          {matches.length === 0 && <p>Nenhum integrante encontrado.</p>}
-          <div><button className="button button-primary" type="button" disabled={busy || !selection.length} onClick={async () => {
-            if (await onAction({ action: "invite", memberIds: selection })) setSelected([]);
-          }}>Convidar {selection.length || ""}</button></div>
-        </>}
-        {available.length === 0 && <p>Nenhum integrante aprovado disponível para convidar.</p>}
-      </div>
+  const confirmed = `${registered} ${registered === 1 ? "confirmado" : "confirmados"} de ${entries.length} ${entries.length === 1 ? "convidado" : "convidados"}`;
+
+  return <>
+    <Panel title="Convites do torneio" description={confirmed} flush
+      footer={available.length > 0 && <button className="button button-primary" type="button" disabled={busy || !selection.length} onClick={async () => {
+        if (await onAction({ action: "invite", memberIds: selection })) setSelected([]);
+      }}><TicketPlus aria-hidden="true" /> Convidar {selection.length || ""}</button>}>
+      {available.length > 0 ? <>
+        <div className="tournament-invite-search"><SearchField value={search} onChange={setSearch} placeholder="Buscar por apelido" label="Buscar integrante aprovado" /></div>
+        {matches.length > 0 ? <ul className="tournament-invite-list" aria-label="Integrantes disponíveis">
+          {matches.map((member) => <li key={member.id}><label>
+            <input type="checkbox" checked={selection.includes(member.id)} disabled={busy}
+              onChange={(event) => setSelected(event.target.checked ? [...selection, member.id] : selection.filter((id) => id !== member.id))} />
+            {member.nickname}
+          </label></li>)}
+        </ul> : <p className="table-empty">Nenhum integrante encontrado.</p>}
+      </> : <p className="table-empty">Nenhum integrante aprovado disponível para convidar.</p>}
     </Panel>
     {entries.length > 0 && <Panel title="Participantes convidados" flush>
-      <div className="table-wrap tournament-standing"><table>
-        <thead><tr><th scope="col">Apelido</th><th scope="col">Inscrição</th><th scope="col">Ações</th></tr></thead>
-        <tbody>{entries.map((entry) => <tr key={entry.id}>
-          <td>{entry.nickname}</td><td>{entry.registered ? "Confirmada" : "Aguardando confirmação"}</td>
-          <td><button type="button" className="text-button" disabled={busy} onClick={() => void remove(entry)}>Retirar convite</button></td>
-        </tr>)}</tbody>
-      </table></div>
+      <DataTable
+        rows={entries}
+        rowKey={(entry) => entry.id}
+        empty="Nenhum participante convidado."
+        caption="Participantes convidados"
+        columns={[
+          { key: "nickname", header: "Apelido", hideLabel: true, className: "is-lead", render: (entry) => <strong>{entry.nickname}</strong> },
+          { key: "registration", header: "Inscrição", render: (entry) => entry.registered ? <StatusBadge status="aprovado" label="Confirmada" /> : <StatusBadge status="pendente" label="Aguardando confirmação" /> },
+          {
+            key: "actions", header: "Ações", srOnlyHeader: true, className: "row-actions",
+            render: (entry) => <RowMenu label={`Ações de ${entry.nickname}`} items={[
+              { label: "Retirar convite", icon: <UserX />, danger: true, disabled: busy, onSelect: () => void remove(entry) },
+            ]} />,
+          },
+        ]}
+      />
     </Panel>}
-  </div>;
+  </>;
 }

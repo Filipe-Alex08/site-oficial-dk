@@ -44,7 +44,7 @@ export default function TournamentMatchDialog({ mode, match, state, activityOpti
     {mode === "schedule" ? <div className="field">
       <label htmlFor="tournament-match-activity">Atividade</label>
       <Select id="tournament-match-activity" value={activityId} options={[{ value: "", label: "Selecione uma atividade" }, ...activityOptions]} onChange={setActivityId} disabled={busy} />
-    </div> : <div className="tournament-stack">
+    </div> : <div className="tournament-dialog-fields">
       <div className="field">
         <label htmlFor="tournament-match-result">Resultado</label>
         <Select id="tournament-match-result" value={kind} options={resultOptions} onChange={(value) => setKind(value as TournamentResult["kind"])} disabled={busy} />
@@ -53,7 +53,10 @@ export default function TournamentMatchDialog({ mode, match, state, activityOpti
         <label htmlFor="tournament-match-winner">Vencedor</label>
         <Select id="tournament-match-winner" value={winnerId} options={winnerOptions} onChange={setWinnerId} disabled={busy} />
       </div>}
-      <label className="field">Observação visível aos membros (opcional)<textarea rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} disabled={busy} /></label>
+      <div className="field">
+        <label htmlFor="tournament-match-note">Observação visível aos membros<span className="opt">opcional</span></label>
+        <textarea id="tournament-match-note" className="is-short" maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} disabled={busy} />
+      </div>
     </div>}
   </AdminDialog>;
 }
